@@ -34,6 +34,7 @@ function setBadge(text: string, cssClass: string): void {
   const badge = document.getElementById("status-badge");
   if (badge) {
     badge.textContent = text;
-    badge.className = cssClass;
+    // Keep the base "badge" class (position/size/styling) and add the state class.
+    badge.className = `badge ${cssClass}`;
   }
 }
