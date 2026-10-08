@@ -1,0 +1,247 @@
+{
+  "_note": "All NPCs (PROJECT.md sections 6 and 8). No staff photos are ever used (decision 2026-10-07): faceTextureFile and portraitFile stay null until Mr. Van Diest supplies finished portrait PNGs (asked before Milestone 6); otherwise generic placeholder portraits are used. isSubstitute=true means a generic look and name. Dialogue ids point into dialogues.json.",
+  "npcs": [
+    {
+      "id": "npc_mr-van-diest",
+      "displayName": "Mr. Van Diest",
+      "role": "eld-teacher",
+      "location": { "roomId": "eld", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": false,
+      "wander": "none",
+      "dialogueId": "eld-not-done"
+    },
+    {
+      "id": "npc_music",
+      "displayName": "TODO — Music Room NPC",
+      "role": "flavor",
+      "location": { "roomId": "music", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "music-todo"
+    },
+    {
+      "id": "npc_learning-center",
+      "displayName": "TODO — Learning Center NPC",
+      "role": "flavor",
+      "location": { "roomId": "learning-center", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "learning-center-todo"
+    },
+    {
+      "id": "npc_theater",
+      "displayName": "TODO — Theater NPC",
+      "role": "flavor",
+      "location": { "roomId": "theater", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "theater-todo"
+    },
+    {
+      "id": "npc_hallway-1",
+      "displayName": "TODO — Hallway NPC 1",
+      "role": "hallway",
+      "location": { "area": "hallway", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "hallway-todo-1"
+    },
+    {
+      "id": "npc_hallway-2",
+      "displayName": "TODO — Hallway NPC 2",
+      "role": "hallway",
+      "location": { "area": "courtyard", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "idle",
+      "dialogueId": "hallway-todo-2"
+    },
+    {
+      "id": "npc-5th-csun-history",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "5th-csun-history", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    },
+    {
+      "id": "npc-5th-lmu-math",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "5th-lmu-math", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    },
+    {
+      "id": "npc-5th-ucla-english",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "5th-ucla-english", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    },
+    {
+      "id": "npc-5th-usc-science",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "5th-usc-science", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    },
+    {
+      "id": "npc-6th-csun-math",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "6th-csun-math", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    },
+    {
+      "id": "npc-6th-lmu-science",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "6th-lmu-science", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    },
+    {
+      "id": "npc-6th-ucla-history",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "6th-ucla-history", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    },
+    {
+      "id": "npc-6th-usc-english",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "6th-usc-english", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    },
+    {
+      "id": "npc-7th-csun-math",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "7th-csun-math", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    },
+    {
+      "id": "npc-7th-lmu-history",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "7th-lmu-history", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    },
+    {
+      "id": "npc-7th-ucla-science",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "7th-ucla-science", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    },
+    {
+      "id": "npc-7th-usc-english",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "7th-usc-english", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    },
+    {
+      "id": "npc-8th-csun-english",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "8th-csun-english", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    },
+    {
+      "id": "npc-8th-lmu-history",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "8th-lmu-history", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    },
+    {
+      "id": "npc-8th-ucla-math",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "8th-ucla-math", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    },
+    {
+      "id": "npc-8th-usc-science",
+      "displayName": "TODO — Teacher Name",
+      "role": "teacher",
+      "location": { "roomId": "8th-usc-science", "x": 0, "y": 0, "z": 0 },
+      "faceTextureFile": null,
+      "portraitFile": null,
+      "isSubstitute": true,
+      "wander": "none",
+      "dialogueId": "station-todo"
+    }
+  ]
+}

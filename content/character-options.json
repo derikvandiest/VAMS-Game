@@ -1,0 +1,25 @@
+{
+  "_note": "Character customization options (PROJECT.md section 5.1). These are the agreed defaults — Mr. Van Diest reviews the final list at Milestone 16. Skin tones are placeholder hex colors spanning a natural range.",
+  "hairstyles": [
+    { "id": "hair-1", "name": "Style 1" },
+    { "id": "hair-2", "name": "Style 2" },
+    { "id": "hair-3", "name": "Style 3" },
+    { "id": "hair-4", "name": "Style 4" },
+    { "id": "hair-5", "name": "Style 5" },
+    { "id": "hair-6", "name": "Style 6" }
+  ],
+  "skinTones": [
+    { "id": "skin-1", "name": "Tone 1", "hex": "#FFE0C4" },
+    { "id": "skin-2", "name": "Tone 2", "hex": "#F1C27D" },
+    { "id": "skin-3", "name": "Tone 3", "hex": "#E0AC69" },
+    { "id": "skin-4", "name": "Tone 4", "hex": "#C68642" },
+    { "id": "skin-5", "name": "Tone 5", "hex": "#A76B36" },
+    { "id": "skin-6", "name": "Tone 6", "hex": "#8D5524" },
+    { "id": "skin-7", "name": "Tone 7", "hex": "#5C3317" }
+  ],
+  "genders": [
+    { "id": "boy", "label": "Boy" },
+    { "id": "girl", "label": "Girl" },
+    { "id": "neutral", "label": "Neutral" }
+  ]
+}

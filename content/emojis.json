@@ -1,0 +1,17 @@
+{
+  "_note": "Preset emojis only — no free text (PROJECT.md section 5.13). Default list of 12; Mr. Van Diest reviews it at Milestone 16. The server sends only the id, never images or text.",
+  "emojis": [
+    { "id": "wave", "char": "👋" },
+    { "id": "grin", "char": "😀" },
+    { "id": "joy", "char": "😂" },
+    { "id": "thumbsup", "char": "👍" },
+    { "id": "clap", "char": "👏" },
+    { "id": "heart", "char": "❤️" },
+    { "id": "thinking", "char": "🤔" },
+    { "id": "surprised", "char": "😮" },
+    { "id": "party", "char": "🎉" },
+    { "id": "fire", "char": "🔥" },
+    { "id": "sad", "char": "😢" },
+    { "id": "raisehands", "char": "🙌" }
+  ]
+}

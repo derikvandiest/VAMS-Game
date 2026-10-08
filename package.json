@@ -1,0 +1,36 @@
+{
+  "name": "eld-pd-game",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Valor Academy Middle School online multiplayer PD game (see PROJECT.md)",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,magenta \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "tsx watch server/src/index.ts",
+    "dev:client": "vite",
+    "build": "vite build",
+    "start": "tsx server/src/index.ts",
+    "check": "tsc --noEmit"
+  },
+  "overrides": {
+    "shell-quote": "^1.12.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.4",
+    "@types/three": "^0.186.0",
+    "concurrently": "^9.2.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.3"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.4",
+    "socket.io-client": "^4.8.4",
+    "three": "^0.186.1"
+  }
+}

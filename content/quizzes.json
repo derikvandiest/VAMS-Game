@@ -1,0 +1,15 @@
+{
+  "_note": "SERVER-ONLY FILE (PROJECT.md sections 11 and 12). Correct answers must NEVER be sent to the browser — enforced with an automated check starting Milestone 8. Placeholder only; real questions arrive at Milestone 16. Each station needs 1-2 questions (time budget: 60 minutes total).",
+  "stations": {
+    "TODO-station": {
+      "questions": [
+        {
+          "text": "TODO — placeholder question.",
+          "choices": ["Choice A", "Choice B", "Choice C", "Choice D"],
+          "correctIndex": 0,
+          "feedbackWrong": "Not quite — let's go over it again!"
+        }
+      ]
+    }
+  }
+}

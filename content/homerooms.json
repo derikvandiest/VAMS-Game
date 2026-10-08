@@ -1,0 +1,29 @@
+{
+  "_note": "Homeroom data (PROJECT.md section 5.2). Names are ALWAYS all caps: CSUN, LMU, UCLA, USC. Colors are placeholders chosen to be distinct — final review by Mr. Van Diest at Milestone 16. Each color must work in both light and dark mode (checked at Milestone 5).",
+  "homerooms": [
+    {
+      "id": "CSUN",
+      "name": "CSUN",
+      "color": "#F4C430",
+      "description": "Yellow"
+    },
+    {
+      "id": "LMU",
+      "name": "LMU",
+      "color": "#2E9E4F",
+      "description": "Green"
+    },
+    {
+      "id": "UCLA",
+      "name": "UCLA",
+      "color": "#2F6FD0",
+      "description": "Blue"
+    },
+    {
+      "id": "USC",
+      "name": "USC",
+      "color": "#D7263D",
+      "description": "Red"
+    }
+  ]
+}

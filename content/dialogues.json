@@ -1,0 +1,31 @@
+{
+  "_note": "All dialogue (PROJECT.md sections 6, 5.6, 5.15). Clearly marked placeholder lines — real dialogue arrives at Milestone 16. Each station gets its own dialogue id at Milestone 6/7; every classroom teacher currently shares the 'station-todo' placeholder. Lines: speaker + text. Keep stations to 6-10 lines (time budget).",
+  "dialogues": {
+    "station-todo": [
+      { "speaker": "TODO Teacher", "text": "TODO — placeholder dialogue line 1 for the PD station." },
+      { "speaker": "TODO Teacher", "text": "TODO — placeholder line 2. Real content comes in Milestone 16." },
+      { "speaker": "TODO Teacher", "text": "TODO — placeholder line 3. Now the quiz would appear here." }
+    ],
+    "eld-not-done": [
+      { "speaker": "Mr. Van Diest", "text": "TODO — welcome line. Before 16 stamps: 'You're not done yet — keep going!' At 16 stamps the turn-in dialogue plays instead (Milestone 11)." }
+    ],
+    "eld-turn-in": [
+      { "speaker": "Mr. Van Diest", "text": "TODO — turn-in dialogue at 16 stamps (Milestone 11). Then: head to the parking lot and leave school." }
+    ],
+    "music-todo": [
+      { "speaker": "TODO Music NPC", "text": "TODO — short flavor dialogue for the Music Room." }
+    ],
+    "learning-center-todo": [
+      { "speaker": "TODO Learning Center NPC", "text": "TODO — short flavor dialogue for the Learning Center." }
+    ],
+    "theater-todo": [
+      { "speaker": "TODO Theater NPC", "text": "TODO — short flavor dialogue for the Theater." }
+    ],
+    "hallway-todo-1": [
+      { "speaker": "TODO Hallway NPC", "text": "TODO — short hallway flavor line." }
+    ],
+    "hallway-todo-2": [
+      { "speaker": "TODO Hallway NPC", "text": "TODO — short courtyard flavor line." }
+    ]
+  }
+}

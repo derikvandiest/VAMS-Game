@@ -1,0 +1,23 @@
+{
+  "_note": "Game settings (PROJECT.md sections 9, 5.11, 5.14). Edit these numbers/text without touching code. Certificate and email wording is PLACEHOLDER until Milestone 12.",
+  "maxPlayers": 60,
+  "expectedPlayers": 40,
+  "playerNameMaxLength": 16,
+  "walkingSpeed": 3.5,
+  "timeBudgetMinutes": 60,
+  "firstLoadBudgetMB": 15,
+  "stationDialogueMinLines": 6,
+  "stationDialogueMaxLines": 10,
+  "stationQuestionsMin": 1,
+  "stationQuestionsMax": 2,
+  "emojiCooldownSeconds": 1.5,
+  "arrivalAnimationSeconds": 7,
+  "certificate": {
+    "title": "Certificate of Completion — TODO: final wording from Mr. Van Diest (Milestone 12)",
+    "body": "TODO: This certificate confirms that [NAME] completed the ELD Professional Development at Valor Academy Middle School on [DATE]."
+  },
+  "email": {
+    "subject": "TODO: your ELD PD certificate — final subject at Milestone 12",
+    "body": "TODO: short message with the certificate and results summary attached. Final wording at Milestone 12."
+  }
+}

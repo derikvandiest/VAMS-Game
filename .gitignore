@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Secrets — never commit real environment variables
+.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Raw staff photos: NEVER committed, NEVER deployed (PROJECT.md sections 8 and 18).
+# No staff photos are used in this project — this folder stays empty.
+assets/npc-photos/*
+!assets/npc-photos/.gitkeep
