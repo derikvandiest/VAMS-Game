@@ -3,7 +3,7 @@
 A browser-based, Habbo Hotel–style 3D multiplayer game used in teacher professional development.
 The full specification lives in [PROJECT.md](PROJECT.md) — that file is the source of truth.
 
-**Current status:** Milestone 1 — project skeleton with a placeholder 3D scene.
+**Current status:** Milestone 2 — single-player prototype: you can walk a placeholder campus with WASD / arrow keys.
 
 ---
 
@@ -23,7 +23,9 @@ The full specification lives in [PROJECT.md](PROJECT.md) — that file is the so
 4. Type `npm run dev` and press **Enter**. Leave this window open — it starts the game.
 5. Open Chrome or Edge and go to **<http://localhost:5173>**
 
-**What you should see:** a 3D scene — green ground, a simple placeholder school building (tan walls, red roof, brown door), small bushes with soft shadows, light-blue sky — and a **green badge in the top-right corner that says "Server: connected — players online: 1"**.
+**What you should see:** a 3D campus you can walk around — green grass, a U-shaped school building (tan walls) around an open courtyard with a fountain, a parking lot, and a gate to the north. Your blue character starts at the gate. Press **W A S D** (or the arrow keys) to walk; the camera follows you and you **cannot walk through walls**. A hint bar at the bottom reminds you of the controls, and a **green badge in the top-right corner says "Server: connected — players online: 1"**.
+
+> Milestone 2 is **single-player only** — you will not see other players yet (that arrives in Milestone 3). The campus shape is a placeholder built from `content/layout.json`; it will be reshaped to match the real school photos in a later milestone.
 
 ### How to stop
 Click inside the terminal and press `Ctrl + C`. Start it again any time with `npm run dev`.
@@ -39,7 +41,7 @@ Open **Terminal** (⌘+Space, type "Terminal"), `cd` into the project folder, an
 |---|---|
 | `PROJECT.md` | The full game spec (source of truth), including section 18 = all planning decisions |
 | `README.md` | This file — plain-language instructions |
-| `content/` | **All game content as editable JSON** — classrooms, NPCs, dialogue, quizzes, homerooms, character options, emojis, settings |
+| `content/` | **All game content as editable JSON** — classrooms, NPCs, dialogue, quizzes, homerooms, character options, emojis, settings, and the campus `layout.json` (walls, doors, spawn, parking lot) |
 | `client/` | The browser part of the game (Three.js 3D + UI) |
 | `server/` | The Node + Socket.io server (serves the game, handles multiplayer) |
 | `assets/` | Images — NPC portraits and reference photos (all placeholders for now; `npc-photos/` stays empty forever) |

@@ -47,3 +47,20 @@ body {
 .badge-bad {
   background: #d7263d;
 }
+
+/* Controls hint (bottom-center). Milestone 2 reminds players how to walk. */
+#controls-hint {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 10;
+  pointer-events: none; /* never blocks clicks/keys */
+  white-space: nowrap;
+}
