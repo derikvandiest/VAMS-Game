@@ -4,17 +4,19 @@ import layout from "../../content/layout.json";
 /**
  * Milestone 2 — single-player prototype (PROJECT.md section 14, milestone 2).
  *
- * Builds the placeholder campus from content/layout.json (a U-shaped building
- * around an open courtyard, plus a parking lot and gate), draws a low-poly
- * player, and lets the player walk with WASD / arrow keys. A fixed isometric
- * camera follows the player. Walls (from the layout) are solid: the player
- * cannot walk through them.
+ * Builds the placeholder campus from content/layout.json (two buildings forming
+ * an L around a rectangular field, plus a parking lot with parked cars and a
+ * gate), draws a low-poly player, and lets the player walk with WASD / arrow
+ * keys. A fixed isometric camera follows the player and can be panned by
+ * right-click + drag. Walls (from the layout) are solid: the player cannot walk
+ * through them.
  *
  * This scene is LOCAL ONLY for now — other players appear in Milestone 3.
  */
 
 type LayoutWall = { x: number; z: number; w: number; d: number };
-type LayoutDoor = { id: string; x: number; z: number };
+type LayoutDoor = { id: string; x: number; z: number; axis: string };
+type LayoutCar = { x: number; z: number; rot: number; color: string };
 type CampusLayout = typeof import("../../content/layout.json");
 
 const PLAYER_SPEED = 3.5; // world units / second (matches settings.walkingSpeed)
@@ -24,6 +26,7 @@ export function startPlaceholderScene(container: HTMLElement): void {
   const layoutData = layout as CampusLayout;
   const walls: LayoutWall[] = layoutData.walls;
   const doors: LayoutDoor[] = layoutData.doors;
+  const cars: LayoutCar[] = layoutData.cars;
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x9ec7e8); // soft sky
@@ -61,15 +64,13 @@ export function startPlaceholderScene(container: HTMLElement): void {
   ground.receiveShadow = true;
   scene.add(ground);
 
-  // --- Walkable paths: gate → parking lot → corridors → courtyard ----------
+  // --- Walkable paths: gate → parking → field → building fronts -----------
   const pathMaterial = new THREE.MeshStandardMaterial({ color: 0xd9c9a3, roughness: 1 });
   const paths: Array<[number, number, number, number]> = [
-    [0, -30, 5, 6], // gate → parking
-    [0, -27, 14, 10], // parking lot
-    [0, -13.5, 5, 3], // main entrance (through the north-wing gap)
-    [0, 0.5, 5, 25], // courtyard north-south
-    [0, 0.5, 19, 5], // courtyard east-west
-    [0, 14.5, 16, 3], // courtyard → bottom wing (south corridor)
+    [0, -27, 20, 10], // parking lot
+    [0, -19, 5, 8], // parking → field (north entrance)
+    [-11, -2, 4, 26], // walkway along the west building (field side)
+    [1, 12, 34, 4], // walkway along the south building (field side)
   ];
   for (const [x, z, w, d] of paths) {
     const path = new THREE.Mesh(new THREE.PlaneGeometry(w, d), pathMaterial);
@@ -78,7 +79,6 @@ export function startPlaceholderScene(container: HTMLElement): void {
     path.receiveShadow = true;
     scene.add(path);
   }
-
 
   // --- Walls: solid blocks used for both rendering and collision ----------
   const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xe8e0d2, roughness: 0.9 });
@@ -91,28 +91,46 @@ export function startPlaceholderScene(container: HTMLElement): void {
     scene.add(mesh);
   }
 
-  // --- Doors: wooden frames on the courtyard-facing walls ------------------
+  // --- Doors: wooden frames on the field-facing walls ---------------------
+  // axis "z" → the door sits on an east/west-facing wall, so the frame is
+  //            narrow in x and wide in z (opening runs north-south).
+  // axis "x" → the door sits on a north/south-facing wall, so the frame is
+  //            wide in x and narrow in z (opening runs east-west).
   const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x6b4f3a, roughness: 0.8 });
   for (const door of doors) {
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.4), doorMaterial);
+    const [fw, fd] = door.axis === "z" ? [0.4, 2] : [2, 0.4];
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(fw, 3, fd), doorMaterial);
     frame.position.set(door.x, 1.5, door.z);
     frame.castShadow = true;
     scene.add(frame);
   }
 
-  // --- Courtyard fountain (decorative) ------------------------------------
-  const fountain = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      layoutData.courtyard.fountainRadius,
-      layoutData.courtyard.fountainRadius + 0.3,
-      1,
-      16
-    ),
-    new THREE.MeshStandardMaterial({ color: 0xb0b8c0, roughness: 0.7 })
-  );
-  fountain.position.set(layoutData.courtyard.center.x, 0.5, layoutData.courtyard.center.z);
-  fountain.castShadow = true;
-  scene.add(fountain);
+  // --- Parked cars (decorative — no collision, so the lot stays walkable) -
+  // A tiny reusable low-poly car: body + cabin. (The arriving/departing car
+  // animation in Milestone 11 will reuse this shape.)
+  function makeCar(colorHex: string): THREE.Group {
+    const car = new THREE.Group();
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(1.8, 0.6, 3.8),
+      new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.5, metalness: 0.2 })
+    );
+    body.position.y = 0.6;
+    body.castShadow = true;
+    const cabin = new THREE.Mesh(
+      new THREE.BoxGeometry(1.5, 0.55, 1.8),
+      new THREE.MeshStandardMaterial({ color: 0x222831, roughness: 0.4 })
+    );
+    cabin.position.set(0, 1.15, -0.2);
+    cabin.castShadow = true;
+    car.add(body, cabin);
+    return car;
+  }
+  for (const car of cars) {
+    const mesh = makeCar(car.color);
+    mesh.position.set(car.x, 0, car.z);
+    mesh.rotation.y = car.rot;
+    scene.add(mesh);
+  }
 
   // --- Gate posts (visual markers for the gate gap in the north wall) -----
   const gateHalf = layoutData.boundary.gate.width / 2;
@@ -171,6 +189,58 @@ export function startPlaceholderScene(container: HTMLElement): void {
 
   window.addEventListener("resize", resize);
   resize();
+
+  // --- Camera pan: right-click + drag to slide the view -------------------
+  // The camera keeps following the player, but panning adds an extra offset on
+  // top so you can look around without losing the player (clamped so the player
+  // can never be panned off-screen).
+  const panOffset = new THREE.Vector3();
+  const PAN_SPEED = 0.06; // world units per pixel dragged
+  const PAN_MAX = 14; // max distance the view can be panned from the player
+  let panning = false;
+  let lastMouseX = 0;
+  let lastMouseY = 0;
+
+  const canvas = renderer.domElement;
+  // Suppress the browser's right-click menu so dragging feels natural.
+  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  canvas.addEventListener("mousedown", (e) => {
+    if (e.button === 2) {
+      // right button starts a pan
+      panning = true;
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+    }
+  });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!panning) return;
+    const dx = e.clientX - lastMouseX;
+    const dy = e.clientY - lastMouseY;
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+
+    // Pan along the camera's right and forward directions, projected onto the
+    // ground plane so the view slides horizontally (no tilting).
+    const forward = new THREE.Vector3();
+    camera.getWorldDirection(forward);
+    const right = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
+    forward.y = 0;
+    forward.normalize();
+    right.y = 0;
+    right.normalize();
+
+    panOffset.addScaledVector(right, dx * PAN_SPEED);
+    panOffset.addScaledVector(forward, -dy * PAN_SPEED);
+
+    // Keep the pan within a sane distance of the player.
+    if (panOffset.length() > PAN_MAX) panOffset.setLength(PAN_MAX);
+  });
+
+  window.addEventListener("mouseup", () => {
+    panning = false;
+  });
 
   // --- Input: WASD + arrow keys (spec section 5.4) ------------------------
   const keys = new Set<string>();
@@ -251,13 +321,13 @@ export function startPlaceholderScene(container: HTMLElement): void {
       player.position.y *= 0.8;
     }
 
-    // Camera follows the player at a fixed isometric offset.
+    // Camera follows the player at a fixed isometric offset, plus any pan.
     camera.position.set(
-      player.position.x + camOffset.x,
-      camOffset.y,
-      player.position.z + camOffset.z
+      player.position.x + camOffset.x + panOffset.x,
+      camOffset.y + panOffset.y,
+      player.position.z + camOffset.z + panOffset.z
     );
-    camera.lookAt(player.position.x, 1, player.position.z);
+    camera.lookAt(player.position.x + panOffset.x, 1 + panOffset.y, player.position.z + panOffset.z);
 
     renderer.render(scene, camera);
   });

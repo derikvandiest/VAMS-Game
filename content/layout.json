@@ -1,5 +1,5 @@
 {
-  "_note": "School campus layout — SINGLE SOURCE OF TRUTH for the walkable world (PROJECT.md section 7). Placeholder compact campus shaped like the reference screenshots: a U-shaped/horseshoe building around an open courtyard, with a parking lot and gate to the north. The 2D map (Milestone 9) and classroom doors (Milestone 7) are generated from THIS file. Coordinates: x = east(+)/west(-), z = south(+)/north(-), y = up. 'walls' are solid blocks (center x,z + size w,d) used for BOTH rendering and collision — keep them axis-aligned. Doors line up with classrooms.json by id and sit on the courtyard-facing wall of each room. Real room numbers/names arrive at Milestone 16.",
+  "_note": "School campus layout — SINGLE SOURCE OF TRUTH for the walkable world (PROJECT.md section 7). Placeholder compact campus shaped like the reference screenshots: TWO buildings (a west building running north-south and a south building running east-west) forming an L around a large rectangular grass field, with a parking lot and gate to the north. The 2D map (Milestone 9) and classroom doors (Milestone 7) are generated from THIS file. Coordinates: x = east(+)/west(-), z = south(+)/north(-), y = up. 'walls' are solid blocks (center x,z + size w,d) used for BOTH rendering and collision — keep them axis-aligned. Doors line up with classrooms.json by id and sit on the field-facing wall of each room; 'axis' is the direction the door opening runs along (z = opening runs north-south on an east/west-facing wall, x = opening runs east-west on a north/south-facing wall). 'cars' are decorative parked cars (no collision, so the lot stays walkable). Real room numbers/names arrive at Milestone 16.",
   "boundary": {
     "minX": -22,
     "maxX": 22,
@@ -18,53 +18,54 @@
     "spotWidth": 2.5,
     "arrivalSpot": { "x": 0, "z": -27 }
   },
-  "courtyard": {
-    "center": { "x": 0, "z": 0.5 },
-    "width": 18,
-    "depth": 22,
-    "fountainRadius": 1.8
+  "field": {
+    "center": { "x": 2, "z": -1 },
+    "width": 26,
+    "depth": 22
   },
   "buildings": [
-    { "id": "top-left", "label": "North Wing - west (5th grade)", "x": -8.75, "z": -15, "w": 11.5, "d": 6, "innerEdge": "z:-12" },
-    { "id": "top-right", "label": "North Wing - east (ELD / Music)", "x": 8.75, "z": -15, "w": 11.5, "d": 6, "innerEdge": "z:-12" },
-    { "id": "bottom", "label": "South Wing (8th grade + Learning/Theater)", "x": 0, "z": 16, "w": 29, "d": 6, "innerEdge": "z:13" },
-    { "id": "left", "label": "West Wing (6th grade)", "x": -12, "z": 0, "w": 6, "d": 22, "innerEdge": "x:-9" },
-    { "id": "right", "label": "East Wing (7th grade)", "x": 12, "z": 0, "w": 6, "d": 22, "innerEdge": "x:9" }
+    { "id": "west", "label": "West Building (5th/6th grade + ELD/Music)", "x": -14, "z": 0, "w": 6, "d": 24, "faces": "east" },
+    { "id": "south", "label": "South Building (7th/8th grade + Learning/Theater)", "x": 2, "z": 15, "w": 26, "d": 6, "faces": "north" }
   ],
-  "mainEntrance": { "x": 0, "z": -15, "width": 6 },
   "walls": [
-    { "x": -8.75, "z": -15, "w": 11.5, "d": 6 },
-    { "x": 8.75, "z": -15, "w": 11.5, "d": 6 },
-    { "x": 0, "z": 16, "w": 29, "d": 6 },
-    { "x": -12, "z": 0, "w": 6, "d": 22 },
-    { "x": 12, "z": 0, "w": 6, "d": 22 },
-    { "x": 0, "z": 0.5, "w": 4, "d": 4 },
+    { "x": -14, "z": 0, "w": 6, "d": 24 },
+    { "x": 2, "z": 15, "w": 26, "d": 6 },
     { "x": -13, "z": -34, "w": 18, "d": 1 },
     { "x": 13, "z": -34, "w": 18, "d": 1 },
     { "x": 0, "z": 26, "w": 44, "d": 1 },
     { "x": -22, "z": -4, "w": 1, "d": 60 },
     { "x": 22, "z": -4, "w": 1, "d": 60 }
   ],
+  "cars": [
+    { "x": -7.5, "z": -30.5, "rot": 0, "color": "#d0d0d0" },
+    { "x": -2.5, "z": -30.5, "rot": 0, "color": "#f2f2f2" },
+    { "x": 2.5, "z": -30.5, "rot": 0, "color": "#4a4a4a" },
+    { "x": 7.5, "z": -30.5, "rot": 0, "color": "#3a5a8a" },
+    { "x": -7.5, "z": -23.5, "rot": 3.1416, "color": "#8a3a3a" },
+    { "x": -2.5, "z": -23.5, "rot": 3.1416, "color": "#2a2a2a" },
+    { "x": 2.5, "z": -23.5, "rot": 3.1416, "color": "#c0c8d0" },
+    { "x": 7.5, "z": -23.5, "rot": 3.1416, "color": "#6a7a5a" }
+  ],
   "doors": [
-    { "id": "5th-csun-history", "x": -12, "z": -12 },
-    { "id": "5th-lmu-math", "x": -8.75, "z": -12 },
-    { "id": "5th-ucla-english", "x": -5.5, "z": -12 },
-    { "id": "5th-usc-science", "x": 5.5, "z": -12 },
-    { "id": "eld", "x": 8.75, "z": -12 },
-    { "id": "music", "x": 12, "z": -12 },
-    { "id": "8th-csun-english", "x": -12, "z": 13 },
-    { "id": "8th-lmu-history", "x": -7.2, "z": 13 },
-    { "id": "8th-ucla-math", "x": -2.4, "z": 13 },
-    { "id": "8th-usc-science", "x": 2.4, "z": 13 },
-    { "id": "learning-center", "x": 7.2, "z": 13 },
-    { "id": "theater", "x": 12, "z": 13 },
-    { "id": "6th-csun-math", "x": -9, "z": -8.25 },
-    { "id": "6th-lmu-science", "x": -9, "z": -2.75 },
-    { "id": "6th-ucla-history", "x": -9, "z": 2.75 },
-    { "id": "6th-usc-english", "x": -9, "z": 8.25 },
-    { "id": "7th-csun-math", "x": 9, "z": -8.25 },
-    { "id": "7th-lmu-history", "x": 9, "z": -2.75 },
-    { "id": "7th-ucla-science", "x": 9, "z": 2.75 },
-    { "id": "7th-usc-english", "x": 9, "z": 8.25 }
+    { "id": "5th-csun-history", "x": -11, "z": -10.8, "axis": "z" },
+    { "id": "5th-lmu-math", "x": -11, "z": -8.4, "axis": "z" },
+    { "id": "5th-ucla-english", "x": -11, "z": -6, "axis": "z" },
+    { "id": "5th-usc-science", "x": -11, "z": -3.6, "axis": "z" },
+    { "id": "eld", "x": -11, "z": -1.2, "axis": "z" },
+    { "id": "music", "x": -11, "z": 1.2, "axis": "z" },
+    { "id": "6th-csun-math", "x": -11, "z": 3.6, "axis": "z" },
+    { "id": "6th-lmu-science", "x": -11, "z": 6, "axis": "z" },
+    { "id": "6th-ucla-history", "x": -11, "z": 8.4, "axis": "z" },
+    { "id": "6th-usc-english", "x": -11, "z": 10.8, "axis": "z" },
+    { "id": "7th-csun-math", "x": -9, "z": 12, "axis": "x" },
+    { "id": "7th-lmu-history", "x": -6.5, "z": 12, "axis": "x" },
+    { "id": "7th-ucla-science", "x": -4, "z": 12, "axis": "x" },
+    { "id": "7th-usc-english", "x": -1.5, "z": 12, "axis": "x" },
+    { "id": "8th-csun-english", "x": 1, "z": 12, "axis": "x" },
+    { "id": "8th-lmu-history", "x": 3.5, "z": 12, "axis": "x" },
+    { "id": "8th-ucla-math", "x": 6, "z": 12, "axis": "x" },
+    { "id": "8th-usc-science", "x": 8.5, "z": 12, "axis": "x" },
+    { "id": "learning-center", "x": 11, "z": 12, "axis": "x" },
+    { "id": "theater", "x": 13.5, "z": 12, "axis": "x" }
   ]
 }
