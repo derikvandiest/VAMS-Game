@@ -3,7 +3,7 @@
 A browser-based, Habbo Hotel–style 3D multiplayer game used in teacher professional development.
 The full specification lives in [PROJECT.md](PROJECT.md) — that file is the source of truth.
 
-**Current status:** Milestone 2 — single-player prototype: walk an L-shaped campus (two buildings around a grass field, parking lot to the west), take exterior stairs up to a second-floor roof, orbit the camera, and click the compass to face north.
+**Current status:** Milestone 2 — single-player prototype: walk a two-story campus (two L-shaped buildings around a grass field, parking lot to the west), climb exterior stairs to second floors with walkways to the upstairs classrooms, orbit the camera, and click the compass to face north.
 
 ---
 
@@ -23,9 +23,9 @@ The full specification lives in [PROJECT.md](PROJECT.md) — that file is the so
 4. Type `npm run dev` and press **Enter**. Leave this window open — it starts the game.
 5. Open Chrome or Edge and go to **<http://localhost:5173>**
 
-**What you should see:** a 3D campus — an asphalt ground with a paved inner courtyard and a rectangular **grass field** in the middle, framed by **two buildings** forming an L (a west building and a north building) with a **parking lot and cars to the west**. Your blue character starts in the parking lot. Press **W A S D** (or the arrow keys) to walk; the camera follows you. Walk up either building's **exterior stairs** to reach its **second-floor roof** (you can't walk off — there are railings). **Right-click + drag** to orbit the camera around your character, and **click the compass** (top-left) to snap the view to **north-up**. A hint bar at the bottom reminds you of the controls, and a **green badge in the top-right corner says "Server: connected — players online: 1"**.
+**What you should see:** a 3D campus — an asphalt ground with a paved inner courtyard and a rectangular **grass field** in the middle, framed by **two buildings** forming an L (a west building and a north building) with a **parking lot and cars to the west**. Your blue character starts in the parking lot. Press **W A S D** (or the arrow keys) to walk; the camera follows you. Each building is **two stories**: walk up the **exterior stairs** (south side of the west building, east side of the north building) to the **second floor**, where a **walkway** leads to the 4 upstairs classrooms (railings stop you at the edge). **Right-click + drag** to orbit the camera around your character, and **click the compass** (top-left) to snap the view to **north-up**. A hint bar at the bottom reminds you of the controls, and a **green badge in the top-right corner says "Server: connected — players online: 1"**.
 
-> Milestone 2 is **single-player only** — you will not see other players yet (that arrives in Milestone 3). The "second floor" is currently the building's walkable roof (a prototype; real furnished interiors arrive at Milestone 7). The campus shape is a placeholder built from `content/layout.json`; it will be reshaped to match the real school photos in a later milestone.
+> Milestone 2 is **single-player only** — you will not see other players yet (that arrives in Milestone 3). The "second floor" is currently a walkable platform with walls and a marked walkway (a prototype; real furnished interiors arrive at Milestone 7). The campus shape is a placeholder built from `content/layout.json`; it will be reshaped to match the real school photos in a later milestone.
 
 ### How to stop
 Click inside the terminal and press `Ctrl + C`. Start it again any time with `npm run dev`.

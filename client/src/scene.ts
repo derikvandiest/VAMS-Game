@@ -2,39 +2,41 @@ import * as THREE from "three";
 import layout from "../../content/layout.json";
 
 /**
- * Milestone 2 — single-player prototype (PROJECT.md section 14, milestone 2).
+ * Milestone 2 - single-player prototype (PROJECT.md section 14, milestone 2).
  *
  * Builds the placeholder campus from content/layout.json: two buildings forming
  * an L (west building + north building) around a rectangular grass field, an
  * asphalt ground with a paved inner courtyard, a parking lot with parked cars,
- * and a second-floor roof on each building reached by an exterior staircase.
+ * and TWO-STORY buildings - each with a ground floor and a second floor reached
+ * by an exterior staircase.
  *
  * A low-poly player walks with WASD / arrow keys. The camera is LOCKED to the
  * player and orbits them (right-click + drag rotates/elevates); a compass button
- * snaps the view back to north-up. Collision is HEIGHT-AWARE: only the two
- * buildings (at ground level) and the roof railings (up top) are solid, so the
- * player can walk up the stairs onto a building's second-floor roof.
+ * snaps the view back to north-up. Collision is HEIGHT-AWARE: only the ground
+ * stories of the two buildings (y 0..6) and the second-story walls (y 6.1..12.1)
+ * are solid, so the player can walk up the stairs onto a second floor. A marked
+ * WALKWAY on each second floor leads from the stair landing to the 4 upstairs
+ * classrooms.
  *
- * PROTOTYPE NOTE: a building's "second floor" is its walkable roof with railings,
- * not a furnished interior. Real two-story interiors arrive at Milestone 7.
+ * PROTOTYPE NOTE: a building's "second floor" is a walkable platform with
+ * second-story walls, door frames, and a walkway - not a furnished interior.
+ * Real two-story interiors arrive at Milestone 7.
  *
- * This scene is LOCAL ONLY for now — other players appear in Milestone 3.
+ * This scene is LOCAL ONLY for now - other players appear in Milestone 3.
  */
 
 type LayoutWall = { x: number; z: number; w: number; d: number };
-type LayoutDoor = { id: string; x: number; z: number; axis: string };
+type LayoutDoor = { id: string; x: number; z: number; axis: string; floor: number };
 type LayoutCar = { x: number; z: number; rot: number; color: string };
 type LayoutStair = {
   building: string;
   center: { x: number; z: number };
-  width: number;
-  depth: number;
-  axis: string;
-  dir: number;
-  bottomX?: number;
-  topX?: number;
-  bottomZ?: number;
-  topZ?: number;
+  width: number; // cross-sectional width (perpendicular to climb)
+  len: number; // climb length along the climb axis
+  axis: string; // "z" = climb runs north-south, "x" = climb runs east-west
+  dir: number; // +1/-1 step direction along the climb axis
+  bottom: number; // climb-axis coordinate at the ground
+  top: number; // climb-axis coordinate at the second floor
 };
 type CampusLayout = typeof import("../../content/layout.json");
 
@@ -48,7 +50,7 @@ const PLAYER_HEIGHT = 2.4; // used for height-aware collision
 // points the camera due SOUTH of the player looking NORTH (north-up on screen).
 const CAM_DISTANCE = 30; // horizontal distance from player to camera
 const CAM_HEIGHT = 26; // camera height above the ground
-const DEFAULT_CAM_ANGLE = Math.PI / 4; // classic 45° isometric feel
+const DEFAULT_CAM_ANGLE = Math.PI / 4; // classic 45-degree isometric feel
 const NORTH_UP_ANGLE = 0; // camera due south, looking north (north is up)
 const MIN_ELEVATION = 12; // closest to top-down when dragging down
 const MAX_ELEVATION = 40; // furthest from top-down when dragging up
@@ -59,13 +61,14 @@ export function startPlaceholderScene(container: HTMLElement): void {
   const doors: LayoutDoor[] = layoutData.doors;
   const cars: LayoutCar[] = layoutData.cars;
   const stairs: LayoutStair[] = layoutData.stairs;
-  const roofY = layoutData.boundary.wallHeight; // second-floor height (6)
+  const roofY = layoutData.boundary.wallHeight; // ground-story height (6)
+  const floor2 = roofY + 0.1; // walkable second-floor surface height
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x9ec7e8); // soft sky
   scene.fog = new THREE.Fog(0x9ec7e8, 70, 150);
 
-  // --- Renderer (pixel ratio capped at 2 for Retina displays — spec section 3)
+  // --- Renderer (pixel ratio capped at 2 for Retina displays - spec section 3)
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
@@ -89,7 +92,7 @@ export function startPlaceholderScene(container: HTMLElement): void {
   scene.add(sun);
 
   // =========================================================================
-  // GROUND — three stacked layers (asphalt outside, pavement inside, grass
+  // GROUND - three stacked layers (asphalt outside, pavement inside, grass
   // field in the middle). Each sits a hair above the last to avoid z-fighting.
   // =========================================================================
 
@@ -143,17 +146,17 @@ export function startPlaceholderScene(container: HTMLElement): void {
   }
 
   // =========================================================================
-  // BUILDINGS — solid at ground level (walls) + a walkable roof (second floor)
-  // surrounded by railings, plus an exterior staircase up to the roof.
+  // BUILDINGS - solid ground story (walls) + a walkable second-floor platform
+  // ringed by second-story walls, plus an exterior staircase up to it.
   // =========================================================================
   const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xe8e0d2, roughness: 0.9 });
   const roofMaterial = new THREE.MeshStandardMaterial({ color: 0xb0b8c0, roughness: 0.95 });
   const stairMaterial = new THREE.MeshStandardMaterial({ color: 0x9aa0a8, roughness: 1 });
   const railingMaterial = new THREE.MeshStandardMaterial({ color: 0x3a3f4a, roughness: 0.8 });
-  const railingHeight = layoutData.boundary.railingHeight;
+  const railingHeight = layoutData.boundary.railingHeight; // second-story wall height (6)
 
-  // Height-aware solid boxes (declared early: the railing loop below fills
-  // `railingSolids` as it builds the roof railings). See the COLLISION section.
+  // Height-aware solid boxes (declared early: the second-story wall loop below
+  // fills `railingSolids` as it builds the walls). See the COLLISION section.
   type Solid = { x: number; z: number; w: number; d: number; yBase: number; yTop: number };
   const railingSolids: Solid[] = [];
   const buildingSolids: Solid[] = walls.map((w) => ({
@@ -174,9 +177,9 @@ export function startPlaceholderScene(container: HTMLElement): void {
     scene.add(mesh);
   }
 
-  // --- Roofs (second floor): a walkable platform on top of each building ----
-  // We track the roof footprints so the player can stand on them and so the
-  // railings know where to go.
+  // --- Roofs (second floor): a walkable platform inset within each building --
+  // Track the roof footprints so the player can stand on them, so the
+  // second-story walls know where to go, and so the walkway can be placed.
   type Roof = { minX: number; maxX: number; minZ: number; maxZ: number };
   const roofs: Roof[] = [];
   for (const wall of walls) {
@@ -189,96 +192,123 @@ export function startPlaceholderScene(container: HTMLElement): void {
     };
     roofs.push(roof);
 
-    const cap = new THREE.Mesh(new THREE.BoxGeometry(wall.w, 0.3, wall.d), roofMaterial);
-    cap.position.set(wall.x, roofY + 0.15, wall.z);
-    cap.castShadow = true;
+    // The floor slab of the second story (sits on top of the ground walls).
+    const cap = new THREE.Mesh(
+      new THREE.BoxGeometry(roof.maxX - roof.minX, 0.1, roof.maxZ - roof.minZ),
+      roofMaterial
+    );
+    cap.position.set((roof.minX + roof.maxX) / 2, roofY + 0.05, (roof.minZ + roof.maxZ) / 2);
     cap.receiveShadow = true;
     scene.add(cap);
   }
 
-  // --- Railings: low walls around each roof edge so the player can't walk
-  // off — EXCEPT a gap where the matching staircase lands. Railings are solid
-  // only up on the roof (height-aware collision), so they never block the
-  // ground below.
+  // --- Second-story walls: full-height walls around each roof so the player
+  // can't walk off - EXCEPT a gap where the matching staircase lands. The gap
+  // goes on whichever roof edge the stair is nearest (position-based, so it
+  // works whether the stair is on the south or the east). These walls are
+  // solid only up on the second floor (height-aware collision).
   for (const stair of stairs) {
-    // Find this staircase's building wall so we know the roof bounds.
     const wall = walls.find((w) => (stair.building === "west" ? w.w < w.d : w.d <= w.w));
     if (!wall) continue;
     const roof = roofs[walls.indexOf(wall)];
+    const roofCX = (roof.minX + roof.maxX) / 2;
+    const roofCZ = (roof.minZ + roof.maxZ) / 2;
 
-    // Railings run along the four edges of the roof, just inside the edge.
-    const t = 0.25; // railing thickness
-    const segments: Array<{ x: number; z: number; w: number; d: number }> = [];
-    const addSegment = (x: number, z: number, w: number, d: number) =>
-      segments.push({ x, z, w, d });
+    const t = 0.25; // wall thickness
+    const gapHalf = stair.width / 2 + 0.5; // half-width of the stair gap
+    const segs: Array<{ x: number; z: number; w: number; d: number }> = [];
+    const add = (x: number, z: number, w: number, d: number) => segs.push({ x, z, w, d });
 
-    // The stair lands on one edge of the roof; we leave a gap (== stair width)
-    // on that edge and put railings on the other three edges (and the remaining
-    // two pieces of the stair edge).
     if (stair.axis === "z") {
-      // Stair is on a north/south edge; gap centered on stair.center.x.
-      const gapHalf = stair.width / 2 + 0.5;
-      // North edge (minZ) and south edge (maxZ) get a gap on the stair side;
-      // here the stair reaches the roof from outside, so only the edge it
-      // touches has the gap. For the north building the stair is on the north
-      // (minZ) edge.
-      const edgeZ = roof.minZ;
-      // left piece of that edge
-      addSegment((roof.minX + (stair.center.x - gapHalf)) / 2, edgeZ, stair.center.x - gapHalf - roof.minX, t);
-      // right piece
-      addSegment(((stair.center.x + gapHalf) + roof.maxX) / 2, edgeZ, roof.maxX - (stair.center.x + gapHalf), t);
-      // opposite edge (full)
-      addSegment((roof.minX + roof.maxX) / 2, roof.maxZ, roof.maxX - roof.minX, t);
-      // two side edges (full)
-      addSegment(roof.minX, (roof.minZ + roof.maxZ) / 2, t, roof.maxZ - roof.minZ);
-      addSegment(roof.maxX, (roof.minZ + roof.maxZ) / 2, t, roof.maxZ - roof.minZ);
+      // Stair climbs north-south, so it lands on the north or south edge (which
+      // runs along x). The gap is centered on stair.center.x.
+      const onSouth = stair.center.z > roofCZ;
+      const edgeZ = onSouth ? roof.maxZ : roof.minZ;
+      add((roof.minX + (stair.center.x - gapHalf)) / 2, edgeZ, stair.center.x - gapHalf - roof.minX, t);
+      add(((stair.center.x + gapHalf) + roof.maxX) / 2, edgeZ, roof.maxX - (stair.center.x + gapHalf), t);
+      const oppZ = onSouth ? roof.minZ : roof.maxZ;
+      add(roofCX, oppZ, roof.maxX - roof.minX, t);
+      add(roof.minX, roofCZ, t, roof.maxZ - roof.minZ);
+      add(roof.maxX, roofCZ, t, roof.maxZ - roof.minZ);
     } else {
-      // Stair is on an east/west edge; gap centered on stair.center.z.
-      const gapHalf = stair.width / 2 + 0.5;
-      const edgeX = roof.minX;
-      addSegment(edgeX, (roof.minZ + (stair.center.z - gapHalf)) / 2, t, stair.center.z - gapHalf - roof.minZ);
-      addSegment(edgeX, ((stair.center.z + gapHalf) + roof.maxZ) / 2, t, roof.maxZ - (stair.center.z + gapHalf));
-      addSegment(roof.maxX, (roof.minZ + roof.maxZ) / 2, t, roof.maxZ - roof.minZ);
-      addSegment((roof.minX + roof.maxX) / 2, roof.minZ, roof.maxX - roof.minX, t);
-      addSegment((roof.minX + roof.maxX) / 2, roof.maxZ, roof.maxX - roof.minX, t);
+      // Stair climbs east-west, so it lands on the east or west edge (which
+      // runs along z). The gap is centered on stair.center.z.
+      const onEast = stair.center.x > roofCX;
+      const edgeX = onEast ? roof.maxX : roof.minX;
+      add(edgeX, (roof.minZ + (stair.center.z - gapHalf)) / 2, t, stair.center.z - gapHalf - roof.minZ);
+      add(edgeX, ((stair.center.z + gapHalf) + roof.maxZ) / 2, t, roof.maxZ - (stair.center.z + gapHalf));
+      const oppX = onEast ? roof.minX : roof.maxX;
+      add(oppX, roofCZ, t, roof.maxZ - roof.minZ);
+      add(roofCX, roof.minZ, roof.maxX - roof.minX, t);
+      add(roofCX, roof.maxZ, roof.maxX - roof.minX, t);
     }
 
-    for (const seg of segments) {
+    for (const seg of segs) {
       if (seg.w <= 0 || seg.d <= 0) continue; // skip zero-length pieces
-      const rail = new THREE.Mesh(new THREE.BoxGeometry(seg.w, railingHeight, seg.d), railingMaterial);
-      rail.position.set(seg.x, roofY + railingHeight / 2, seg.z);
-      rail.castShadow = true;
-      // Register as a height-aware solid that only matters up on the roof.
-      railingSolids.push({ x: seg.x, z: seg.z, w: seg.w, d: seg.d, yBase: roofY, yTop: roofY + railingHeight });
-      scene.add(rail);
+      const wallMesh = new THREE.Mesh(new THREE.BoxGeometry(seg.w, railingHeight, seg.d), railingMaterial);
+      wallMesh.position.set(seg.x, floor2 + railingHeight / 2, seg.z);
+      wallMesh.castShadow = true;
+      // Solid only up on the second floor (height-aware).
+      railingSolids.push({ x: seg.x, z: seg.z, w: seg.w, d: seg.d, yBase: floor2, yTop: floor2 + railingHeight });
+      scene.add(wallMesh);
+    }
+  }
+
+  // --- Second-floor walkways: a marked corridor on each roof running from the
+  // stair landing along the field-facing (door) wall to the upstairs classrooms.
+  // Purely visual - the whole roof platform is already walkable; this just makes
+  // the route to the 4 upstairs doors read clearly.
+  const walkwayMaterial = new THREE.MeshStandardMaterial({ color: 0xd9c9a3, roughness: 1 });
+  for (const wall of walls) {
+    const roof = roofs[walls.indexOf(wall)];
+    const upDoors = doors.filter(
+      (d) => d.floor === 1 && (wall.w < wall.d ? d.axis === "z" : d.axis === "x")
+    );
+    if (upDoors.length === 0) continue;
+    if (wall.w < wall.d) {
+      // West building: doors on the east wall (run north-south). Walkway hugs
+      // that wall, spanning the doors and reaching toward the stair (south).
+      const zs = upDoors.map((d) => d.z);
+      const zMin = Math.min(...zs) - 1;
+      const zMax = Math.max(...zs) + 3;
+      const ww = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.06, zMax - zMin), walkwayMaterial);
+      ww.position.set(roof.maxX - 0.7, floor2 + 0.03, (zMin + zMax) / 2);
+      ww.receiveShadow = true;
+      scene.add(ww);
+    } else {
+      // North building: doors on the south wall (run east-west). Walkway hugs
+      // that wall, spanning the doors and reaching toward the stair (east).
+      const xs = upDoors.map((d) => d.x);
+      const xMin = Math.min(...xs) - 1;
+      const xMax = Math.max(...xs) + 6;
+      const ww = new THREE.Mesh(new THREE.BoxGeometry(xMax - xMin, 0.06, 1.4), walkwayMaterial);
+      ww.position.set((xMin + xMax) / 2, floor2 + 0.03, roof.maxZ - 0.7);
+      ww.receiveShadow = true;
+      scene.add(ww);
     }
   }
 
   // --- Exterior staircases: stepped boxes climbing from the ground to the
-  // roof. Purely visual (walking is handled by the stair-zone Y interpolation).
+  // second floor. Purely visual (walking is handled by the stair-zone Y
+  // interpolation in `targetFloorY`).
   const STEP_COUNT = 8;
   for (const stair of stairs) {
-    const stepRise = roofY / STEP_COUNT;
-    const climbLen = stair.axis === "z" ? Math.abs((stair.topZ ?? 0) - (stair.bottomZ ?? 0)) : Math.abs((stair.topX ?? 0) - (stair.bottomX ?? 0));
-    const stepRun = climbLen / STEP_COUNT;
+    const stepRise = floor2 / STEP_COUNT;
+    const stepRun = stair.len / STEP_COUNT;
     for (let i = 0; i < STEP_COUNT; i++) {
       const h = stepRise * (i + 1);
-      const depthOrWidth = stair.axis === "z" ? stepRun : stair.width;
-      const widthOrDepth = stair.axis === "z" ? stair.width : stepRun;
+      const crossOrRun = stair.axis === "z" ? stepRun : stair.width;
+      const widthOrCross = stair.axis === "z" ? stair.width : stepRun;
       const step = new THREE.Mesh(
-        new THREE.BoxGeometry(widthOrDepth, stepRise, depthOrWidth),
+        new THREE.BoxGeometry(widthOrCross, stepRise, crossOrRun),
         stairMaterial
       );
-      // Position steps from bottom (outside) to top (roof).
+      // Position steps from bottom (ground) to top (second floor).
       const along = (i + 0.5) * stepRun * stair.dir;
       if (stair.axis === "z") {
-        const baseZ = stair.bottomZ ?? 0;
-        const z = baseZ + along;
-        step.position.set(stair.center.x, h / 2, z);
+        step.position.set(stair.center.x, h / 2, stair.bottom + along);
       } else {
-        const baseX = stair.bottomX ?? 0;
-        const x = baseX + along;
-        step.position.set(x, h / 2, stair.center.z);
+        step.position.set(stair.bottom + along, h / 2, stair.center.z);
       }
       step.castShadow = true;
       step.receiveShadow = true;
@@ -287,20 +317,29 @@ export function startPlaceholderScene(container: HTMLElement): void {
   }
 
   // --- Doors: wooden frames on the field-facing walls ---------------------
-  // axis "z" → the door sits on an east/west-facing wall, so the frame is
-  //            narrow in x and wide in z (opening runs north-south).
-  // axis "x" → the door sits on a north/south-facing wall, so the frame is
-  //            wide in x and narrow in z (opening runs east-west).
+  // axis "z" = door on an east/west-facing wall (frame narrow in x, wide in z).
+  // axis "x" = door on a north/south-facing wall (frame wide in x, narrow in z).
+  // floor 0 = ground (y~1.5); floor 1 = second floor (y~floor2+1.5). Second-floor
+  // doors are shifted by the roof inset so they sit on the second-story wall.
   const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x6b4f3a, roughness: 0.8 });
+  const inset = 0.4;
   for (const door of doors) {
     const [fw, fd] = door.axis === "z" ? [0.4, 2] : [2, 0.4];
+    let dx = door.x;
+    let dz = door.z;
+    let dy = 1.5;
+    if (door.floor === 1) {
+      dy = floor2 + 1.5;
+      if (door.axis === "z") dx = door.x - inset;
+      else dz = door.z - inset;
+    }
     const frame = new THREE.Mesh(new THREE.BoxGeometry(fw, 3, fd), doorMaterial);
-    frame.position.set(door.x, 1.5, door.z);
+    frame.position.set(dx, dy, dz);
     frame.castShadow = true;
     scene.add(frame);
   }
 
-  // --- Parked cars (decorative — no collision, so the lot stays walkable) -
+  // --- Parked cars (decorative - no collision, so the lot stays walkable) -
   // A tiny reusable low-poly car: body + cabin. (The arriving/departing car
   // animation in Milestone 11 will reuse this shape.)
   function makeCar(colorHex: string): THREE.Group {
@@ -385,7 +424,7 @@ export function startPlaceholderScene(container: HTMLElement): void {
 
   // --- Camera orbit: right-click + drag to rotate around the character -----
   // Horizontal drag changes the orbit angle; vertical drag changes elevation.
-  // The camera NEVER leaves the player — it stays locked to them.
+  // The camera NEVER leaves the player - it stays locked to them.
   let orbiting = false;
   let lastMouseX = 0;
   let lastMouseY = 0;
@@ -396,7 +435,6 @@ export function startPlaceholderScene(container: HTMLElement): void {
 
   canvas.addEventListener("mousedown", (e) => {
     if (e.button === 2) {
-      // right button starts an orbit
       orbiting = true;
       lastMouseX = e.clientX;
       lastMouseY = e.clientY;
@@ -409,10 +447,7 @@ export function startPlaceholderScene(container: HTMLElement): void {
     const dy = e.clientY - lastMouseY;
     lastMouseX = e.clientX;
     lastMouseY = e.clientY;
-
-    // Horizontal drag → orbit around the player.
-    camAngle -= dx * 0.005;
-    // Vertical drag → raise/lower the camera (clamped).
+    camAngle -= dx * 0.005; // horizontal drag orbits around the player
     camElevation = Math.min(MAX_ELEVATION, Math.max(MIN_ELEVATION, camElevation + dy * 0.05));
   });
 
@@ -437,25 +472,23 @@ export function startPlaceholderScene(container: HTMLElement): void {
   window.addEventListener("keyup", (e) => {
     keys.delete(e.key.toLowerCase());
   });
-  // If the tab loses focus, drop all held keys so the player doesn't "stick".
   window.addEventListener("blur", () => keys.clear());
 
   // =========================================================================
-  // COLLISION — height-aware. Two kinds of solid boxes:
+  // COLLISION - height-aware. Two kinds of solid boxes:
   //   * building walls: solid from the ground up to the roof (yBase 0..roofY)
-  //   * railings: solid only on the roof (yBase roofY..roofY+railingHeight)
+  //   * second-story walls: solid only up on the second floor
+  //     (yBase floor2..floor2+railingHeight)
   // The player (a box from feet `py` to `py + PLAYER_HEIGHT`) only collides
   // when its vertical span overlaps the solid's vertical span. So once the
-  // player is up on a roof (py ≈ roofY) the ground building walls no longer
-  // block them, and the railings only block them up there.
+  // player is up on a second floor (py ~= floor2) the ground building walls no
+  // longer block them, and the second-story walls only block them up there.
   // =========================================================================
-
   function collides(px: number, pz: number, py: number): boolean {
     const playerTop = py + PLAYER_HEIGHT;
     const solids: Solid[] = buildingSolids.concat(railingSolids);
     for (const s of solids) {
-      // Vertical overlap test: player [py, playerTop] vs solid [yBase, yTop].
-      if (py >= s.yTop || playerTop <= s.yBase) continue;
+      if (py >= s.yTop || playerTop <= s.yBase) continue; // no vertical overlap
       const halfW = s.w / 2;
       const halfD = s.d / 2;
       const nearestX = Math.max(s.x - halfW, Math.min(px, s.x + halfW));
@@ -467,44 +500,46 @@ export function startPlaceholderScene(container: HTMLElement): void {
     return false;
   }
 
-  // Is the player standing on a roof footprint? (used to hold them at roofY)
+  // Is the player over a roof footprint? (used to hold them at floor2)
   function onRoof(px: number, pz: number): boolean {
     for (const r of roofs) {
-      if (px >= r.minX - 0.3 && px <= r.maxX + 0.3 && pz >= r.minZ - 0.3 && pz <= r.maxZ + 0.3) {
+      if (px >= r.minX - 0.5 && px <= r.maxX + 0.5 && pz >= r.minZ - 0.5 && pz <= r.maxZ + 0.5) {
         return true;
       }
     }
     return false;
   }
 
-  // Compute the target floor height at the player's (x,z). Inside a stair
-  // zone, the height interpolates from 0 (bottom) to roofY (top). On a roof
-  // it's roofY; otherwise 0 (the ground).
+  // Compute the target floor height at the player's (x,z). Inside a stair zone
+  // the height interpolates from 0 (bottom) to floor2 (top). On a roof it is
+  // floor2; otherwise 0 (the ground).
   function targetFloorY(px: number, pz: number): number {
     // If already up high and still over a roof, stay up (prevents snapping
     // down while walking across the middle of a roof).
-    if (player.position.y > roofY * 0.5 && onRoof(px, pz)) return roofY;
+    if (player.position.y > floor2 * 0.5 && onRoof(px, pz)) return floor2;
 
     for (const stair of stairs) {
       const halfW = stair.width / 2;
-      const halfD = stair.depth / 2;
-      const insideX = px >= stair.center.x - halfW && px <= stair.center.x + halfW;
-      const insideZ = pz >= stair.center.z - halfD && pz <= stair.center.z + halfD;
-      if (!insideX || !insideZ) continue;
+      const halfLen = stair.len / 2;
+      let inside = false;
       if (stair.axis === "z") {
-        const b = stair.bottomZ ?? 0;
-        const t = stair.topZ ?? 0;
-        const p = (pz - b) / (t - b); // 0 at bottom, 1 at top
-        return roofY * Math.min(1, Math.max(0, p));
+        inside =
+          px >= stair.center.x - halfW && px <= stair.center.x + halfW &&
+          pz >= stair.center.z - halfLen && pz <= stair.center.z + halfLen;
       } else {
-        const b = stair.bottomX ?? 0;
-        const t = stair.topX ?? 0;
-        const p = (px - b) / (t - b);
-        return roofY * Math.min(1, Math.max(0, p));
+        inside =
+          px >= stair.center.x - halfLen && px <= stair.center.x + halfLen &&
+          pz >= stair.center.z - halfW && pz <= stair.center.z + halfW;
       }
+      if (!inside) continue;
+      const p =
+        stair.axis === "z"
+          ? (pz - stair.bottom) / (stair.top - stair.bottom)
+          : (px - stair.bottom) / (stair.top - stair.bottom);
+      return floor2 * Math.min(1, Math.max(0, p));
     }
 
-    if (onRoof(px, pz)) return roofY;
+    if (onRoof(px, pz)) return floor2;
     return 0;
   }
 
@@ -523,21 +558,17 @@ export function startPlaceholderScene(container: HTMLElement): void {
 
     const moving = moveX !== 0 || moveZ !== 0;
     if (moving) {
-      // Normalize so diagonal movement isn't faster.
       const len = Math.hypot(moveX, moveZ);
       const stepX = (moveX / len) * PLAYER_SPEED * dt;
       const stepZ = (moveZ / len) * PLAYER_SPEED * dt;
 
       // Try the full move; if it hits a solid, slide along each axis instead.
-      // Collision uses the player's CURRENT floor height so the same check
-      // works on the ground and up on the roofs.
       const py = player.position.y;
       const nextX = player.position.x + stepX;
       const nextZ = player.position.z + stepZ;
       if (!collides(nextX, player.position.z, py)) player.position.x = nextX;
       if (!collides(player.position.x, nextZ, py)) player.position.z = nextZ;
 
-      // Face the direction of travel.
       player.rotation.y = Math.atan2(moveX, moveZ);
 
       // Simple walk cycle: legs swing side to side.
@@ -546,25 +577,18 @@ export function startPlaceholderScene(container: HTMLElement): void {
       leftLeg.rotation.x = swing;
       rightLeg.rotation.x = -swing;
     } else {
-      // Ease legs back to standing when idle.
       leftLeg.rotation.x *= 0.8;
       rightLeg.rotation.x *= 0.8;
     }
 
     // --- Vertical position: ease toward the target floor height -----------
     const targetY = targetFloorY(player.position.x, player.position.z);
-    // Move quickly enough to keep up with walking, but smoothly.
     player.position.y += (targetY - player.position.y) * Math.min(1, dt * 12);
-    // A little up/down bob while walking (added on top of the floor height).
     if (moving) {
-      player.position.y += Math.abs(Math.sin(walkTime)) * 0.08;
+      player.position.y += Math.abs(Math.sin(walkTime)) * 0.08; // walk bob
     }
 
     // --- Camera: locked to the player, orbiting at camAngle ---------------
-    // At camAngle = 0 the camera is due SOUTH (+z) of the player looking
-    // NORTH (-z), so north is up on screen. Positive camAngle rotates the
-    // view clockwise (as seen from above). The camera tracks the player's Y so
-    // it follows them up onto a roof.
     const camX = player.position.x + Math.sin(camAngle) * CAM_DISTANCE;
     const camZ = player.position.z + Math.cos(camAngle) * CAM_DISTANCE;
     camera.position.set(camX, player.position.y + camElevation, camZ);
