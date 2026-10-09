@@ -14,8 +14,13 @@
     <!-- Shows whether the game is talking to the multiplayer server -->
     <div id="status-badge" class="badge badge-wait">Connecting to server…</div>
 
+    <!-- Compass: click to snap the camera back to north-up (Milestone 2) -->
+    <button id="compass" type="button" title="Orient camera north" aria-label="Orient camera north">
+      <span id="compass-needle">N</span>
+    </button>
+
     <!-- On-screen reminder of the controls (Milestone 2: single-player walking) -->
-    <div id="controls-hint">Move with <b>W A S D</b> or the <b>arrow keys</b></div>
+    <div id="controls-hint">Move with <b>W A S D</b> / arrows · <b>right-drag</b> to rotate · click the <b>compass</b> for north</div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

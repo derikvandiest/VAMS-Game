@@ -5,11 +5,13 @@ import layout from "../../content/layout.json";
  * Milestone 2 — single-player prototype (PROJECT.md section 14, milestone 2).
  *
  * Builds the placeholder campus from content/layout.json (two buildings forming
- * an L around a rectangular field, plus a parking lot with parked cars and a
- * gate), draws a low-poly player, and lets the player walk with WASD / arrow
- * keys. A fixed isometric camera follows the player and can be panned by
- * right-click + drag. Walls (from the layout) are solid: the player cannot walk
- * through them.
+ * an L around a rectangular grass field, plus a parking lot with parked cars),
+ * draws a low-poly player, and lets the player walk with WASD / arrow keys.
+ *
+ * The camera is LOCKED to the player: it always orbits around the character at a
+ * fixed distance. Right-click + drag rotates the view (and adjusts elevation).
+ * A compass button in the UI snaps the camera back to north-up. Walls (from the
+ * layout) are solid: the player cannot walk through them.
  *
  * This scene is LOCAL ONLY for now — other players appear in Milestone 3.
  */
@@ -22,6 +24,17 @@ type CampusLayout = typeof import("../../content/layout.json");
 const PLAYER_SPEED = 3.5; // world units / second (matches settings.walkingSpeed)
 const PLAYER_RADIUS = 0.5;
 
+// --- Camera orbit settings -------------------------------------------------
+// The camera sits at a fixed distance/height from the player and always looks
+// at them. `camAngle` is the orbit angle in radians measured so that angle 0
+// points the camera due SOUTH of the player looking NORTH (north-up on screen).
+const CAM_DISTANCE = 30; // horizontal distance from player to camera
+const CAM_HEIGHT = 26; // camera height above the ground
+const DEFAULT_CAM_ANGLE = Math.PI / 4; // classic 45° isometric feel
+const NORTH_UP_ANGLE = 0; // camera due south, looking north (north is up)
+const MIN_ELEVATION = 12; // closest to top-down when dragging down
+const MAX_ELEVATION = 40; // furthest from top-down when dragging up
+
 export function startPlaceholderScene(container: HTMLElement): void {
   const layoutData = layout as CampusLayout;
   const walls: LayoutWall[] = layoutData.walls;
@@ -30,7 +43,7 @@ export function startPlaceholderScene(container: HTMLElement): void {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x9ec7e8); // soft sky
-  scene.fog = new THREE.Fog(0x9ec7e8, 60, 120);
+  scene.fog = new THREE.Fog(0x9ec7e8, 60, 130);
 
   // --- Renderer (pixel ratio capped at 2 for Retina displays — spec section 3)
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -44,33 +57,62 @@ export function startPlaceholderScene(container: HTMLElement): void {
   scene.add(hemisphere);
 
   const sun = new THREE.DirectionalLight(0xfff4e0, 1.4);
-  sun.position.set(18, 28, 12);
+  sun.position.set(18, 30, 12);
   sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024);
   const shadowCam = sun.shadow.camera;
-  shadowCam.left = -30;
-  shadowCam.right = 30;
-  shadowCam.top = 30;
-  shadowCam.bottom = -30;
+  shadowCam.left = -34;
+  shadowCam.right = 34;
+  shadowCam.top = 34;
+  shadowCam.bottom = -34;
   shadowCam.updateProjectionMatrix();
   scene.add(sun);
 
   // --- Ground: one big lawn under the whole campus ------------------------
   const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(90, 90),
+    new THREE.PlaneGeometry(120, 120),
     new THREE.MeshStandardMaterial({ color: 0x7fae6b, roughness: 1 })
   );
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   scene.add(ground);
 
-  // --- Walkable paths: gate → parking → field → building fronts -----------
+  // --- Field: a distinct rectangular grass area in the middle ----------------
+  // Drawn slightly different green with a thin white border so it clearly
+  // reads as "the field" between the two buildings.
+  const field = layoutData.field;
+  const fieldMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(field.width, field.depth),
+    new THREE.MeshStandardMaterial({ color: 0x69a04f, roughness: 1 })
+  );
+  fieldMesh.rotation.x = -Math.PI / 2;
+  fieldMesh.position.set(field.center.x, 0.03, field.center.z);
+  fieldMesh.receiveShadow = true;
+  scene.add(fieldMesh);
+
+  // Thin white border around the field (four thin boxes just above the grass).
+  const borderMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
+  const borderThickness = 0.25;
+  const borderHeight = 0.06;
+  const halfW = field.width / 2;
+  const halfD = field.depth / 2;
+  const borderEdges: Array<[number, number, number, number]> = [
+    [field.center.x, field.center.z - halfD, field.width, borderThickness], // north
+    [field.center.x, field.center.z + halfD, field.width, borderThickness], // south
+    [field.center.x - halfW, field.center.z, borderThickness, field.depth], // west
+    [field.center.x + halfW, field.center.z, borderThickness, field.depth], // east
+  ];
+  for (const [bx, bz, bw, bd] of borderEdges) {
+    const edge = new THREE.Mesh(new THREE.BoxGeometry(bw, borderHeight, bd), borderMaterial);
+    edge.position.set(bx, borderHeight / 2, bz);
+    scene.add(edge);
+  }
+
+  // --- Walkable paths: parking lot + a short path to the field -------------
   const pathMaterial = new THREE.MeshStandardMaterial({ color: 0xd9c9a3, roughness: 1 });
   const paths: Array<[number, number, number, number]> = [
-    [0, -27, 20, 10], // parking lot
-    [0, -19, 5, 8], // parking → field (north entrance)
-    [-11, -2, 4, 26], // walkway along the west building (field side)
-    [1, 12, 34, 4], // walkway along the south building (field side)
+    [layoutData.parkingLot.center.x, layoutData.parkingLot.center.z, layoutData.parkingLot.width, layoutData.parkingLot.depth],
+    [0, -12.5, 5, 5], // parking → field (short connector, just south of the lot)
   ];
   for (const [x, z, w, d] of paths) {
     const path = new THREE.Mesh(new THREE.PlaneGeometry(w, d), pathMaterial);
@@ -132,18 +174,6 @@ export function startPlaceholderScene(container: HTMLElement): void {
     scene.add(mesh);
   }
 
-  // --- Gate posts (visual markers for the gate gap in the north wall) -----
-  const gateHalf = layoutData.boundary.gate.width / 2;
-  for (const gx of [-gateHalf, gateHalf]) {
-    const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.5, 3, 0.5),
-      new THREE.MeshStandardMaterial({ color: 0xd7263d, roughness: 0.8 })
-    );
-    post.position.set(gx, 1.5, layoutData.boundary.gate.centerZ);
-    post.castShadow = true;
-    scene.add(post);
-  }
-
   // --- Player character: a simple low-poly figure -------------------------
   // (Real character customization arrives in Milestone 4.)
   const player = new THREE.Group();
@@ -175,9 +205,10 @@ export function startPlaceholderScene(container: HTMLElement): void {
   player.position.set(layoutData.spawn.x, 0, layoutData.spawn.z);
   scene.add(player);
 
-  // --- Camera: fixed isometric-style view that follows the player ---------
+  // --- Camera: orbits the player at a fixed distance ----------------------
   const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 220);
-  const camOffset = new THREE.Vector3(18, 22, 18); // classic 45° isometric angle
+  let camAngle = DEFAULT_CAM_ANGLE; // orbit angle (radians)
+  let camElevation = CAM_HEIGHT; // camera height (adjustable by dragging)
 
   function resize(): void {
     const width = container.clientWidth || window.innerWidth;
@@ -186,18 +217,23 @@ export function startPlaceholderScene(container: HTMLElement): void {
     camera.aspect = width / heightPx;
     camera.updateProjectionMatrix();
   }
-
   window.addEventListener("resize", resize);
   resize();
 
-  // --- Camera pan: right-click + drag to slide the view -------------------
-  // The camera keeps following the player, but panning adds an extra offset on
-  // top so you can look around without losing the player (clamped so the player
-  // can never be panned off-screen).
-  const panOffset = new THREE.Vector3();
-  const PAN_SPEED = 0.06; // world units per pixel dragged
-  const PAN_MAX = 14; // max distance the view can be panned from the player
-  let panning = false;
+  // --- Compass: clicking it snaps the camera back to north-up -------------
+  const compass = document.getElementById("compass");
+  const compassNeedle = document.getElementById("compass-needle");
+  if (compass) {
+    compass.addEventListener("click", () => {
+      camAngle = NORTH_UP_ANGLE;
+      camElevation = CAM_HEIGHT;
+    });
+  }
+
+  // --- Camera orbit: right-click + drag to rotate around the character -----
+  // Horizontal drag changes the orbit angle; vertical drag changes elevation.
+  // The camera NEVER leaves the player — it stays locked to them.
+  let orbiting = false;
   let lastMouseX = 0;
   let lastMouseY = 0;
 
@@ -207,39 +243,28 @@ export function startPlaceholderScene(container: HTMLElement): void {
 
   canvas.addEventListener("mousedown", (e) => {
     if (e.button === 2) {
-      // right button starts a pan
-      panning = true;
+      // right button starts an orbit
+      orbiting = true;
       lastMouseX = e.clientX;
       lastMouseY = e.clientY;
     }
   });
 
   window.addEventListener("mousemove", (e) => {
-    if (!panning) return;
+    if (!orbiting) return;
     const dx = e.clientX - lastMouseX;
     const dy = e.clientY - lastMouseY;
     lastMouseX = e.clientX;
     lastMouseY = e.clientY;
 
-    // Pan along the camera's right and forward directions, projected onto the
-    // ground plane so the view slides horizontally (no tilting).
-    const forward = new THREE.Vector3();
-    camera.getWorldDirection(forward);
-    const right = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
-    forward.y = 0;
-    forward.normalize();
-    right.y = 0;
-    right.normalize();
-
-    panOffset.addScaledVector(right, dx * PAN_SPEED);
-    panOffset.addScaledVector(forward, -dy * PAN_SPEED);
-
-    // Keep the pan within a sane distance of the player.
-    if (panOffset.length() > PAN_MAX) panOffset.setLength(PAN_MAX);
+    // Horizontal drag → orbit around the player.
+    camAngle -= dx * 0.005;
+    // Vertical drag → raise/lower the camera (clamped).
+    camElevation = Math.min(MAX_ELEVATION, Math.max(MIN_ELEVATION, camElevation + dy * 0.05));
   });
 
   window.addEventListener("mouseup", () => {
-    panning = false;
+    orbiting = false;
   });
 
   // --- Input: WASD + arrow keys (spec section 5.4) ------------------------
@@ -321,13 +346,19 @@ export function startPlaceholderScene(container: HTMLElement): void {
       player.position.y *= 0.8;
     }
 
-    // Camera follows the player at a fixed isometric offset, plus any pan.
-    camera.position.set(
-      player.position.x + camOffset.x + panOffset.x,
-      camOffset.y + panOffset.y,
-      player.position.z + camOffset.z + panOffset.z
-    );
-    camera.lookAt(player.position.x + panOffset.x, 1 + panOffset.y, player.position.z + panOffset.z);
+    // --- Camera: locked to the player, orbiting at camAngle ---------------
+    // At camAngle = 0 the camera is due SOUTH (+z) of the player looking
+    // NORTH (-z), so north is up on screen. Positive camAngle rotates the
+    // view clockwise (as seen from above).
+    const camX = player.position.x + Math.sin(camAngle) * CAM_DISTANCE;
+    const camZ = player.position.z + Math.cos(camAngle) * CAM_DISTANCE;
+    camera.position.set(camX, camElevation, camZ);
+    camera.lookAt(player.position.x, 1, player.position.z);
+
+    // Rotate the compass needle so "N" always points north on screen.
+    if (compassNeedle) {
+      compassNeedle.style.transform = `rotate(${camAngle}rad)`;
+    }
 
     renderer.render(scene, camera);
   });
