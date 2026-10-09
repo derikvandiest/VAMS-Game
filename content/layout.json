@@ -1,66 +1,94 @@
 {
-  "_note": "School campus layout — SINGLE SOURCE OF TRUTH for the walkable world (PROJECT.md section 7). Minimal placeholder campus (reference screenshots): TWO buildings (a west building running north-south and a south building running east-west) forming an L around a large rectangular grass field, with a parking lot directly ABOVE (north of) the buildings. There are NO outer perimeter walls — only the two buildings are solid; everything else is walkable grass. The 2D map (Milestone 9) and classroom doors (Milestone 7) are generated from THIS file. Coordinates: x = east(+)/west(-), z = south(+)/north(-), y = up. 'walls' are the solid building blocks (center x,z + size w,d) used for BOTH rendering and collision — keep them axis-aligned. Doors line up with classrooms.json by id and sit on the field-facing wall of each room; 'axis' is the direction the door opening runs along (z = opening runs north-south on an east/west-facing wall, x = opening runs east-west on a north/south-facing wall). 'cars' are decorative parked cars (no collision, so the lot stays walkable). 'boundary' and 'gate' are METADATA ONLY (not rendered): the gate returns at Milestone 11 (arrival animation). Real room numbers/names arrive at Milestone 16.",
+  "_note": "School campus layout - SINGLE SOURCE OF TRUTH for the walkable world (PROJECT.md section 7). Minimal placeholder campus: TWO buildings forming an L that opens to the SOUTHEAST: a WEST building (running north-south, doors face east) and a NORTH building (running east-west, doors face south). They are NOT connected (a gap between them). A rectangular grass FIELD sits in the middle; the area INSIDE the L is PAVEMENT; everything OUTSIDE is ASPHALT. A parking lot with cars sits far WEST, behind the west building. There are NO outer perimeter walls - only the two buildings (and roof railings) are solid; everything else is walkable. Each building has an exterior STAIRCASE that takes the player up to a second-floor walkable roof (prototype: second floor = the building's roof with railings; real furnished interiors arrive at Milestone 7). The 2D map (Milestone 9) and classroom doors (Milestone 7) are generated from THIS file. Coordinates: x = east(+)/west(-), z = south(+)/north(-), y = up (north is -z). walls are the solid building blocks (center x,z + size w,d) used for BOTH rendering and collision - keep them axis-aligned. Doors line up with classrooms.json by id and sit on the field-facing wall of each room; axis is the direction the door opening runs along (z = opening runs north-south on an east/west-facing wall, x = opening runs east-west on a north/south-facing wall). cars are decorative parked cars (no collision). boundary and gate are METADATA ONLY (not rendered): the gate returns at Milestone 11 (arrival animation). Real room numbers/names arrive at Milestone 16.",
   "boundary": {
-    "minX": -22,
-    "maxX": 22,
-    "minZ": -26,
-    "maxZ": 20,
+    "minX": -30,
+    "maxX": 17,
+    "minZ": -24,
+    "maxZ": 16,
     "wallHeight": 6,
     "wallThickness": 1,
-    "gate": { "centerZ": -13, "width": 8 }
+    "railingHeight": 1.4,
+    "gate": { "centerX": 0, "centerZ": -13, "width": 8 }
   },
-  "spawn": { "x": 0, "z": -19, "radius": 0.5 },
+  "spawn": { "x": -24, "z": 3, "radius": 0.5 },
   "parkingLot": {
-    "center": { "x": 0, "z": -19 },
-    "width": 20,
-    "depth": 10,
+    "center": { "x": -24, "z": 3 },
+    "width": 10,
+    "depth": 22,
     "spots": 8,
     "spotWidth": 2.5,
-    "arrivalSpot": { "x": 0, "z": -19 }
+    "arrivalSpot": { "x": -24, "z": 3 }
   },
   "field": {
-    "center": { "x": 2, "z": -1 },
-    "width": 26,
-    "depth": 22
+    "center": { "x": 2, "z": 2 },
+    "width": 18,
+    "depth": 15
+  },
+  "pavement": {
+    "center": { "x": 2.5, "z": 2 },
+    "width": 27,
+    "depth": 26
   },
   "buildings": [
-    { "id": "west", "label": "West Building (5th/6th grade + ELD/Music)", "x": -14, "z": 0, "w": 6, "d": 24, "faces": "east" },
-    { "id": "south", "label": "South Building (7th/8th grade + Learning/Theater)", "x": 2, "z": 15, "w": 26, "d": 6, "faces": "north" }
+    { "id": "west", "label": "West Building (5th/6th grade + ELD/Music)", "x": -14, "z": 3, "w": 6, "d": 22, "faces": "east" },
+    { "id": "north", "label": "North Building (7th/8th grade + Learning/Theater)", "x": 2, "z": -14, "w": 26, "d": 6, "faces": "south" }
   ],
   "walls": [
-    { "x": -14, "z": 0, "w": 6, "d": 24 },
-    { "x": 2, "z": 15, "w": 26, "d": 6 }
+    { "x": -14, "z": 3, "w": 6, "d": 22 },
+    { "x": 2, "z": -14, "w": 26, "d": 6 }
+  ],
+  "stairs": [
+    {
+      "building": "north",
+      "center": { "x": 2, "z": -19.5 },
+      "width": 6,
+      "depth": 7,
+      "axis": "z",
+      "dir": 1,
+      "bottomZ": -23,
+      "topZ": -16
+    },
+    {
+      "building": "west",
+      "center": { "x": -19.5, "z": 3 },
+      "width": 7,
+      "depth": 6,
+      "axis": "x",
+      "dir": 1,
+      "bottomX": -23,
+      "topX": -16
+    }
   ],
   "cars": [
-    { "x": -7.5, "z": -22, "rot": 0, "color": "#d0d0d0" },
-    { "x": -2.5, "z": -22, "rot": 0, "color": "#f2f2f2" },
-    { "x": 2.5, "z": -22, "rot": 0, "color": "#4a4a4a" },
-    { "x": 7.5, "z": -22, "rot": 0, "color": "#3a5a8a" },
-    { "x": -7.5, "z": -16, "rot": 3.1416, "color": "#8a3a3a" },
-    { "x": -2.5, "z": -16, "rot": 3.1416, "color": "#2a2a2a" },
-    { "x": 2.5, "z": -16, "rot": 3.1416, "color": "#c0c8d0" },
-    { "x": 7.5, "z": -16, "rot": 3.1416, "color": "#6a7a5a" }
+    { "x": -27, "z": -5, "rot": 0, "color": "#d0d0d0" },
+    { "x": -24, "z": -5, "rot": 0, "color": "#f2f2f2" },
+    { "x": -21, "z": -5, "rot": 0, "color": "#4a4a4a" },
+    { "x": -27, "z": 0, "rot": 0, "color": "#3a5a8a" },
+    { "x": -21, "z": 0, "rot": 0, "color": "#8a3a3a" },
+    { "x": -27, "z": 5, "rot": 0, "color": "#2a2a2a" },
+    { "x": -24, "z": 5, "rot": 0, "color": "#c0c8d0" },
+    { "x": -21, "z": 5, "rot": 0, "color": "#6a7a5a" }
   ],
   "doors": [
-    { "id": "5th-csun-history", "x": -11, "z": -10.8, "axis": "z" },
-    { "id": "5th-lmu-math", "x": -11, "z": -8.4, "axis": "z" },
-    { "id": "5th-ucla-english", "x": -11, "z": -6, "axis": "z" },
-    { "id": "5th-usc-science", "x": -11, "z": -3.6, "axis": "z" },
-    { "id": "eld", "x": -11, "z": -1.2, "axis": "z" },
-    { "id": "music", "x": -11, "z": 1.2, "axis": "z" },
-    { "id": "6th-csun-math", "x": -11, "z": 3.6, "axis": "z" },
-    { "id": "6th-lmu-science", "x": -11, "z": 6, "axis": "z" },
-    { "id": "6th-ucla-history", "x": -11, "z": 8.4, "axis": "z" },
-    { "id": "6th-usc-english", "x": -11, "z": 10.8, "axis": "z" },
-    { "id": "7th-csun-math", "x": -9, "z": 12, "axis": "x" },
-    { "id": "7th-lmu-history", "x": -6.5, "z": 12, "axis": "x" },
-    { "id": "7th-ucla-science", "x": -4, "z": 12, "axis": "x" },
-    { "id": "7th-usc-english", "x": -1.5, "z": 12, "axis": "x" },
-    { "id": "8th-csun-english", "x": 1, "z": 12, "axis": "x" },
-    { "id": "8th-lmu-history", "x": 3.5, "z": 12, "axis": "x" },
-    { "id": "8th-ucla-math", "x": 6, "z": 12, "axis": "x" },
-    { "id": "8th-usc-science", "x": 8.5, "z": 12, "axis": "x" },
-    { "id": "learning-center", "x": 11, "z": 12, "axis": "x" },
-    { "id": "theater", "x": 13.5, "z": 12, "axis": "x" }
+    { "id": "5th-csun-history", "x": -11, "z": -6, "axis": "z" },
+    { "id": "5th-lmu-math", "x": -11, "z": -4, "axis": "z" },
+    { "id": "5th-ucla-english", "x": -11, "z": -2, "axis": "z" },
+    { "id": "5th-usc-science", "x": -11, "z": 0, "axis": "z" },
+    { "id": "eld", "x": -11, "z": 2, "axis": "z" },
+    { "id": "music", "x": -11, "z": 4, "axis": "z" },
+    { "id": "6th-csun-math", "x": -11, "z": 6, "axis": "z" },
+    { "id": "6th-lmu-science", "x": -11, "z": 8, "axis": "z" },
+    { "id": "6th-ucla-history", "x": -11, "z": 10, "axis": "z" },
+    { "id": "6th-usc-english", "x": -11, "z": 12, "axis": "z" },
+    { "id": "7th-csun-math", "x": -9, "z": -11, "axis": "x" },
+    { "id": "7th-lmu-history", "x": -6.5, "z": -11, "axis": "x" },
+    { "id": "7th-ucla-science", "x": -4, "z": -11, "axis": "x" },
+    { "id": "7th-usc-english", "x": -1.5, "z": -11, "axis": "x" },
+    { "id": "8th-csun-english", "x": 1, "z": -11, "axis": "x" },
+    { "id": "8th-lmu-history", "x": 3.5, "z": -11, "axis": "x" },
+    { "id": "8th-ucla-math", "x": 6, "z": -11, "axis": "x" },
+    { "id": "8th-usc-science", "x": 8.5, "z": -11, "axis": "x" },
+    { "id": "learning-center", "x": 11, "z": -11, "axis": "x" },
+    { "id": "theater", "x": 13.5, "z": -11, "axis": "x" }
   ]
 }
