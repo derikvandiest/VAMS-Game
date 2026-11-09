@@ -14,13 +14,97 @@
     <!-- Shows whether the game is talking to the multiplayer server -->
     <div id="status-badge" class="badge badge-wait">Connecting to server…</div>
 
-    <!-- Compass: click to snap the camera back to north-up (Milestone 2) -->
+    <!-- Compass: click to snap the camera back to north-up -->
     <button id="compass" type="button" title="Orient camera north" aria-label="Orient camera north">
-      <span id="compass-needle">N</span>
+      <div class="compass-dial">
+        <svg viewBox="0 0 44 44" class="compass-svg" aria-hidden="true">
+          <!-- Outer dial ring -->
+          <circle cx="22" cy="22" r="20" class="compass-ring" />
+          <circle cx="22" cy="22" r="17" class="compass-inner-ring" />
+          <!-- Cardinal ticks -->
+          <line x1="22" y1="2" x2="22" y2="6" class="compass-tick-n" />
+          <line x1="22" y1="38" x2="22" y2="42" class="compass-tick" />
+          <line x1="2" y1="22" x2="6" y2="22" class="compass-tick" />
+          <line x1="38" y1="22" x2="42" y2="22" class="compass-tick" />
+          <!-- Needle group rotates with camera angle -->
+          <g id="compass-needle">
+            <!-- North Arrow (Red) -->
+            <polygon points="22,6 18.5,22 25.5,22" class="needle-north" />
+            <polygon points="22,6 22,22 18.5,22" class="needle-north-dark" />
+            <!-- South Arrow (Silver / White) -->
+            <polygon points="22,38 18.5,22 25.5,22" class="needle-south" />
+            <polygon points="22,38 22,22 18.5,22" class="needle-south-dark" />
+            <!-- Center pivot -->
+            <circle cx="22" cy="22" r="3" class="needle-pivot" />
+            <circle cx="22" cy="22" r="1.5" class="needle-pivot-core" />
+            <!-- North indicator label -->
+            <text x="22" y="14" class="needle-label" text-anchor="middle">N</text>
+          </g>
+        </svg>
+      </div>
     </button>
 
+    <!-- Settings button: opens character customization & settings menu -->
+    <button id="settings-btn" type="button" title="Character settings & customization" aria-label="Settings">
+      <span class="settings-btn-icon">⚙️</span>
+      <span class="settings-btn-label">Settings</span>
+    </button>
+
+    <!-- Unstuck button: teleports player to MPR front doors if stuck -->
+    <button id="unstuck-btn" type="button" title="Teleport to MPR entrance if stuck" aria-label="Unstuck">
+      <span class="unstuck-icon">↺</span>
+      <span>Unstuck</span>
+    </button>
+
+    <!-- Leave Game button: saves & returns to the Start Menu -->
+    <button id="leave-game-btn" type="button" title="Save and return to the main menu" aria-label="Leave Game">
+      <span class="leave-game-icon">🚪</span>
+      <span class="leave-game-label">Leave Game</span>
+    </button>
+
+    <!-- Objective Tracker HUD Widget -->
+    <div id="objective-hud" class="objective-hud" style="display: none;">
+      <div class="obj-hud-header">
+        <span class="obj-hud-icon">📋</span>
+        <span class="obj-hud-title">Current Objective</span>
+        <span id="obj-hud-stamps" class="obj-hud-stamps">0/16 Stamps</span>
+      </div>
+      <div id="obj-hud-desc" class="obj-hud-desc">Explore campus & visit stamp classrooms</div>
+    </div>
+
     <!-- On-screen reminder of the controls (Milestone 2: single-player walking) -->
-    <div id="controls-hint">Move with <b>W A S D</b> / arrows · <b>right-drag</b> to rotate · click the <b>compass</b> for north</div>
+    <div id="controls-hint">Move with <b>W A S D</b> / arrows · hold <b>Shift</b> to sprint · <b>right-drag</b> to rotate · <b>scroll</b> to zoom · click the <b>compass</b> for north</div>
+
+    <!-- Gate interaction prompt (Milestone 2): shown when standing near the gate -->
+    <div id="gate-hint">Press SPACE to open the gate</div>
+
+    <!-- MPR Door prompt: shown when near the MPR entrance outside or exit inside -->
+    <div id="mpr-hint">Press SPACE to enter MPR</div>
+
+    <!-- Screen fade transition overlay for entering/exiting rooms -->
+    <div id="scene-transition-overlay"></div>
+
+    <!-- Ball reset prompt: shown when near the soccer field ball reset vent -->
+    <div id="plate-hint">Step here to reset all balls ⚽ 🏀</div>
+
+    <!-- Action / interaction prompt: shown when near chairs or cars -->
+    <div id="action-hint"></div>
+
+    <!-- Leave Game Confirmation Modal -->
+    <div id="leave-modal-overlay" class="modal-overlay" style="display: none;">
+      <div class="modal-card">
+        <h3 class="modal-title">Leave Game?</h3>
+        <p class="modal-desc">Your character progress, stamps, and campus location will be automatically saved to your current slot.</p>
+        <div class="modal-actions">
+          <button id="leave-confirm-btn" class="modal-btn modal-btn-danger">Save & Exit to Menu</button>
+          <button id="leave-cancel-btn" class="modal-btn modal-btn-secondary">Keep Playing</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Start Menu Screen (Valor Academy Middle School) -->
+    <div id="start-menu" class="start-menu-container"></div>
+
 
     <script type="module" src="/src/main.ts"></script>
   </body>

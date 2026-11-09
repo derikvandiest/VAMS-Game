@@ -1,90 +1,967 @@
 {
-  "_note": "School campus layout - SINGLE SOURCE OF TRUTH for the walkable world (PROJECT.md section 7). Minimal placeholder campus: TWO buildings forming an L that opens to the SOUTHEAST: a WEST building (running north-south, doors face east) and a NORTH building (running east-west, doors face south). They are NOT connected (a gap between them). Each building is TWO STORIES: a ground floor and a second floor, each with 4 classrooms (4 doors per floor per building = 16 stamp rooms total; the 4 special rooms ELD/Music/Learning/Theater are added at Milestone 7). A rectangular grass FIELD sits in the middle; the area INSIDE the L is PAVEMENT; everything OUTSIDE is ASPHALT. A parking lot with cars sits far WEST, behind the west building. There are NO outer perimeter walls - only the two buildings (ground story) and the second-story walls (up top) are solid; everything else is walkable. Each building has an EXTERIOR staircase on its back side (west building: SOUTH side; north building: EAST side) that climbs from the ground to the second floor. On the second floor a WALKWAY runs from the stair landing along the field-facing wall to the 4 upstairs doors. (Prototype: second floor = a walkable platform with second-story walls, door frames, and a marked walkway; real furnished interiors arrive at Milestone 7.) The 2D map (Milestone 9) and classroom doors (Milestone 7) are generated from THIS file. Coordinates: x = east(+)/west(-), z = south(+)/north(-), y = up (north is -z). walls are the solid ground-story building blocks (center x,z + size w,d) used for BOTH rendering and collision - keep them axis-aligned. Doors line up with classrooms.json by id and sit on the field-facing wall of each room; floor 0 = ground (y~1.5), floor 1 = second floor (y~7.8); axis is the direction the door opening runs along (z = opening runs north-south on an east/west-facing wall, x = opening runs east-west on a north/south-facing wall). Stairs: width = cross-sectional width (perpendicular to the climb), len = climb length along the climb axis, axis = climb direction (z = north-south, x = east-west), dir = +1/-1 step direction along the axis, bottom/top = climb-axis coordinate at the ground (bottom) and second floor (top). cars are decorative parked cars (no collision). boundary and gate are METADATA ONLY (not rendered): the gate returns at Milestone 11 (arrival animation). Real room numbers/names arrive at Milestone 16.",
+  "_note": "School campus layout - SINGLE SOURCE OF TRUTH for the walkable world (PROJECT.md section 7). REAL-WORLD SCALE: 1 unit = 1 meter, calibrated from Google Maps aerial view. MPR extended westward into parking lot (w: 24, x: [-38, -14], z: [37, 53]). Parking lot extended south to align with south side of MPR (z: [-10, 53]). Grass field shifted south (z: [10.5, 41.5]) so bottom of north stairs (z: 7) rests on pavement. Office building aligned west with west building (x: -30), north with north building (z: -20), connected to north building at x: -8, with gate between office and west building.",
   "boundary": {
-    "minX": -30,
-    "maxX": 23,
-    "minZ": -24,
-    "maxZ": 25,
-    "wallHeight": 6,
-    "wallThickness": 1,
-    "railingHeight": 6,
-    "gate": { "centerX": 0, "centerZ": -13, "width": 8 }
+    "minX": -53.5,
+    "maxX": 55,
+    "minZ": -23,
+    "maxZ": 65.5,
+    "wallHeight": 3.5,
+    "wallThickness": 0.3,
+    "railingHeight": 4,
+    "gate": {
+      "centerX": -28,
+      "centerZ": -6.25,
+      "width": 8.5
+    },
+    "vehicleGate": {
+      "centerX": 55,
+      "centerZ": 58,
+      "width": 6.8,
+      "height": 3.5,
+      "type": "double-leaf-vehicle-driveway",
+      "interactive": false
+    },
+    "slidingGate": {
+      "centerX": -42,
+      "centerZ": -23,
+      "width": 6.8,
+      "height": 3.5,
+      "type": "cantilever-sliding-gate",
+      "state": "open",
+      "interactive": false
+    }
   },
-  "spawn": { "x": -24, "z": 3, "radius": 0.5 },
+  "whiteBrickWall": {
+    "description": "White brick perimeter security wall enclosing the south and west boundaries (replacing the red fence along those sides)",
+    "height": 3.88,
+    "copingHeight": 4.0,
+    "thickness": 0.32,
+    "copingThickness": 0.38,
+    "brickSize": "large-format (~71cm x 22cm)",
+    "south": {
+      "startX": 55.0,
+      "endX": -53.5,
+      "z": 65.42,
+      "length": 108.5
+    },
+    "west": {
+      "startZ": 65.5,
+      "endZ": -23.0,
+      "x": -53.42,
+      "length": 88.5
+    }
+  },
+  "westHedge": {
+    "x": -52.7,
+    "minZ": -22.5,
+    "maxZ": 55.0,
+    "width": 0.85,
+    "height": 4.25,
+    "gap": 0.35
+  },
+  "dumpsterEnclosure": {
+    "description": "Beige brick masonry dumpster enclosure in the southwest corner of the parking lot with steel service gates on the east side enclosing 1 trash dumpster and 1 recycling dumpster facing east toward the drive aisle",
+    "gateSide": "east",
+    "x": -49.5,
+    "z": 61.28,
+    "width": 7.05,
+    "depth": 7.55,
+    "wallHeight": 2.4,
+    "wallThickness": 0.3,
+    "wallColor": "#d5c5b2",
+    "trashDumpster": {
+      "type": "commercial-front-load",
+      "color": "#1e3a2f",
+      "label": "TRASH ONLY",
+      "x": -49.4,
+      "z": 60.0
+    },
+    "recycleDumpster": {
+      "type": "commercial-front-load",
+      "color": "#1d4ed8",
+      "label": "RECYCLE ONLY",
+      "x": -49.4,
+      "z": 62.6
+    }
+  },
+  "spawn": {
+    "x": -42,
+    "z": 9,
+    "radius": 0.4
+  },
   "parkingLot": {
-    "center": { "x": -24, "z": 3 },
-    "width": 10,
-    "depth": 22,
-    "spots": 8,
-    "spotWidth": 2.5,
-    "arrivalSpot": { "x": -24, "z": 3 }
+    "center": {
+      "x": -43.25,
+      "z": 21.25
+    },
+    "width": 20.5,
+    "depth": 88.5,
+    "spots": 16,
+    "spotWidth": 3,
+    "arrivalSpot": {
+      "x": -42,
+      "z": 9
+    }
   },
   "field": {
-    "center": { "x": 2, "z": 2 },
-    "width": 18,
-    "depth": 15
+    "center": {
+      "x": 27.5,
+      "z": 26
+    },
+    "width": 41,
+    "depth": 31,
+    "cornerRadius": 2.5,
+    "soccerGoals": [
+      {
+        "id": "north",
+        "style": "in-ground-school-posts",
+        "x": 27.5,
+        "z": 12.0,
+        "width": 6.0,
+        "height": 2.44,
+        "facing": [
+          0,
+          1
+        ]
+      },
+      {
+        "id": "south",
+        "style": "in-ground-school-posts",
+        "x": 27.5,
+        "z": 40.0,
+        "width": 6.0,
+        "height": 2.44,
+        "facing": [
+          0,
+          -1
+        ]
+      }
+    ]
   },
   "pavement": {
-    "center": { "x": 2.5, "z": 2 },
-    "width": 27,
-    "depth": 26
+    "center": {
+      "x": 20.5,
+      "z": 27.25
+    },
+    "width": 69,
+    "depth": 76.5
+  },
+  "southPavement": {
+    "center": {
+      "x": -23.5,
+      "z": 63.75
+    },
+    "width": 19,
+    "depth": 3.5
+  },
+  "breezewayPavement": {
+    "center": {
+      "x": -21,
+      "z": -6.25
+    },
+    "width": 14,
+    "depth": 8.5
+  },
+  "eastRoad": {
+    "center": {
+      "x": 65,
+      "z": 20
+    },
+    "width": 14,
+    "length": 130,
+    "minX": 58,
+    "maxX": 72,
+    "minZ": -45,
+    "maxZ": 85,
+    "lanes": 2,
+    "curbWidth": 0.2
+  },
+  "northRoad": {
+    "description": "One-way street connecting eastbound into the East Road with parallel parking along the north outside sidewalk and 2-story apartment buildings",
+    "direction": "one-way-east",
+    "minX": -62,
+    "maxX": 72,
+    "minZ": -35.5,
+    "maxZ": -26.0,
+    "width": 9.5,
+    "lanes": 1,
+    "parkingLane": {
+      "side": "north",
+      "width": 2.6
+    }
+  },
+  "apartments": [
+    {
+      "id": "apt-west",
+      "name": "The Palms Apartments",
+      "stories": 2,
+      "x": -36,
+      "z": -47,
+      "w": 24,
+      "d": 12,
+      "h": 7.4
+    },
+    {
+      "id": "apt-center",
+      "name": "Nordhoff Gardens",
+      "stories": 2,
+      "x": 0,
+      "z": -47.5,
+      "w": 28,
+      "d": 13,
+      "h": 7.4
+    },
+    {
+      "id": "apt-east",
+      "name": "Vista Del Sol",
+      "stories": 2,
+      "x": 36,
+      "z": -47,
+      "w": 24,
+      "d": 12,
+      "h": 7.4
+    }
+  ],
+  "schoolBuses": [
+    {
+      "id": "bus-1",
+      "x": 59.75,
+      "z": 47,
+      "rot": 0,
+      "facing": "south",
+      "description": "First school bus parked along east sidewalk curb leading toward vehicle gate"
+    },
+    {
+      "id": "bus-2",
+      "x": 59.75,
+      "z": 34,
+      "rot": 0,
+      "facing": "south",
+      "description": "Second school bus parked directly behind first bus"
+    }
+  ],
+  "sidewalks": [
+    {
+      "x": -31.5,
+      "z": 10.25,
+      "w": 3,
+      "d": 60.5
+    },
+    {
+      "x": -29,
+      "z": -6.25,
+      "w": 2.1,
+      "d": 8.5
+    },
+    {
+      "x": -35.5,
+      "z": 39,
+      "w": 11,
+      "d": 3
+    },
+    {
+      "x": -39.5,
+      "z": 51.5,
+      "w": 3,
+      "d": 22
+    },
+    {
+      "x": 56.5,
+      "z": 21.25,
+      "w": 3,
+      "d": 88.5
+    },
+    {
+      "x": 12.5,
+      "z": -21.5,
+      "w": 91,
+      "d": 3
+    }
+  ],
+  "cover": {
+    "center": {
+      "x": -1,
+      "z": 28.25
+    },
+    "width": 10,
+    "depth": 26.5,
+    "height": 3.8
   },
   "buildings": [
-    { "id": "west", "label": "West Building (5th/6th grade)", "x": -14, "z": 6, "w": 6, "d": 22, "faces": "east" },
-    { "id": "north", "label": "North Building (7th/8th grade)", "x": 2, "z": -14, "w": 26, "d": 6, "faces": "south" }
+    {
+      "id": "west",
+      "label": "West Building (5th/6th grade)",
+      "x": -22,
+      "z": 19.25,
+      "w": 16,
+      "d": 42.5,
+      "faces": "east"
+    },
+    {
+      "id": "north",
+      "label": "North Building (7th/8th grade)",
+      "x": 19,
+      "z": -11,
+      "w": 54,
+      "d": 18,
+      "faces": "south"
+    },
+    {
+      "id": "office",
+      "label": "Office (Administrative)",
+      "x": -19,
+      "z": -15.25,
+      "w": 22,
+      "d": 9.5,
+      "faces": "south"
+    },
+    {
+      "id": "mpr",
+      "label": "MPR (Multi-Purpose Room)",
+      "x": -26,
+      "z": 51.5,
+      "w": 24,
+      "d": 22,
+      "faces": "east"
+    }
   ],
   "walls": [
-    { "x": -14, "z": 6, "w": 6, "d": 22 },
-    { "x": 2, "z": -14, "w": 26, "d": 6 }
+    {
+      "id": "west",
+      "x": -22,
+      "z": 19.25,
+      "w": 16,
+      "d": 42.5
+    },
+    {
+      "id": "north",
+      "x": 19,
+      "z": -11,
+      "w": 54,
+      "d": 18
+    },
+    {
+      "id": "office",
+      "x": -19,
+      "z": -15.25,
+      "w": 22,
+      "d": 9.5
+    },
+    {
+      "id": "mpr",
+      "x": -26,
+      "z": 51.5,
+      "w": 24,
+      "d": 22
+    }
+  ],
+  "walkways": [
+    {
+      "building": "west",
+      "axis": "z",
+      "center": {
+        "x": -12.5,
+        "z": 19.25
+      },
+      "width": 3,
+      "length": 42.5
+    },
+    {
+      "building": "north",
+      "axis": "x",
+      "center": {
+        "x": 16.75,
+        "z": -0.5
+      },
+      "width": 3,
+      "length": 55.5
+    },
+    {
+      "building": "office",
+      "axis": "x",
+      "center": {
+        "x": -21,
+        "z": -9
+      },
+      "width": 3,
+      "length": 14
+    },
+    {
+      "building": "north",
+      "axis": "z",
+      "center": {
+        "x": -11,
+        "z": -6.2
+      },
+      "width": 6,
+      "length": 8.6
+    }
   ],
   "stairs": [
     {
       "building": "west",
-      "center": { "x": -14, "z": 20.5 },
+      "center": {
+        "x": -12.5,
+        "z": 43.5
+      },
       "width": 3,
-      "len": 7,
+      "len": 6,
       "axis": "z",
       "dir": -1,
-      "bottom": 24,
-      "top": 17
+      "bottom": 46.5,
+      "top": 40.5
     },
     {
       "building": "north",
-      "center": { "x": 18.5, "z": -14 },
+      "center": {
+        "x": 43,
+        "z": 4
+      },
       "width": 3,
-      "len": 7,
-      "axis": "x",
+      "len": 6,
+      "axis": "z",
       "dir": -1,
-      "bottom": 22,
-      "top": 15
+      "bottom": 7,
+      "top": 1
     }
   ],
   "cars": [
-    { "x": -27, "z": -5, "rot": 0, "color": "#d0d0d0" },
-    { "x": -24, "z": -5, "rot": 0, "color": "#f2f2f2" },
-    { "x": -21, "z": -5, "rot": 0, "color": "#4a4a4a" },
-    { "x": -27, "z": 0, "rot": 0, "color": "#3a5a8a" },
-    { "x": -21, "z": 0, "rot": 0, "color": "#8a3a3a" },
-    { "x": -27, "z": 5, "rot": 0, "color": "#2a2a2a" },
-    { "x": -24, "z": 5, "rot": 0, "color": "#c0c8d0" },
-    { "x": -21, "z": 5, "rot": 0, "color": "#6a7a5a" }
+    {
+      "x": -36.8,
+      "z": -13.0,
+      "rot": 0,
+      "color": "#e2e8f0",
+      "type": "sedan"
+    },
+    {
+      "x": -36.8,
+      "z": -10.15,
+      "rot": 0,
+      "color": "#1e293b",
+      "type": "suv"
+    },
+    {
+      "x": -36.8,
+      "z": -7.3,
+      "rot": 0,
+      "color": "#3b82f6",
+      "type": "electric"
+    },
+    {
+      "x": -36.8,
+      "z": -1.6,
+      "rot": 0,
+      "color": "#64748b",
+      "type": "sedan"
+    },
+    {
+      "x": -36.8,
+      "z": 1.25,
+      "rot": 0,
+      "color": "#047857",
+      "type": "electric"
+    },
+    {
+      "x": -36.8,
+      "z": 4.1,
+      "rot": 0,
+      "color": "#f59e0b",
+      "type": "suv"
+    },
+    {
+      "x": -36.8,
+      "z": 6.95,
+      "rot": 0,
+      "color": "#475569",
+      "type": "compact"
+    },
+    {
+      "x": -36.8,
+      "z": 9.8,
+      "rot": 0,
+      "color": "#f8fafc",
+      "type": "sedan"
+    },
+    {
+      "x": -36.8,
+      "z": 12.65,
+      "rot": 0,
+      "color": "#7c3aed",
+      "type": "electric"
+    },
+    {
+      "x": -36.8,
+      "z": 18.35,
+      "rot": 0,
+      "color": "#b91c1c",
+      "type": "suv"
+    },
+    {
+      "x": -36.8,
+      "z": 24.05,
+      "rot": 0,
+      "color": "#334155",
+      "type": "sedan"
+    },
+    {
+      "x": -36.8,
+      "z": 26.9,
+      "rot": 0,
+      "color": "#d97706",
+      "type": "suv"
+    },
+    {
+      "x": -36.8,
+      "z": 29.75,
+      "rot": 0,
+      "color": "#4b5563",
+      "type": "electric"
+    },
+    {
+      "x": -36.8,
+      "z": 32.6,
+      "rot": 0,
+      "color": "#ffffff",
+      "type": "van",
+      "id": "ford-mpr-van"
+    },
+    {
+      "x": -49.5,
+      "z": -13.0,
+      "rot": 3.1416,
+      "color": "#0f172a",
+      "type": "suv"
+    },
+    {
+      "x": -49.5,
+      "z": -7.3,
+      "rot": 3.1416,
+      "color": "#dc2626",
+      "type": "sedan"
+    },
+    {
+      "x": -49.5,
+      "z": -4.45,
+      "rot": 3.1416,
+      "color": "#2563eb",
+      "type": "electric"
+    },
+    {
+      "x": -49.5,
+      "z": -1.6,
+      "rot": 3.1416,
+      "color": "#f1f5f9",
+      "type": "compact"
+    },
+    {
+      "x": -49.5,
+      "z": 1.25,
+      "rot": 3.1416,
+      "color": "#78350f",
+      "type": "suv"
+    },
+    {
+      "x": -49.5,
+      "z": 6.95,
+      "rot": 3.1416,
+      "color": "#059669",
+      "type": "sedan"
+    },
+    {
+      "x": -49.5,
+      "z": 9.8,
+      "rot": 3.1416,
+      "color": "#4338ca",
+      "type": "electric"
+    },
+    {
+      "x": -49.5,
+      "z": 12.65,
+      "rot": 3.1416,
+      "color": "#e11d48",
+      "type": "compact"
+    },
+    {
+      "x": -49.5,
+      "z": 15.5,
+      "rot": 3.1416,
+      "color": "#e2e8f0",
+      "type": "sedan"
+    },
+    {
+      "x": -49.5,
+      "z": 18.35,
+      "rot": 3.1416,
+      "color": "#374151",
+      "type": "suv"
+    },
+    {
+      "x": -49.5,
+      "z": 21.2,
+      "rot": 3.1416,
+      "color": "#d97706",
+      "type": "electric"
+    },
+    {
+      "x": -49.5,
+      "z": 26.9,
+      "rot": 3.1416,
+      "color": "#6b7280",
+      "type": "compact"
+    },
+    {
+      "x": -49.5,
+      "z": 29.75,
+      "rot": 3.1416,
+      "color": "#15803d",
+      "type": "suv"
+    },
+    {
+      "x": -49.5,
+      "z": 32.6,
+      "rot": 3.1416,
+      "color": "#9f1239",
+      "type": "sedan"
+    },
+    {
+      "x": -49.5,
+      "z": 35.45,
+      "rot": 3.1416,
+      "color": "#ffffff",
+      "type": "electric"
+    },
+    {
+      "x": -49.5,
+      "z": 38.3,
+      "rot": 3.1416,
+      "color": "#1e293b",
+      "type": "suv"
+    },
+    {
+      "x": -49.5,
+      "z": 41.15,
+      "rot": 3.1416,
+      "color": "#0891b2",
+      "type": "compact"
+    },
+    {
+      "x": -49.5,
+      "z": 46.85,
+      "rot": 3.1416,
+      "color": "#ca8a04",
+      "type": "sedan"
+    },
+    {
+      "x": -49.5,
+      "z": 52.55,
+      "rot": 3.1416,
+      "color": "#be123c",
+      "type": "electric"
+    },
+    {
+      "x": -49.5,
+      "z": 55.4,
+      "rot": 3.1416,
+      "color": "#047857",
+      "type": "compact"
+    }
+  ],
+  "tables": [
+    {
+      "x": -3.6,
+      "z": 16.5
+    },
+    {
+      "x": 1.6,
+      "z": 16.5
+    },
+    {
+      "x": -3.6,
+      "z": 21.5
+    },
+    {
+      "x": 1.6,
+      "z": 21.5
+    },
+    {
+      "x": -3.6,
+      "z": 26.5
+    },
+    {
+      "x": 1.6,
+      "z": 26.5
+    },
+    {
+      "x": -3.6,
+      "z": 31.5
+    },
+    {
+      "x": 1.6,
+      "z": 31.5
+    },
+    {
+      "x": -3.6,
+      "z": 36.5
+    },
+    {
+      "x": 1.6,
+      "z": 36.5
+    }
+  ],
+  "gates": [
+    {
+      "id": "main",
+      "x": -28,
+      "z": -6.25,
+      "axis": "z",
+      "length": 8.5,
+      "thickness": 0.4,
+      "height": 3
+    }
   ],
   "doors": [
-    { "id": "5th-csun-history", "x": -11, "z": 1, "axis": "z", "floor": 0 },
-    { "id": "5th-lmu-math", "x": -11, "z": 5, "axis": "z", "floor": 0 },
-    { "id": "5th-ucla-english", "x": -11, "z": 9, "axis": "z", "floor": 0 },
-    { "id": "5th-usc-science", "x": -11, "z": 13, "axis": "z", "floor": 0 },
-    { "id": "6th-csun-math", "x": -11, "z": 1, "axis": "z", "floor": 1 },
-    { "id": "6th-lmu-science", "x": -11, "z": 5, "axis": "z", "floor": 1 },
-    { "id": "6th-ucla-history", "x": -11, "z": 9, "axis": "z", "floor": 1 },
-    { "id": "6th-usc-english", "x": -11, "z": 13, "axis": "z", "floor": 1 },
-    { "id": "7th-csun-math", "x": -8, "z": -11, "axis": "x", "floor": 0 },
-    { "id": "7th-lmu-history", "x": -3, "z": -11, "axis": "x", "floor": 0 },
-    { "id": "7th-ucla-science", "x": 2, "z": -11, "axis": "x", "floor": 0 },
-    { "id": "7th-usc-english", "x": 7, "z": -11, "axis": "x", "floor": 0 },
-    { "id": "8th-csun-english", "x": -8, "z": -11, "axis": "x", "floor": 1 },
-    { "id": "8th-lmu-history", "x": -3, "z": -11, "axis": "x", "floor": 1 },
-    { "id": "8th-ucla-math", "x": 2, "z": -11, "axis": "x", "floor": 1 },
-    { "id": "8th-usc-science", "x": 7, "z": -11, "axis": "x", "floor": 1 }
-  ]
+    {
+      "id": "7th-usc-english",
+      "x": -14,
+      "z": 3.5,
+      "axis": "z",
+      "floor": 0
+    },
+    {
+      "id": "7th-ucla-science",
+      "x": -14,
+      "z": 13.5,
+      "axis": "z",
+      "floor": 0
+    },
+    {
+      "id": "7th-lmu-humanities",
+      "x": -14,
+      "z": 23.5,
+      "axis": "z",
+      "floor": 0
+    },
+    {
+      "id": "7th-csun-math",
+      "x": -14,
+      "z": 33.5,
+      "axis": "z",
+      "floor": 0
+    },
+    {
+      "id": "6th-usc-english",
+      "x": -14,
+      "z": 3.5,
+      "axis": "z",
+      "floor": 1
+    },
+    {
+      "id": "6th-ucla-humanities",
+      "x": -14,
+      "z": 13.5,
+      "axis": "z",
+      "floor": 1
+    },
+    {
+      "id": "6th-lmu-science",
+      "x": -14,
+      "z": 23.5,
+      "axis": "z",
+      "floor": 1
+    },
+    {
+      "id": "6th-csun-math",
+      "x": -14,
+      "z": 33.5,
+      "axis": "z",
+      "floor": 1
+    },
+    {
+      "id": "learning-center",
+      "x": -4,
+      "z": -2,
+      "axis": "x",
+      "floor": 0
+    },
+    {
+      "id": "8th-usc-science",
+      "x": 2,
+      "z": -2,
+      "axis": "x",
+      "floor": 0
+    },
+    {
+      "id": "8th-ucla-math",
+      "x": 14,
+      "z": -2,
+      "axis": "x",
+      "floor": 0
+    },
+    {
+      "id": "8th-lmu-humanities",
+      "x": 26,
+      "z": -2,
+      "axis": "x",
+      "floor": 0
+    },
+    {
+      "id": "8th-csun-english",
+      "x": 38,
+      "z": -2,
+      "axis": "x",
+      "floor": 0
+    },
+    {
+      "id": "theater",
+      "x": -4,
+      "z": -2,
+      "axis": "x",
+      "floor": 1
+    },
+    {
+      "id": "5th-usc-science",
+      "x": 2,
+      "z": -2,
+      "axis": "x",
+      "floor": 1
+    },
+    {
+      "id": "5th-ucla-english",
+      "x": 14,
+      "z": -2,
+      "axis": "x",
+      "floor": 1
+    },
+    {
+      "id": "5th-lmu-math",
+      "x": 26,
+      "z": -2,
+      "axis": "x",
+      "floor": 1
+    },
+    {
+      "id": "5th-csun-humanities",
+      "x": 38,
+      "z": -2,
+      "axis": "x",
+      "floor": 1
+    },
+    {
+      "id": "mpr-double-door-left",
+      "x": -14,
+      "z": 50.5,
+      "axis": "z",
+      "floor": 0
+    },
+    {
+      "id": "mpr-double-door-right",
+      "x": -14,
+      "z": 52.5,
+      "axis": "z",
+      "floor": 0
+    },
+    {
+      "id": "mpr-parking-double-door-left",
+      "x": -38,
+      "z": 42.0,
+      "axis": "z",
+      "floor": 0
+    },
+    {
+      "id": "mpr-parking-double-door-right",
+      "x": -38,
+      "z": 44.0,
+      "axis": "z",
+      "floor": 0
+    },
+    {
+      "id": "office-door",
+      "x": -11,
+      "z": -10.5,
+      "axis": "x",
+      "floor": 0
+    },
+    {
+      "id": "office-glass-double-door-left",
+      "x": -30,
+      "z": -16.25,
+      "axis": "z",
+      "floor": 0
+    },
+    {
+      "id": "office-glass-double-door-right",
+      "x": -30,
+      "z": -14.25,
+      "axis": "z",
+      "floor": 0
+    },
+    {
+      "id": "music",
+      "x": -26,
+      "z": -10.5,
+      "axis": "x",
+      "floor": 1
+    },
+    {
+      "id": "eld",
+      "x": -16,
+      "z": -10.5,
+      "axis": "x",
+      "floor": 1
+    }
+  ],
+  "basketballCourt": {
+    "center": {
+      "x": 27.5,
+      "z": 53
+    },
+    "width": 28,
+    "depth": 15,
+    "hoops": [
+      {
+        "id": "west",
+        "x": 14.5,
+        "z": 53,
+        "dir": [
+          1,
+          0
+        ]
+      },
+      {
+        "id": "east",
+        "x": 40.5,
+        "z": 53,
+        "dir": [
+          -1,
+          0
+        ]
+      },
+      {
+        "id": "north-1",
+        "x": 22.5,
+        "z": 46.5,
+        "dir": [
+          0,
+          1
+        ]
+      },
+      {
+        "id": "north-2",
+        "x": 32.5,
+        "z": 46.5,
+        "dir": [
+          0,
+          1
+        ]
+      }
+    ]
+  },
+  "eastHedge": {
+    "x": 54.45,
+    "minZ": -22.5,
+    "maxZ": 54.4,
+    "width": 0.85,
+    "height": 2.7,
+    "gap": 0.3
+  }
 }

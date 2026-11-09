@@ -1,4 +1,13 @@
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
+
+let currentSocket: Socket | null = null;
+
+export function getSocket(): Socket {
+  if (!currentSocket) {
+    currentSocket = io();
+  }
+  return currentSocket;
+}
 
 /**
  * Multiplayer connection (Milestone 1: connection status only).
@@ -8,8 +17,8 @@ import { io } from "socket.io-client";
  *  - Development: http://localhost:5173 (Vite forwards to the server — see vite.config.ts)
  *  - Production:  the game's public URL (the Node server serves everything)
  */
-export function connectToServer(): void {
-  const socket = io();
+export function connectToServer(): Socket {
+  const socket = getSocket();
 
   socket.on("connect", () => {
     setBadge(`Server: connected`, "badge-ok");
@@ -28,13 +37,27 @@ export function connectToServer(): void {
       setBadge(`Server: connected — players online: ${stats.players}`, "badge-ok");
     }
   });
+
+  return socket;
 }
 
-function setBadge(text: string, cssClass: string): void {
+export function disconnectFromServer(): void {
+  if (currentSocket) {
+    currentSocket.disconnect();
+    currentSocket = null;
+  }
+}
+
+export function setOfflineBadge(): void {
+  disconnectFromServer();
+  setBadge("Mode: Single Player (Offline)", "badge-singleplayer");
+}
+
+export function setBadge(text: string, cssClass: string): void {
   const badge = document.getElementById("status-badge");
   if (badge) {
     badge.textContent = text;
-    // Keep the base "badge" class (position/size/styling) and add the state class.
     badge.className = `badge ${cssClass}`;
   }
 }
+

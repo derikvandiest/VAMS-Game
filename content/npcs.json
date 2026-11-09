@@ -68,10 +68,10 @@
       "dialogueId": "hallway-todo-2"
     },
     {
-      "id": "npc-5th-csun-history",
+      "id": "npc-5th-csun-humanities",
       "displayName": "TODO — Teacher Name",
       "role": "teacher",
-      "location": { "roomId": "5th-csun-history", "x": 0, "y": 0, "z": 0 },
+      "location": { "roomId": "5th-csun-humanities", "x": 0, "y": 0, "z": 0 },
       "faceTextureFile": null,
       "portraitFile": null,
       "isSubstitute": true,
@@ -134,10 +134,10 @@
       "dialogueId": "station-todo"
     },
     {
-      "id": "npc-6th-ucla-history",
+      "id": "npc-6th-ucla-humanities",
       "displayName": "TODO — Teacher Name",
       "role": "teacher",
-      "location": { "roomId": "6th-ucla-history", "x": 0, "y": 0, "z": 0 },
+      "location": { "roomId": "6th-ucla-humanities", "x": 0, "y": 0, "z": 0 },
       "faceTextureFile": null,
       "portraitFile": null,
       "isSubstitute": true,
@@ -167,10 +167,10 @@
       "dialogueId": "station-todo"
     },
     {
-      "id": "npc-7th-lmu-history",
+      "id": "npc-7th-lmu-humanities",
       "displayName": "TODO — Teacher Name",
       "role": "teacher",
-      "location": { "roomId": "7th-lmu-history", "x": 0, "y": 0, "z": 0 },
+      "location": { "roomId": "7th-lmu-humanities", "x": 0, "y": 0, "z": 0 },
       "faceTextureFile": null,
       "portraitFile": null,
       "isSubstitute": true,
@@ -211,10 +211,10 @@
       "dialogueId": "station-todo"
     },
     {
-      "id": "npc-8th-lmu-history",
+      "id": "npc-8th-lmu-humanities",
       "displayName": "TODO — Teacher Name",
       "role": "teacher",
-      "location": { "roomId": "8th-lmu-history", "x": 0, "y": 0, "z": 0 },
+      "location": { "roomId": "8th-lmu-humanities", "x": 0, "y": 0, "z": 0 },
       "faceTextureFile": null,
       "portraitFile": null,
       "isSubstitute": true,

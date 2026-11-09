@@ -1,17 +1,17 @@
 {
-  "_note": "All 20 classrooms (PROJECT.md section 5.5). 16 stamp rooms = 4 grades x 4 homerooms exactly, subjects are labels only. 4 non-stamp rooms: ELD, Music Room, Learning Center, Theater (the office is NOT enterable — decision 2026-10-07). roomNumber and doorPosition are placeholders until Milestones 2 and 7. Class display name format: '5th Grade USC (Science)', map short label: '5 USC'.",
+  "_note": "All 20 classrooms (PROJECT.md section 5.5). 16 stamp rooms = 4 grades x 4 homerooms exactly, subjects are labels only. 4 non-stamp rooms: ELD, Music Room, Learning Center, Theater. Upstairs north building: Theater (far left x=-4), 5th USC (x=2), 5th UCLA (x=14), 5th LMU (x=26), 5th CSUN (far right x=38). 1st floor north building: Learning Center (far left x=-4), 8th USC (x=2), 8th UCLA (x=14), 8th LMU (x=26), 8th CSUN (far right x=38). Upstairs west building: 6th USC (z=3.5), 6th UCLA (z=13.5), 6th LMU (z=23.5), 6th CSUN (z=33.5). 1st floor west building: 7th USC (z=3.5), 7th UCLA (z=13.5), 7th LMU (z=23.5), 7th CSUN (z=33.5). Office 2nd floor: Music (x=-26) + ELD (x=-16).",
   "classrooms": [
     {
-      "id": "5th-csun-history",
-      "label": "5th Grade CSUN (History)",
+      "id": "5th-csun-humanities",
+      "label": "5th Grade CSUN (Humanities)",
       "shortLabel": "5 CSUN",
       "type": "stamp",
       "grade": 5,
       "homeroom": "CSUN",
-      "subject": "History",
+      "subject": "Humanities",
       "roomNumber": "TBD",
       "doorPosition": { "x": 0, "y": 0, "z": 0 },
-      "npcId": "npc-5th-csun-history",
+      "npcId": "npc-5th-csun-humanities",
       "topicTitle": "TODO — PD topic title (placeholder)"
     },
     {
@@ -80,16 +80,16 @@
       "topicTitle": "TODO — PD topic title (placeholder)"
     },
     {
-      "id": "6th-ucla-history",
-      "label": "6th Grade UCLA (History)",
+      "id": "6th-ucla-humanities",
+      "label": "6th Grade UCLA (Humanities)",
       "shortLabel": "6 UCLA",
       "type": "stamp",
       "grade": 6,
       "homeroom": "UCLA",
-      "subject": "History",
+      "subject": "Humanities",
       "roomNumber": "TBD",
       "doorPosition": { "x": 0, "y": 0, "z": 0 },
-      "npcId": "npc-6th-ucla-history",
+      "npcId": "npc-6th-ucla-humanities",
       "topicTitle": "TODO — PD topic title (placeholder)"
     },
     {
@@ -119,16 +119,16 @@
       "topicTitle": "TODO — PD topic title (placeholder)"
     },
     {
-      "id": "7th-lmu-history",
-      "label": "7th Grade LMU (History)",
+      "id": "7th-lmu-humanities",
+      "label": "7th Grade LMU (Humanities)",
       "shortLabel": "7 LMU",
       "type": "stamp",
       "grade": 7,
       "homeroom": "LMU",
-      "subject": "History",
+      "subject": "Humanities",
       "roomNumber": "TBD",
       "doorPosition": { "x": 0, "y": 0, "z": 0 },
-      "npcId": "npc-7th-lmu-history",
+      "npcId": "npc-7th-lmu-humanities",
       "topicTitle": "TODO — PD topic title (placeholder)"
     },
     {
@@ -171,16 +171,16 @@
       "topicTitle": "TODO — PD topic title (placeholder)"
     },
     {
-      "id": "8th-lmu-history",
-      "label": "8th Grade LMU (History)",
+      "id": "8th-lmu-humanities",
+      "label": "8th Grade LMU (Humanities)",
       "shortLabel": "8 LMU",
       "type": "stamp",
       "grade": 8,
       "homeroom": "LMU",
-      "subject": "History",
+      "subject": "Humanities",
       "roomNumber": "TBD",
       "doorPosition": { "x": 0, "y": 0, "z": 0 },
-      "npcId": "npc-8th-lmu-history",
+      "npcId": "npc-8th-lmu-humanities",
       "topicTitle": "TODO — PD topic title (placeholder)"
     },
     {
@@ -230,7 +230,7 @@
     {
       "id": "learning-center",
       "label": "Learning Center",
-      "shortLabel": "Learning",
+      "shortLabel": "Learning Center",
       "type": "other",
       "roomNumber": "TBD",
       "doorPosition": { "x": 0, "y": 0, "z": 0 },
