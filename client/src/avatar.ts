@@ -65,10 +65,10 @@ const FEMALE_OUTFIT_MAP: Record<string, string> = {
 };
 
 export function resolveOutfitUrl(topStyle: string, gender: string): string {
-  const isFemale = gender === "female";
-  const map = isFemale ? FEMALE_OUTFIT_MAP : MALE_OUTFIT_MAP;
+  const isGirl = gender === "girl";
+  const map = isGirl ? FEMALE_OUTFIT_MAP : MALE_OUTFIT_MAP;
   const name = map[topStyle] ?? map["default"];
-  const folder = isFemale ? "Female" : "Male";
+  const folder = isGirl ? "Female" : "Male";
   return `/models/quaternius/${folder}/${name}.glb`;
 }
 
@@ -533,8 +533,8 @@ export function createAvatarRig(opts: { nameTag?: boolean } = {}): AvatarRig {
   function apply(profile: CharacterProfile): void {
     currentProfile = { ...profile };
 
-    // Slight scale difference female vs male
-    const s = profile.gender === "female" ? 0.96 : 1.0;
+    // Slight scale difference girl vs boy/neutral
+    const s = profile.gender === "girl" ? 0.96 : 1.0;
     scaleContainer.scale.set(s, s, s);
 
     if (nameTagSprite) {

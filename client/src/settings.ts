@@ -172,8 +172,8 @@ class ThumbRenderer {
     const rig = this.rig;
     const t: CharacterProfile = { ...p, name: "x" };
 
-    const s = p.gender === "female" ? 0.96 : 1.0;
-    let cy = p.gender === "female" ? 1.475 : 1.515;
+    const s = p.gender === "girl" ? 0.96 : 1.0;
+    let cy = p.gender === "girl" ? 1.475 : 1.515;
     let dist = 0.85;
     let rotY = -0.32;
     let lookDy = 0;
@@ -184,7 +184,7 @@ class ThumbRenderer {
         t.glasses = "none";
         t.headwear = "none";
         t.facialHair = "none";
-        cy = p.gender === "female" ? 1.47 : 1.51;
+        cy = p.gender === "girl" ? 1.47 : 1.51;
         dist = 0.78;
         rotY = -0.22;
         lookDy = -0.01;
@@ -232,7 +232,6 @@ class ThumbRenderer {
         break;
       case "earrings":
         t.earrings = id as CharacterProfile["earrings"];
-        t.hairStyle = "bald";
         t.headwear = "none";
         dist = 0.65;
         rotY = -0.82;
@@ -575,8 +574,8 @@ export function initSettingsModal(onSave?: (profile: CharacterProfile) => void):
     chipEl.style.background = info.shirtColor;
     chipEl.style.color = info.textHex;
     nameOut.textContent = draft.name || "Unnamed";
-    genderTagEl.textContent = draft.gender === "female" ? "♀ Feminine" : "♂ Masculine";
-    genderTagEl.className = `cs-gender-tag ${draft.gender === "female" ? "cs-gender-f" : "cs-gender-m"}`;
+    genderTagEl.textContent = draft.gender === "girl" ? "♀ Feminine" : "♂ Masculine";
+    genderTagEl.className = `cs-gender-tag ${draft.gender === "girl" ? "cs-gender-f" : "cs-gender-m"}`;
   }
 
   // ---- HTML Builders ----------------------------------------------------------------------
@@ -624,12 +623,12 @@ export function initSettingsModal(onSave?: (profile: CharacterProfile) => void):
       .map((o) => {
         const on = o.id === currentId;
         const badge =
-          o.category === "male"
-            ? '<span class="cs-card-badge cs-badge-male">M</span>'
-            : o.category === "female"
-              ? '<span class="cs-card-badge cs-badge-female">F</span>'
-              : o.category === "unisex"
-                ? '<span class="cs-card-badge cs-badge-unisex">U</span>'
+          o.category === "boy"
+            ? '<span class="cs-card-badge cs-badge-boy">B</span>'
+            : o.category === "girl"
+              ? '<span class="cs-card-badge cs-badge-girl">G</span>'
+              : o.category === "all"
+                ? '<span class="cs-card-badge cs-badge-all">A</span>'
                 : "";
 
         if (o.id === "none") {
@@ -686,8 +685,10 @@ export function initSettingsModal(onSave?: (profile: CharacterProfile) => void):
             }
             await saveCustomAvatarGlb(data.url);
             draft.customAvatarUrl = "idb://custom-avatar";
-            if (data.gender === "female" || data.gender === "male") {
-              draft.gender = data.gender;
+            if (data.gender === "female") {
+              draft.gender = "girl";
+            } else if (data.gender === "male") {
+              draft.gender = "boy";
             }
             thumbs.clearCache();
             refreshPreview();
@@ -729,10 +730,10 @@ export function initSettingsModal(onSave?: (profile: CharacterProfile) => void):
               <span class="cs-label">Body Type &amp; Educator Rig <span>Photorealistic adult proportions</span></span>
             </div>
             <div class="cs-segment">
-              <button type="button" class="cs-seg-btn${draft.gender === "male" ? " active" : ""}" data-gender="male">
+              <button type="button" class="cs-seg-btn${draft.gender === "boy" ? " active" : ""}" data-gender="boy">
                 <span>&#9794; Masculine Educator</span>
               </button>
-              <button type="button" class="cs-seg-btn${draft.gender === "female" ? " active" : ""}" data-gender="female">
+              <button type="button" class="cs-seg-btn${draft.gender === "girl" ? " active" : ""}" data-gender="girl">
                 <span>&#9792; Feminine Educator</span>
               </button>
             </div>
@@ -760,7 +761,7 @@ export function initSettingsModal(onSave?: (profile: CharacterProfile) => void):
             <div class="cs-section-head">
               <span class="cs-label">3D Educator Face &amp; Model Preset <span>Select realistic facial features</span></span>
             </div>
-            ${thumbGrid("headStyle", "head", HEAD_STYLES, draft.headStyle)}
+            ${thumbGrid("headStyle", "head", HEAD_STYLES, draft.headStyle || "")}
           </div>
         `;
         break;
@@ -769,17 +770,16 @@ export function initSettingsModal(onSave?: (profile: CharacterProfile) => void):
         const filteredHairs =
           hairFilter === "all"
             ? HAIR_STYLES
-            : HAIR_STYLES.filter((h) => h.category === hairFilter || h.id === "bald");
+            : HAIR_STYLES.filter((h) => h.category === hairFilter);
         tabBody.innerHTML = `
           <div class="cs-section">
             <div class="cs-section-head">
               <span class="cs-label">Hairstyles <span>Native Avaturn hair</span></span>
             </div>
             <div class="cs-filter-bar">
-              <button type="button" class="cs-filter-pill${hairFilter === "all" ? " active" : ""}" data-hair-filter="all">All Styles (${HAIR_STYLES.length})</button>
-              <button type="button" class="cs-filter-pill${hairFilter === "male" ? " active" : ""}" data-hair-filter="male">Masculine / Short</button>
-              <button type="button" class="cs-filter-pill${hairFilter === "female" ? " active" : ""}" data-hair-filter="female">Feminine / Long</button>
-              <button type="button" class="cs-filter-pill${hairFilter === "unisex" ? " active" : ""}" data-hair-filter="unisex">Unisex</button>
+              <button type="button" class="cs-filter-pill${hairFilter === "boy" ? " active" : ""}" data-hair-filter="boy">Masculine / Short</button>
+              <button type="button" class="cs-filter-pill${hairFilter === "girl" ? " active" : ""}" data-hair-filter="girl">Feminine / Long</button>
+              <button type="button" class="cs-filter-pill${hairFilter === "all" ? " active" : ""}" data-hair-filter="all">All</button>
             </div>
             ${thumbGrid("hairStyle", "hair", filteredHairs, draft.hairStyle)}
           </div>
@@ -795,7 +795,7 @@ export function initSettingsModal(onSave?: (profile: CharacterProfile) => void):
             <div class="cs-section-head">
               <span class="cs-label">3D Educator Face Preset <span>Photorealistic facial identity</span></span>
             </div>
-            ${thumbGrid("headStyle", "head", HEAD_STYLES, draft.headStyle)}
+            ${thumbGrid("headStyle", "head", HEAD_STYLES, draft.headStyle || "")}
           </div>
 
           ${colorSection("Skin Tone", "Natural complexion tint", "skinTone", SKIN_TONES, draft.skinTone)}
@@ -804,10 +804,10 @@ export function initSettingsModal(onSave?: (profile: CharacterProfile) => void):
             <div class="cs-section-head">
               <span class="cs-label">3D Eyewear &amp; Glasses <span>Includes Avaturn designer frames</span></span>
             </div>
-            ${thumbGrid("glasses", "glasses", GLASSES_OPTIONS, draft.glasses)}
+            ${thumbGrid("glasses", "glasses", GLASSES_OPTIONS, draft.glasses || "")}
           </div>
 
-          ${colorSection("Eyewear Frame Color", "Tints glasses frames", "glassesColor", GLASSES_COLORS, draft.glassesColor)}
+          ${colorSection("Eyewear Frame Color", "Tints glasses frames", "glassesColor", GLASSES_COLORS, draft.glassesColor || "")}
         `;
         break;
 
@@ -826,13 +826,13 @@ export function initSettingsModal(onSave?: (profile: CharacterProfile) => void):
 
       case "bottom":
         tabBody.innerHTML = `
-          ${colorSection("Trousers / Bottom Color", "Tailored slacks, denim, khaki & charcoal", "pantsColor", PANTS_COLORS, draft.pantsColor)}
+          ${colorSection("Trousers / Bottom Color", "Tailored slacks, denim, khaki & charcoal", "pantsColor", PANTS_COLORS, draft.pantsColor || "")}
         `;
         break;
 
       case "shoes":
         tabBody.innerHTML = `
-          ${colorSection("Footwear Color", "Primary dress shoe & sneaker color", "shoesColor", SHOE_COLORS, draft.shoesColor)}
+          ${colorSection("Footwear Color", "Primary dress shoe & sneaker color", "shoesColor", SHOE_COLORS, draft.shoesColor || "")}
         `;
         break;
 
@@ -842,10 +842,10 @@ export function initSettingsModal(onSave?: (profile: CharacterProfile) => void):
             <div class="cs-section-head">
               <span class="cs-label">3D Eyewear &amp; Glasses <span>Frames &amp; shades</span></span>
             </div>
-            ${thumbGrid("glasses", "glasses", GLASSES_OPTIONS, draft.glasses)}
+            ${thumbGrid("glasses", "glasses", GLASSES_OPTIONS, draft.glasses || "")}
           </div>
 
-          ${colorSection("Eyewear Frame Color", "Tints glasses frames", "glassesColor", GLASSES_COLORS, draft.glassesColor)}
+          ${colorSection("Eyewear Frame Color", "Tints glasses frames", "glassesColor", GLASSES_COLORS, draft.glassesColor || "")}
         `;
         break;
 
@@ -958,14 +958,14 @@ export function initSettingsModal(onSave?: (profile: CharacterProfile) => void):
         setCameraView("full");
 
         const currentHairObj = HAIR_STYLES.find((h) => h.id === draft.hairStyle);
-        if (g === "female") {
+        if (g === "girl") {
           draft.facialHair = "none";
-          if (currentHairObj?.category === "male") {
-            draft.hairStyle = "Hair.LongWaves";
+          if (currentHairObj?.category === "boy") {
+            draft.hairStyle = "hair-long";
           }
         } else {
-          if (currentHairObj?.category === "female") {
-            draft.hairStyle = "Hair.Afro";
+          if (currentHairObj?.category === "girl") {
+            draft.hairStyle = "hair-afro";
           }
         }
       }
@@ -982,7 +982,7 @@ export function initSettingsModal(onSave?: (profile: CharacterProfile) => void):
       if (sameHex(draft.shirtColor, prevDefault)) {
         draft.shirtColor = HOMEROOM_INFO[hr].shirtColor;
       }
-      if (sameHex(draft.hatColor, prevDefault)) {
+      if (sameHex(draft.hatColor || "", prevDefault)) {
         draft.hatColor = HOMEROOM_INFO[hr].shirtColor;
       }
       renderBody();

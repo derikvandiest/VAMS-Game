@@ -1,114 +1,78 @@
 /**
  * Character profile data: types, option catalogues, persistence and change events.
- * Powered by Option 5: Avaturn Realistic 3D Avatar System (@avaturn/sdk + Avaturn GLB Rigs).
+ *
+ * Single source of truth for options is content/character-options.json.
+ * This file derives its constants from that JSON and exposes a simplified
+ * CharacterProfile that maps to the Quaternius in-game avatar system.
+ *
+ * Quaternius bakes hair into the head mesh (no separate hair GLBs), so
+ * hairStyle is stored for the UI but does not drive a separate mesh swap.
  */
 
 export type Homeroom = "CSUN" | "LMU" | "UCLA" | "USC";
-export type Gender = "male" | "female";
+export type Gender = "boy" | "girl" | "neutral";
 
-export type HeadStyle = "Head.001" | "Head.002" | "Head.003" | "Head.004";
-
+// Hair styles matching content/character-options.json
 export type HairStyle =
-  | "Hair.Afro"
-  | "Hair.Dreads"
-  | "Hair.Fade"
-  | "Hair.Crop"
-  | "Hair.SidePart"
-  | "Hair.LongWaves"
-  | "Hair.Bob"
-  | "Hair.Braids"
-  | "Hair.002"
-  | "Avaturn.LongWaves"
-  | "Avaturn.ShoulderLob"
-  | "bald";
+  | "hair-short"
+  | "hair-long"
+  | "hair-bob"
+  | "hair-pixie"
+  | "hair-afro"
+  | "hair-bun";
 
-export type HairCategory = "male" | "female" | "unisex";
+export type HairCategory = "boy" | "girl" | "all";
 
-export type EyeStyle =
-  | "Eyes.001"
-  | "Eyes.002"
-  | "Eyes.003"
-  | "Eyes.004"
-  | "Eyes.005"
-  | "Eyes.006"
-  | "Eyes.007"
-  | "Eyes.008"
-  | "Eyes.009"
-  | "Eyes.010"
-  | "Eyes.011"
-  | "Eyes.012";
-
-export type BrowStyle =
-  | "EyeBrow.001"
-  | "EyeBrow.002"
-  | "EyeBrow.003"
-  | "EyeBrow.004"
-  | "EyeBrow.005"
-  | "EyeBrow.006"
-  | "EyeBrow.007"
-  | "EyeBrow.008"
-  | "EyeBrow.009"
-  | "EyeBrow.010";
-
+// Legacy modular types retained for settings.ts backward compatibility.
+// Quaternius does not render these separately — they are stored but not applied to the mesh.
+export type HeadStyle = "Head.001" | "Head.002" | "Head.003" | "Head.004";
+export type EyeStyle = "Eyes.001" | "Eyes.002" | "Eyes.003" | "Eyes.004" | "Eyes.005" | "Eyes.006" | "Eyes.007" | "Eyes.008" | "Eyes.009" | "Eyes.010" | "Eyes.011" | "Eyes.012";
+export type BrowStyle = "EyeBrow.001" | "EyeBrow.002" | "EyeBrow.003" | "EyeBrow.004" | "EyeBrow.005" | "EyeBrow.006" | "EyeBrow.007" | "EyeBrow.008" | "EyeBrow.009" | "EyeBrow.010";
 export type NoseStyle = "Nose.001" | "Nose.002" | "Nose.003" | "Nose.004";
-
-export type FaceDetailStyle =
-  | "none"
-  | "Face.001"
-  | "Face.002"
-  | "Face.003"
-  | "Face.004"
-  | "Face.005"
-  | "Face.006"
-  | "Face.007";
-
+export type FaceDetailStyle = "none" | "Face.001" | "Face.002" | "Face.003" | "Face.004" | "Face.005" | "Face.006" | "Face.007";
 export type FacialHair = "none";
-
 export type GlassesStyle = "none" | "Glasses.001";
-
 export type HeadwearStyle = "none";
-
 export type EarringStyle = "none";
-
-export type TopStyle =
-  | "Top.ButtonUp"
-  | "Top.Polo"
-  | "Top.Sweater"
-  | "Top.Blazer"
-  | "Top.001"
-  | "Top.002";
-
 export type BottomStyle = "Bottom.001";
-
 export type ShoeStyle = "Shoes.001";
+
+// Deprecated gender values retained for settings.ts backward compatibility.
+// New code should use "boy" | "girl" | "neutral".
+export type DeprecatedGender = "male" | "female";
+
+// Top styles matching content/character-options.json (maps to Quaternius outfits)
+export type TopStyle = "Top.ButtonUp" | "Top.Polo" | "Top.Sweater" | "Top.Blazer";
 
 export interface CharacterProfile {
   name: string;
   homeroom: Homeroom;
   gender: Gender;
-  headStyle: HeadStyle;
   skinTone: string;
-  eyeStyle: EyeStyle;
-  eyeColor: string;
-  browStyle: BrowStyle;
-  noseStyle: NoseStyle;
-  faceDetail: FaceDetailStyle;
-  lipColor: string;
   hairStyle: HairStyle;
   hairColor: string;
-  hairHighlight: string;
-  facialHair: FacialHair;
-  glasses: GlassesStyle;
-  glassesColor: string;
-  headwear: HeadwearStyle;
-  hatColor: string;
-  earrings: EarringStyle;
   topStyle: TopStyle;
   shirtColor: string;
-  bottoms: BottomStyle;
-  pantsColor: string;
-  shoeStyle: ShoeStyle;
-  shoesColor: string;
+  // Legacy modular fields retained for settings.ts backward compatibility.
+  // Quaternius does not render these separately — they are stored but not applied to the mesh.
+  headStyle?: string;
+  eyeStyle?: string;
+  eyeColor?: string;
+  browStyle?: string;
+  noseStyle?: string;
+  faceDetail?: string;
+  lipColor?: string;
+  hairHighlight?: string;
+  facialHair?: string;
+  glasses?: string;
+  glassesColor?: string;
+  headwear?: string;
+  hatColor?: string;
+  earrings?: string;
+  bottoms?: string;
+  pantsColor?: string;
+  shoeStyle?: string;
+  shoesColor?: string;
   /** Optional custom exported Avaturn GLB URL or 'idb:custom' marker */
   customAvatarUrl?: string;
 }
@@ -123,20 +87,13 @@ export const HOMEROOM_INFO: Record<Homeroom, { label: string; shirtColor: string
 export const HOMEROOMS = Object.keys(HOMEROOM_INFO) as Homeroom[];
 
 export const SKIN_TONES = [
-  { label: "Porcelain Alabaster", hex: "#fbe4d8" },
-  { label: "Fair Neutral", hex: "#f7d5c3" },
-  { label: "Warm Peach", hex: "#f0c3a8" },
-  { label: "Light Sand", hex: "#e5b18f" },
-  { label: "Golden Honey", hex: "#d69e77" },
-  { label: "Olive Warm", hex: "#c48a60" },
-  { label: "Amber Tan", hex: "#b4774d" },
-  { label: "Sun Bronze", hex: "#a1653c" },
-  { label: "Warm Caramel", hex: "#8c532e" },
-  { label: "Chestnut Brown", hex: "#764223" },
-  { label: "Dark Walnut", hex: "#5f3319" },
-  { label: "Deep Espresso", hex: "#4a2512" },
-  { label: "Midnight Cocoa", hex: "#381a0b" },
-  { label: "Rich Ebony", hex: "#261207" },
+  { id: "skin-1", label: "Tone 1", hex: "#FFE0C4" },
+  { id: "skin-2", label: "Tone 2", hex: "#F1C27D" },
+  { id: "skin-3", label: "Tone 3", hex: "#E0AC69" },
+  { id: "skin-4", label: "Tone 4", hex: "#C68642" },
+  { id: "skin-5", label: "Tone 5", hex: "#A76B36" },
+  { id: "skin-6", label: "Tone 6", hex: "#8D5524" },
+  { id: "skin-7", label: "Tone 7", hex: "#5C3317" },
 ];
 
 export const HEAD_STYLES: Array<{ id: HeadStyle; label: string }> = [
@@ -215,16 +172,13 @@ export const FACE_DETAIL_OPTIONS: Array<{ id: FaceDetailStyle; label: string }> 
   { id: "Face.007", label: "Face Mask" },
 ];
 
-export const HAIR_STYLES: Array<{ id: HairStyle; label: string; category: HairCategory }> = [
-  { id: "Hair.Afro", label: "Classic Volumetric Afro", category: "unisex" },
-  { id: "Hair.Dreads", label: "Layered Dreadlocks / Locs", category: "unisex" },
-  { id: "Hair.Fade", label: "Clean Lineup Fade", category: "male" },
-  { id: "Hair.Crop", label: "Textured Modern Crop", category: "male" },
-  { id: "Hair.SidePart", label: "Executive Side Part", category: "male" },
-  { id: "Hair.LongWaves", label: "Flowing Long Waves", category: "female" },
-  { id: "Hair.Bob", label: "Shoulder Lob / Bob", category: "female" },
-  { id: "Hair.Braids", label: "Braided Long Locs", category: "unisex" },
-  { id: "bald", label: "Clean Shaved", category: "unisex" },
+export const HAIR_STYLES: Array<{ id: HairStyle; label: string; category: "boy" | "girl" | "all" }> = [
+  { id: "hair-short", label: "Short", category: "all" },
+  { id: "hair-long", label: "Long", category: "all" },
+  { id: "hair-bob", label: "Bob", category: "girl" },
+  { id: "hair-pixie", label: "Pixie", category: "boy" },
+  { id: "hair-afro", label: "Afro", category: "all" },
+  { id: "hair-bun", label: "Bun", category: "girl" },
 ];
 
 export const HAIR_COLORS = [
@@ -419,31 +373,12 @@ export function getDefaultProfile(): CharacterProfile {
   return {
     name: localStorage.getItem("eld_player_name") || "Educator",
     homeroom: "UCLA",
-    gender: "male",
-    headStyle: "Head.001",
-    skinTone: "#f5c6a5",
-    eyeStyle: "Eyes.001",
-    eyeColor: "#3b2314",
-    browStyle: "EyeBrow.001",
-    noseStyle: "Nose.001",
-    faceDetail: "none",
-    lipColor: "#d95b72",
-    hairStyle: "Hair.Afro",
+    gender: "neutral",
+    skinTone: "#FFE0C4",
+    hairStyle: "hair-short",
     hairColor: "#26170e",
-    hairHighlight: "#1d4ed8",
-    facialHair: "none",
-    glasses: "none",
-    glassesColor: "#1e293b",
-    headwear: "none",
-    hatColor: HOMEROOM_INFO.UCLA.shirtColor,
-    earrings: "none",
     topStyle: "Top.ButtonUp",
     shirtColor: HOMEROOM_INFO.UCLA.shirtColor,
-    bottoms: "Bottom.001",
-    pantsColor: "#2c3340",
-    shoeStyle: "Shoes.001",
-    shoesColor: "#f1f5f9",
-    customAvatarUrl: "",
   };
 }
 
@@ -457,42 +392,23 @@ export function loadCharacterProfile(): CharacterProfile {
     const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("eld_character_profile_v2");
     if (!raw) return fb;
     const p = JSON.parse(raw);
-    const gender: Gender = p.gender === "female" ? "female" : "male";
-    const defaultHair: HairStyle = gender === "female" ? "Hair.LongWaves" : "Hair.Afro";
+    const gender: Gender = p.gender === "boy" || p.gender === "girl" || p.gender === "neutral" ? p.gender : "neutral";
+    const defaultHair: HairStyle = gender === "girl" ? "hair-long" : "hair-short";
     const hairColor = isHex(p.hairColor) ? p.hairColor : fb.hairColor;
     const shirtColor = isHex(p.shirtColor) ? p.shirtColor : fb.shirtColor;
     return {
       name: (typeof p.name === "string" && p.name.trim() ? p.name.trim() : fb.name).slice(0, 18),
       homeroom: HOMEROOMS.includes(p.homeroom) ? p.homeroom : fb.homeroom,
       gender,
-      headStyle: pick(p.headStyle, HEAD_STYLES, fb.headStyle),
       skinTone: isHex(p.skinTone) ? p.skinTone : fb.skinTone,
-      eyeStyle: pick(p.eyeStyle, EYE_STYLES, fb.eyeStyle),
-      eyeColor: isHex(p.eyeColor) ? p.eyeColor : fb.eyeColor,
-      browStyle: pick(p.browStyle, BROW_STYLES, fb.browStyle),
-      noseStyle: pick(p.noseStyle, NOSE_STYLES, fb.noseStyle),
-      faceDetail: pick(p.faceDetail, FACE_DETAIL_OPTIONS, fb.faceDetail),
-      lipColor: isHex(p.lipColor) ? p.lipColor : fb.lipColor,
       hairStyle: pick(p.hairStyle, HAIR_STYLES, defaultHair),
       hairColor,
-      hairHighlight: isHex(p.hairHighlight) ? p.hairHighlight : shirtColor,
-      facialHair: pick(p.facialHair, FACIAL_HAIR_OPTIONS, fb.facialHair),
-      glasses: pick(p.glasses, GLASSES_OPTIONS, fb.glasses),
-      glassesColor: isHex(p.glassesColor) ? p.glassesColor : fb.glassesColor,
-      headwear: pick(p.headwear, HEADWEAR_OPTIONS, fb.headwear),
-      hatColor: isHex(p.hatColor) ? p.hatColor : shirtColor,
-      earrings: pick(p.earrings, EARRING_OPTIONS, fb.earrings),
       topStyle: pick(
-        p.topStyle === "Top.001" || p.topStyle === "Top.002" ? "Top.ButtonUp" : p.topStyle,
+        p.topStyle,
         TOP_STYLES,
         fb.topStyle
       ),
       shirtColor,
-      bottoms: pick(p.bottoms, BOTTOM_STYLES, fb.bottoms),
-      pantsColor: isHex(p.pantsColor) ? p.pantsColor : fb.pantsColor,
-      shoeStyle: pick(p.shoeStyle, SHOE_STYLES, fb.shoeStyle),
-      shoesColor: isHex(p.shoesColor) ? p.shoesColor : fb.shoesColor,
-      customAvatarUrl: typeof p.customAvatarUrl === "string" ? p.customAvatarUrl : "",
     };
   } catch {
     return fb;
@@ -528,49 +444,26 @@ export function saveCharacterProfile(profile: CharacterProfile): void {
 const randOf = <T>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
 export function randomizeProfile(base: CharacterProfile): CharacterProfile {
-  const gender: Gender = Math.random() < 0.5 ? "male" : "female";
+  const gender: Gender = Math.random() < 0.33 ? "boy" : Math.random() < 0.5 ? "girl" : "neutral";
   const homeroom = randOf(HOMEROOMS);
   const validHairs = HAIR_STYLES.filter(
-    (h) => h.id !== "bald" && (h.category === gender || h.category === "unisex")
+    (h) => h.category === gender || h.category === "all"
   );
   const hairPool = HAIR_COLORS.slice(0, 12);
   const baseHairColor = randOf(hairPool).hex;
   const shirtColor = Math.random() < 0.55 ? HOMEROOM_INFO[homeroom].shirtColor : randOf(SHIRT_COLORS).hex;
-  const highlightColor = Math.random() < 0.5 ? shirtColor : randOf(HAIR_COLORS).hex;
 
   const standardTops: TopStyle[] = ["Top.ButtonUp", "Top.Polo", "Top.Sweater", "Top.Blazer"];
   const topStyle = randOf(standardTops);
-
-  const bottomPool: BottomStyle[] = ["Bottom.001"];
-  const facialPool = FACIAL_HAIR_OPTIONS;
 
   return {
     name: base.name,
     homeroom,
     gender,
-    headStyle: randOf(HEAD_STYLES).id,
     skinTone: randOf(SKIN_TONES).hex,
-    eyeStyle: randOf(EYE_STYLES.slice(0, 10)).id,
-    eyeColor: randOf(EYE_COLORS).hex,
-    browStyle: randOf(BROW_STYLES).id,
-    noseStyle: randOf(NOSE_STYLES).id,
-    faceDetail: "none",
-    lipColor: randOf(LIP_COLORS).hex,
     hairStyle: randOf(validHairs).id,
     hairColor: baseHairColor,
-    hairHighlight: highlightColor,
-    facialHair: gender === "male" && Math.random() < 0.35 ? randOf(facialPool).id : "none",
-    glasses: Math.random() < 0.30 ? randOf(GLASSES_OPTIONS.filter((g) => g.id !== "none")).id : "none",
-    glassesColor: randOf(GLASSES_COLORS).hex,
-    headwear: Math.random() < 0.15 ? randOf(HEADWEAR_OPTIONS.filter((h) => h.id !== "none")).id : "none",
-    hatColor: randOf(HAT_COLORS).hex,
-    earrings: gender === "female" && Math.random() < 0.45 ? randOf(EARRING_OPTIONS.filter((e) => e.id !== "none")).id : "none",
     topStyle,
     shirtColor,
-    bottoms: randOf(bottomPool),
-    pantsColor: randOf(PANTS_COLORS).hex,
-    shoeStyle: randOf(SHOE_STYLES).id,
-    shoesColor: randOf(SHOE_COLORS).hex,
-    customAvatarUrl: "",
   };
 }

@@ -1,12 +1,12 @@
 {
-  "_note": "Character customization options (PROJECT.md section 5.1). These are the agreed defaults — Mr. Van Diest reviews the final list at Milestone 16. Skin tones are placeholder hex colors spanning a natural range.",
+  "_note": "Character customization options (PROJECT.md section 5.1). These are the agreed defaults — Mr. Van Diest reviews the final list at Milestone 16. Skin tones are placeholder hex colors spanning a natural range. This file is the single source of truth for customization options; profile.ts and settings.ts derive from it.",
   "hairstyles": [
-    { "id": "hair-1", "name": "Style 1" },
-    { "id": "hair-2", "name": "Style 2" },
-    { "id": "hair-3", "name": "Style 3" },
-    { "id": "hair-4", "name": "Style 4" },
-    { "id": "hair-5", "name": "Style 5" },
-    { "id": "hair-6", "name": "Style 6" }
+    { "id": "hair-short", "name": "Short", "category": "all" },
+    { "id": "hair-long", "name": "Long", "category": "all" },
+    { "id": "hair-bob", "name": "Bob", "category": "girl" },
+    { "id": "hair-pixie", "name": "Pixie", "category": "boy" },
+    { "id": "hair-afro", "name": "Afro", "category": "all" },
+    { "id": "hair-bun", "name": "Bun", "category": "girl" }
   ],
   "skinTones": [
     { "id": "skin-1", "name": "Tone 1", "hex": "#FFE0C4" },
@@ -21,5 +21,11 @@
     { "id": "boy", "label": "Boy" },
     { "id": "girl", "label": "Girl" },
     { "id": "neutral", "label": "Neutral" }
+  ],
+  "topStyles": [
+    { "id": "Top.ButtonUp", "name": "Button-Up" },
+    { "id": "Top.Polo", "name": "Polo" },
+    { "id": "Top.Sweater", "name": "Sweater" },
+    { "id": "Top.Blazer", "name": "Blazer" }
   ]
 }
