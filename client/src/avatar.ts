@@ -56,13 +56,8 @@ export interface AvatarRig {
   setLocomotion?: (speed: number) => void;
   /** World-space targets for the left/right hand (ball handling). null releases that arm back to the animation. */
   setHands?: (left: THREE.Vector3 | null, right: THREE.Vector3 | null) => void;
-  /** Start a soccer kick with the right leg; `yaw` = direction of the ball relative to where the character faces. */
-  kick?: (yaw: number) => void;
 }
 
-/** Seconds from the start of a kick until the foot meets the ball. */
-export const KICK_STRIKE_TIME = 0.2;
-const KICK_DURATION = 0.5;
 
 // ---------------------------------------------------------------------------
 // Looks: each look (content/character-options.json) is one Quaternius model.
@@ -335,12 +330,10 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
   let smoothSpeed = 0;
   let gaitPhase = 0; // 0..1 position in the shared walk/run cycle
   let gait = { walkCycle: 1.85, runCycle: 1.15, walkDur: 1.33, runDur: 0.8 }; // measured per model (native units)
-  // Ball handling: world-space hand targets (scene) and a timed kick
+  // Ball handling: world-space hand targets (scene)
   const handTarget: Array<THREE.Vector3 | null> = [null, null];
   let handStamp = 0;
   const handW = [0, 0];
-  let kickT = -1; // seconds since the kick started (-1 = not kicking)
-  let kickYaw = 0;
   let lastBob = 0; // torsoGroup bob already applied to bodyGroup
   let lastSyncMs = 0; // per rig: each rig has its own clock
   let seatBlend = 0; // 0 = standing animation, 1 = fully in the seated pose
@@ -901,7 +894,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
 
   // ---------------------------------------------------------------------------
   // Ball handling. Arms are solved with two-bone IK to reach world-space hand targets (dribbling, holding,
-  // shooting); a soccer kick swings the right leg through wind-up, strike and follow-through.
+  // shooting).
   // ---------------------------------------------------------------------------
   function applyHands(): void {
     const s = sitBones;
@@ -935,38 +928,6 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
       aimBone(arm.up, arm.lo, null, elbow.clone().sub(shoulder), w, true);
       aimBone(arm.lo, hand, null, target.clone().sub(elbow), w, true);
     });
-  }
-
-  // Kick keyframes (player space, +z forward): [progress, thigh direction, shin direction]
-  const KICK_KEYS: Array<[number, number[], number[]]> = [
-    [0.0, [-0.05, -1, 0.0], [0, -1, 0]],
-    [0.2, [-0.05, -0.95, -0.3], [0, -0.1, -1]], // wind-up: thigh back, knee bent, heel up behind
-    [0.32, [-0.05, -0.8, 0.55], [0, -0.95, -0.15]], // thigh drives forward, the shin lags behind
-    [0.4, [-0.05, -0.75, 0.65], [0, -0.7, 0.7]], // strike: shin snaps through, foot meets the ball low
-    [0.55, [-0.05, -0.35, 0.93], [0, -0.3, 0.95]], // follow-through: leg swings up
-    [1.0, [-0.05, -1, 0.1], [0, -1, 0.05]],
-  ];
-  function kickKey(p: number): { thigh: THREE.Vector3; shin: THREE.Vector3 } {
-    let i = 0;
-    while (i < KICK_KEYS.length - 2 && p > KICK_KEYS[i + 1][0]) i++;
-    const [p0, t0, s0] = KICK_KEYS[i];
-    const [p1, t1, s1] = KICK_KEYS[i + 1];
-    const f = Math.min(1, Math.max(0, (p - p0) / (p1 - p0)));
-    const e = f * f * (3 - 2 * f);
-    const mix = (a: number[], b: number[]) => new THREE.Vector3(a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e, a[2] + (b[2] - a[2]) * e).normalize();
-    return { thigh: mix(t0, t1), shin: mix(s0, s1) };
-  }
-  function applyKick(): void {
-    const s = sitBones;
-    if (!s || kickT < 0) return;
-    const p = kickT / KICK_DURATION;
-    const w = Math.min(1, p / 0.12, (1 - p) / 0.2);
-    if (w <= 0.001) return;
-    const { thigh, shin } = kickKey(p);
-    const yawQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), kickYaw);
-    player.updateMatrixWorld(true);
-    aimBone(s.upLegR, s.loLegR, null, thigh.applyQuaternion(yawQ), w);
-    aimBone(s.loLegR, null, footRest.R, shin.applyQuaternion(yawQ), w);
   }
 
   // ---------------------------------------------------------------------------
@@ -1051,16 +1012,11 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     if (seatBlend > 0.998) seatBlend = 1;
     applySeatedPose(seatBlend);
 
-    // Ball handling: blend hands in/out, advance the kick
+    // Ball handling: blend hands in/out
     const handsLive = nowMs - handStamp < 250 && !isSeated;
     for (let i = 0; i < 2; i++) handW[i] += (((handsLive && handTarget[i]) ? 1 : 0) - handW[i]) * Math.min(1, dt * 14);
-    if (kickT >= 0) {
-      kickT += dt;
-      if (kickT >= KICK_DURATION) kickT = -1;
-    }
     if (!isSeated) {
       applyHands();
-      applyKick();
     }
 
     glueFeet();
@@ -1128,11 +1084,6 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
       handTarget[0] = left ? left.clone() : null;
       handTarget[1] = right ? right.clone() : null;
       handStamp = typeof performance !== "undefined" ? performance.now() : 0;
-    },
-    kick: (yaw: number) => {
-      if (kickT >= 0) return;
-      kickT = 0;
-      kickYaw = Math.max(-1.2, Math.min(1.2, yaw));
     },
     setLocomotion: (speed: number) => {
       locoSpeed = speed;

@@ -25,7 +25,7 @@ import {
   getAllClassroomIds,
   ClassroomInstance,
 } from "./classrooms";
-import { createAvatarRig, GAME_AVATAR_SCALE, KICK_STRIKE_TIME } from "./avatar";
+import { createAvatarRig, GAME_AVATAR_SCALE } from "./avatar";
 import { loadCharacterProfile, onProfileChange } from "./profile";
 import { initSettingsModal } from "./settings";
 
@@ -3796,9 +3796,6 @@ export function startPlaceholderScene(
 
   const ballPos = new THREE.Vector3(field.center.x, BALL_GROUND_Y, field.center.z);
   const ballVel = new THREE.Vector3(0, 0, 0);
-  let kickActive = false; // a kick animation is playing; the ball is struck when the foot arrives
-  let kickTimer = 0;
-  let kickCooldown = 0;
   const ballOrientation = new THREE.Quaternion();
   let goalCelebrationTimer = 0;
 
@@ -7722,42 +7719,28 @@ export function startPlaceholderScene(
       const minBallDist = PLAYER_RADIUS + BALL_RADIUS;
       const playerNearGround = player.position.y <= ballPos.y + 0.6;
 
-      kickCooldown = Math.max(0, kickCooldown - dt);
-      const kickReach = minBallDist * 1.5;
-      if (kickActive) {
-        kickTimer += dt;
-        if (kickTimer >= KICK_STRIKE_TIME) {
-          kickActive = false;
-          kickCooldown = 0.3;
-          if (distToPlayer < kickReach && playerNearGround) {
-            const bnx = distToPlayer > 0.0001 ? bdx / distToPlayer : 0;
-            const bnz = distToPlayer > 0.0001 ? bdz / distToPlayer : 1;
-            const pLen = Math.hypot(moveX, moveZ);
-            const moveNx = pLen > 0.001 ? moveX / pLen : 0;
-            const moveNz = pLen > 0.001 ? moveZ / pLen : 0;
-            const kickDirX = bnx * 0.65 + (moving ? moveNx * 0.55 : 0);
-            const kickDirZ = bnz * 0.65 + (moving ? moveNz * 0.55 : 0);
-            const kLen = Math.hypot(kickDirX, kickDirZ) || 1;
-            const kickPower = moving ? (keys.has("shift") ? 14.5 : 7.5) : 4.2;
-            ballVel.x = (kickDirX / kLen) * kickPower;
-            ballVel.z = (kickDirZ / kLen) * kickPower;
-            ballVel.y = moving ? (keys.has("shift") ? 3.6 : 1.4) : 0.6;
-          }
-        }
-      } else if (distToPlayer < minBallDist && playerNearGround && kickCooldown <= 0) {
-        // Start the kick animation; the ball is struck when the foot reaches it
-        kickActive = true;
-        kickTimer = 0;
-        let yaw = Math.atan2(bdx, bdz) - player.rotation.y;
-        yaw = Math.atan2(Math.sin(yaw), Math.cos(yaw));
-        rig.kick?.(yaw);
-      } else if (distToPlayer < minBallDist && playerNearGround) {
-        // Just kicked: keep the ball from sinking into the player while it flies off
+      if (distToPlayer < minBallDist && playerNearGround) {
         const bnx = distToPlayer > 0.0001 ? bdx / distToPlayer : 0;
         const bnz = distToPlayer > 0.0001 ? bdz / distToPlayer : 1;
         const overlap = minBallDist - distToPlayer;
+
         ballPos.x += bnx * overlap;
         ballPos.z += bnz * overlap;
+
+        const pLen = Math.hypot(moveX, moveZ);
+        const moveNx = pLen > 0.001 ? moveX / pLen : 0;
+        const moveNz = pLen > 0.001 ? moveZ / pLen : 0;
+
+        const kickDirX = bnx * 0.65 + (moving ? moveNx * 0.55 : 0);
+        const kickDirZ = bnz * 0.65 + (moving ? moveNz * 0.55 : 0);
+        const kLen = Math.hypot(kickDirX, kickDirZ) || 1;
+        const kNx = kickDirX / kLen;
+        const kNz = kickDirZ / kLen;
+
+        const kickPower = moving ? (keys.has("shift") ? 14.5 : 7.5) : 3.2;
+        ballVel.x = kNx * kickPower;
+        ballVel.z = kNz * kickPower;
+        ballVel.y = moving ? (keys.has("shift") ? 3.6 : 1.4) : 0.4;
       }
     }
 
