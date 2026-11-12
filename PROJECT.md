@@ -129,7 +129,7 @@ Details:
   - Many players can be inside the **same classroom** at once. Entry positions must be spread out so avatars don’t stack on one spot, and rooms must be big enough to look reasonable with 10+ players.
   - Wandering/patrolling NPCs, if any, must appear in the **same place for everyone** (server-driven or deterministic), not different per player.
   - The game must stay smooth with 50 avatars on screen (see Section 9).
-- **Action key = E** (talk, doors, gate, sit, drive). **Spacebar jumps.**
+- **Action key = E** (talk, doors, gate, sit, drive).
 - **Interact:** when near an NPC, show a prompt (“Press E to talk”). **E** starts the conversation and **E** advances each line of dialogue. The player cannot move while in dialogue.
 - **No free-text chat between players [DEFAULT].** Players communicate only through **emojis** (Section 5.13).
 

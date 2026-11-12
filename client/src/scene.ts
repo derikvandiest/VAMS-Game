@@ -6812,17 +6812,6 @@ export function startPlaceholderScene(
   // --- Interaction States: Table Seating & Vehicle Driving ---------------
   let seatedChair: ChairSlot | null = null;
 
-  // --- Jumping (Space): simple vertical physics on top of the ground height ---
-  const JUMP_SPEED = 6.4; // initial upward speed (world units/s) -> about 0.9 units high
-  const GRAVITY = 22;
-  let jumpH = 0; // height above the ground
-  let jumpV = 0;
-  let airborne = false;
-  function tryJump(): void {
-    if (airborne || seatedChair || drivingCar) return;
-    airborne = true;
-    jumpV = JUMP_SPEED;
-  }
   let drivingCar: DrivableCar | null = null;
 
   function standUp(): void {
@@ -6878,8 +6867,6 @@ export function startPlaceholderScene(
       bballVel.set(0, 0, 0);
     }
     seatedChair = chair;
-    airborne = false;
-    jumpH = 0;
     // Align with chair seat and backrest
     const seatBackOffset = 0.08;
     const seatedX = chair.chairX - Math.sin(chair.facingAngle) * seatBackOffset;
@@ -7130,7 +7117,7 @@ export function startPlaceholderScene(
       keys.add("shift");
     }
     // E is the action key: stand up / leave the car, shoot a held basketball, use doors and the gate,
-    // press the car reset button, sit in a chair or get into a car. Space jumps.
+    // press the car reset button, sit in a chair or get into a car.
     if (e.code === "KeyE") {
       e.preventDefault();
       const distToCarResetBtn = Math.hypot(player.position.x - CAR_RESET_BTN_X, player.position.z - CAR_RESET_BTN_Z);
@@ -7229,7 +7216,6 @@ export function startPlaceholderScene(
     }
     if (e.code === "Space") {
       e.preventDefault(); // never scroll the page
-      if (!e.repeat) tryJump();
       return;
     }
     if (e.key.toLowerCase() === "f") {
@@ -7662,19 +7648,8 @@ export function startPlaceholderScene(
 
       if (!moving) rig.setLocomotion?.(0);
 
-      // Jump physics: stay in the air until the height returns to the ground
-      if (airborne) {
-        jumpV -= GRAVITY * dt;
-        jumpH += jumpV * dt;
-        if (jumpH <= 0 && jumpV < 0) {
-          jumpH = 0;
-          airborne = false;
-        }
-      }
-      rig.setAirborne?.(airborne, jumpV);
       const targetY = targetFloorY(player.position.x, player.position.z);
-      const baseY = player.position.y - jumpH; // ground height under the player (before this frame's jump)
-      player.position.y = baseY + (targetY - baseY) * Math.min(1, dt * 12) + jumpH;
+      player.position.y += (targetY - player.position.y) * Math.min(1, dt * 12);
       bodyGroup.position.y = 0; // the walk/run clips carry their own bounce
       void bob;
     }

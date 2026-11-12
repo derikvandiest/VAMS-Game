@@ -3,7 +3,7 @@
 A browser-based, Habbo Hotel–style 3D multiplayer game used in teacher professional development.
 The full specification lives in [PROJECT.md](PROJECT.md) — that file is the source of truth.
 
-**Current status:** Milestone 2 — single-player prototype: walk a two-story campus (two L-shaped buildings around a grass field, parking lot to the west), climb exterior stairs to second floors with walkways to the upstairs classrooms, orbit the camera, click the compass to face north, sprint with Shift, zoom with the scroll wheel, and open/close the gate between the buildings with **E**, and jump with **Spacebar**.
+**Current status:** Milestone 2 — single-player prototype: walk a two-story campus (two L-shaped buildings around a grass field, parking lot to the west), climb exterior stairs to second floors with walkways to the upstairs classrooms, orbit the camera, click the compass to face north, sprint with Shift, zoom with the scroll wheel, and open/close the gate between the buildings with **E**.
 
 ---
 
@@ -37,7 +37,6 @@ Your blue character starts in the parking lot. Press **W A S D** (or the arrow k
 | Clamp to north | Click the **compass** (top-left) to snap the view to north-up |
 | Zoom | **Scroll wheel** zooms smoothly from a close-up of your character to a campus overview; right-drag up/down tilts the view |
 | Open / close the gate | **E** when standing within ~3.5 units of the gate |
-| Jump | **Spacebar** |
 | Sit / stand, get in / out of a car | **E** near a chair or car |
 | Kick soccer ball | Walk or sprint into the ball on the grass field |
 | Pick up basketball | Walk over the ball on the basketball court |
