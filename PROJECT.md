@@ -76,9 +76,9 @@ Do not put any secret keys in client code. Use environment variables, and provid
 The player creates a character before entering. Fields:
 
 - **Name** — text input (max ~16 characters). Apply a basic profanity/inappropriate-name filter. Required.
-- **Haircut** — choose from several options **[DEFAULT: 6 styles; I will review]**.
+- **Look** (replaces "Haircut") — choose from several pre-made characters **[DEFAULT: 3 per gender, 6 total; I will review]**. Quaternius models have hair baked in, so each look is one model (outfit + hairstyle + face), plus a separate **hair color** picker.
 - **Skin color** — a palette **[DEFAULT: 6–8 tones]**.
-- **Gender** — options for the character body/appearance **[DEFAULT: Boy, Girl, and a neutral/other option; labels editable]**.
+- **Gender** — body/appearance options **[DECIDED: Masculine and Feminine; no neutral option; labels editable]**.
 - **There is NO shirt-color picker.** Shirt color comes from the homeroom chosen next.
 - A **live 3D preview** of the character that updates as choices change (rotatable or auto-turning).
 - Be careful that typing a name does not trigger game hotkeys (WASD, M, R, E, Space).
@@ -339,7 +339,7 @@ All editable content must be in JSON (or similar) files under `/content`, valida
 - `dialogues.json` — arrays of lines per dialogue id, with speaker
 - `quizzes.json` — per stamp classroom: one or more questions; each has text, 2–4 choices, correct answer index, optional feedback for incorrect answers (that does not reveal the answer). **This file lives on the server only; correct answers are never sent to the browser.**
 - `homerooms.json` — CSUN (yellow), LMU (green), UCLA (blue), USC (red) with exact hex colors
-- `character-options.json` — hairstyles, skin tones, gender options
+- `character-options.json` — looks (models), hair colors, skin tones, gender options
 - `emojis.json` — the preset emoji list
 - `settings.json` — max players, walking speed, certificate text/layout, email subject/body, time-budget thresholds, etc.
 
@@ -477,5 +477,5 @@ Decisions made by Mr. Van Diest during planning. Where these disagree with earli
 14. **No staff photos will ever be provided.** `/assets/npc-photos` stays empty and gitignored; NPCs use generic looks and generic portraits unless Mr. Van Diest supplies finished portrait PNGs himself. (Supersedes the section 8 photo pipeline.)
 15. **Language: TypeScript** (section 2 allowed either).
 16. **Connection timing resolved:** the player connects to the server right after confirming the homeroom, stays hidden and frozen during the arrival animation, and appears at the gate when it ends. (Resolves section 5.3 vs section 9.)
-17. **Character customization defaults:** 6 hairstyles, 7 skin tones, Boy / Girl / Neutral labels — editable in `content/character-options.json`; reviewed at Milestone 16. (Sets the section 5.1 defaults.)
+17. **Character customization defaults:** 19 looks (9 masculine, 10 feminine), 7 hairstyles per gender plus facial hair, 5 hats, 3 glasses, 5 shoe styles, 8 hair colors, 7 skin tones, Masculine / Feminine labels — editable in `content/character-options.json`; reviewed at Milestone 16. (Sets the section 5.1 defaults.)
 

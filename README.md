@@ -35,7 +35,7 @@ Your blue character starts in the parking lot. Press **W A S D** (or the arrow k
 | Sprint | Hold **Shift** (×2.5× speed while held) |
 | Look around | **Right-click + drag** to orbit the camera around you (rotates / raises-lowers) |
 | Clamp to north | Click the **compass** (top-left) to snap the view to north-up |
-| Zoom | **Scroll wheel** zooms in/out (clamped to 12–55 units) |
+| Zoom | **Scroll wheel** zooms smoothly from a close-up of your character to a campus overview; right-drag up/down tilts the view |
 | Open / close the gate | **Spacebar** when standing within ~3.5 units of the gate |
 | Kick soccer ball | Walk or sprint into the ball on the grass field |
 | Pick up basketball | Walk over the ball on the basketball court |
@@ -80,7 +80,7 @@ Open **Terminal** (⌘+Space, type "Terminal"), `cd` into the project folder, an
 | Sprint | Hold **Shift** (×2.5× speed while held) |
 | Look around | **Right-click + drag** to orbit the camera around you (rotates / raises-lowers) |
 | Clamp to north | Click the **compass** (top-left) to snap the view to north-up |
-| Zoom | **Scroll wheel** zooms in/out (clamped to 12–55 units) |
+| Zoom | **Scroll wheel** zooms smoothly from a close-up of your character to a campus overview; right-drag up/down tilts the view |
 | Shoot basketball | Press **Spacebar** or **Click** (or **F** / **E**) while holding basketball |
 | Reset soccer & basketball | Walk onto the **water runoff vent** in the bottom-right corner of the grass (or press **B**) |
 | Sit at table | Press **E** near any chair (press **E** or **WASD** to stand) |

@@ -25,7 +25,7 @@ import {
   getAllClassroomIds,
   ClassroomInstance,
 } from "./classrooms";
-import { createAvatarRig } from "./avatar";
+import { createAvatarRig, GAME_AVATAR_SCALE } from "./avatar";
 import { loadCharacterProfile, onProfileChange } from "./profile";
 import { initSettingsModal } from "./settings";
 
@@ -124,13 +124,11 @@ const PLAYER_HEIGHT = 2.4; // used for height-aware collision
 // at them. `camAngle` is the orbit angle in radians measured so that angle 0
 // points the camera due SOUTH of the player looking NORTH (north-up on screen).
 const CAM_DISTANCE = 30; // horizontal distance from player to camera (default zoom)
-const MIN_ZOOM = 12; // scroll-wheel zoom limits (README controls)
-const MAX_ZOOM = 75;
+const MIN_ZOOM = 3.2; // scroll-wheel zoom limits: close-up on the character ...
+const MAX_ZOOM = 50; // ... out to a campus overview (horizontal distance from the player)
 const CAM_HEIGHT = 26; // camera height above the ground
 const NORTH_UP_ANGLE = -Math.PI / 2; // North is where the buses are parked (+X), camera sits at -X looking +X
 const DEFAULT_CAM_ANGLE = NORTH_UP_ANGLE; // north-up: facing the buses
-const MIN_ELEVATION = 12; // closest to top-down when dragging down
-const MAX_ELEVATION = 40; // furthest from top-down when dragging up
 
 export interface SceneController {
   stop: () => void;
@@ -6579,7 +6577,7 @@ export function startPlaceholderScene(
 
   // --- Player character: shared procedural avatar rig (see avatar.ts) ------
   // The character studio preview uses the exact same builder, so what you design is what you get.
-  const rig = createAvatarRig({ nameTag: true });
+  const rig = createAvatarRig({ nameTag: true, scale: GAME_AVATAR_SCALE });
   const {
     player,
     bodyGroup,
@@ -6604,6 +6602,18 @@ export function startPlaceholderScene(
   let camAngle = DEFAULT_CAM_ANGLE; // orbit angle (radians)
   let camElevation = CAM_HEIGHT; // camera height (adjustable by dragging)
   let camDistance = CAM_DISTANCE; // camera distance (adjustable by scrolling)
+
+  // Zoom model: the wheel sets a goal distance and the camera eases toward it. The viewing
+  // angle follows the zoom (low and close behind the character when zoomed in, steeper when
+  // zoomed out), and dragging up/down adds a small tilt on top (`pitchBias`).
+  // Code elsewhere may still assign camDistance / camElevation directly (resets, room
+  // entry): the frame loop notices and adopts those values as the new defaults.
+  let zoomGoal = CAM_DISTANCE;
+  let pitchBias = 0;
+  let refDist = CAM_DISTANCE; // distance at which `basePitch` applies
+  let basePitch = Math.atan2(CAM_HEIGHT, CAM_DISTANCE);
+  let seenDist = camDistance;
+  let seenElev = camElevation;
 
   // Capture all existing outdoor objects before creating MPR room
   const outdoorObjects = new Set<THREE.Object3D>(scene.children);
@@ -6864,7 +6874,7 @@ export function startPlaceholderScene(
     player.rotation.y = chair.facingAngle;
 
     // Drop body so pelvis rests directly on top of the chair seat surface
-    const buttDrop = (chair.seatY + 0.01) - 0.68;
+    const buttDrop = rig.seatDrop ? rig.seatDrop(chair.seatY) : (chair.seatY + 0.01) - 0.68;
     bodyGroup.position.y = buttDrop;
     bodyGroup.rotation.set(0, 0, 0);
     torsoGroup.rotation.set(0.06, 0, 0);
@@ -6904,7 +6914,7 @@ export function startPlaceholderScene(
     rightArmPivot.rotation.set(-0.75, 0, 0.15);
     leftElbowPivot.rotation.set(-0.45, 0, 0);
     rightElbowPivot.rotation.set(-0.45, 0, 0);
-    bodyGroup.position.y = 0;
+    bodyGroup.position.y = rig.seatDrop ? rig.seatDrop(0.37 / 0.55) : 0;
     rig.syncSkeleton?.();
   }
 
@@ -7036,8 +7046,11 @@ export function startPlaceholderScene(
     (e) => {
       e.preventDefault();
       const maxZ = inMprRoom ? 18.0 : (currentClassroom ? 15.0 : MAX_ZOOM);
-      const minZ = inMprRoom ? 6.0 : (currentClassroom ? 5.0 : MIN_ZOOM);
-      camDistance = Math.min(maxZ, Math.max(minZ, camDistance + e.deltaY * 0.05));
+      const minZ = MIN_ZOOM;
+      // Proportional (exponential) zoom feels the same at every distance. Normalise line-based
+      // wheels, and make Mac trackpad pinch (ctrl+wheel) a little stronger.
+      const delta = e.deltaY * (e.deltaMode === 1 ? 16 : 1) * (e.ctrlKey ? 3 : 1);
+      zoomGoal = Math.min(maxZ, Math.max(minZ, zoomGoal * Math.exp(delta * 0.0014)));
     },
     { passive: false }
   );
@@ -7068,7 +7081,7 @@ export function startPlaceholderScene(
     lastMouseX = e.clientX;
     lastMouseY = e.clientY;
     camAngle -= dx * 0.005; // horizontal drag orbits around the player
-    camElevation = Math.min(MAX_ELEVATION, Math.max(MIN_ELEVATION, camElevation + dy * 0.05));
+    pitchBias = Math.min(0.45, Math.max(-0.45, pitchBias + dy * 0.004)); // drag down = steeper view
   });
 
   window.addEventListener("mouseup", () => {
@@ -7520,7 +7533,7 @@ export function startPlaceholderScene(
       rightArmPivot.rotation.set(-0.75, 0, 0.15);
       leftElbowPivot.rotation.set(-0.45, 0, 0);
       rightElbowPivot.rotation.set(-0.45, 0, 0);
-      bodyGroup.position.y = 0;
+      bodyGroup.position.y = rig.seatDrop ? rig.seatDrop(0.37 / 0.55) : 0;
       bodyGroup.rotation.x = 0;
     } else if (seatedChair) {
       // Keep realistic seated pose on chair
@@ -7530,7 +7543,7 @@ export function startPlaceholderScene(
       player.position.set(seatedX, 0, seatedZ);
       player.rotation.y = seatedChair.facingAngle;
 
-      const buttDrop = (seatedChair.seatY + 0.01) - 0.68;
+      const buttDrop = rig.seatDrop ? rig.seatDrop(seatedChair.seatY) : (seatedChair.seatY + 0.01) - 0.68;
       const breathe = Math.sin(Date.now() * 0.0022) * 0.012; // subtle realistic breathing motion
       bodyGroup.position.y = buttDrop;
       bodyGroup.rotation.set(0, 0, 0);
@@ -7562,12 +7575,20 @@ export function startPlaceholderScene(
         const stepZ = (moveZ / len) * speed * dt;
 
         const py = player.position.y;
+        const prevX = player.position.x;
+        const prevZ = player.position.z;
         const nextX = player.position.x + stepX;
         const nextZ = player.position.z + stepZ;
         if (!collides(nextX, player.position.z, py)) player.position.x = nextX;
         if (!collides(player.position.x, nextZ, py)) player.position.z = nextZ;
+        // Report the real ground speed (0 when blocked by a wall) so the animation matches the movement
+        rig.setLocomotion?.(Math.hypot(player.position.x - prevX, player.position.z - prevZ) / Math.max(dt, 1e-4));
 
-        player.rotation.y = Math.atan2(moveX, moveZ);
+        // Turn smoothly toward the direction of travel (shortest way round)
+        const heading = Math.atan2(moveX, moveZ);
+        let turn = heading - player.rotation.y;
+        turn = Math.atan2(Math.sin(turn), Math.cos(turn));
+        player.rotation.y += turn * (1 - Math.exp(-dt * 14));
 
         walkTime += dt * (sprinting ? 18 : 10);
         bob = Math.abs(Math.sin(walkTime)) * (sprinting ? 0.08 : 0.04);
@@ -7624,12 +7645,12 @@ export function startPlaceholderScene(
         rightElbowPivot.rotation.x = -0.15;
       }
 
-      const targetLean = moving ? (sprinting ? 0.20 : 0.05) : 0;
-      bodyGroup.rotation.x += (targetLean - bodyGroup.rotation.x) * Math.min(1, dt * 15);
+      if (!moving) rig.setLocomotion?.(0);
 
       const targetY = targetFloorY(player.position.x, player.position.z);
       player.position.y += (targetY - player.position.y) * Math.min(1, dt * 12);
-      bodyGroup.position.y = bob;
+      bodyGroup.position.y = 0; // the walk/run clips carry their own bounce
+      void bob;
     }
     rig.syncSkeleton?.();
 
@@ -8217,10 +8238,29 @@ export function startPlaceholderScene(
     const focusX = drivingCar ? drivingCar.group.position.x : player.position.x;
     const focusY = drivingCar ? drivingCar.group.position.y : player.position.y;
     const focusZ = drivingCar ? drivingCar.group.position.z : player.position.z;
+    // Something else assigned the distance/elevation (reset, entering a room, compass click):
+    // adopt it as the new default instead of fighting it.
+    if (camDistance !== seenDist || camElevation !== seenElev) {
+      zoomGoal = camDistance;
+      refDist = camDistance;
+      basePitch = Math.atan2(camElevation, camDistance);
+      pitchBias = 0;
+    }
+    // Ease toward the zoom goal (frame-rate independent), then derive the viewing angle from it
+    const maxZoom = inMprRoom ? 18.0 : (currentClassroom ? 15.0 : MAX_ZOOM);
+    zoomGoal = Math.min(maxZoom, Math.max(MIN_ZOOM, zoomGoal));
+    camDistance += (zoomGoal - camDistance) * (1 - Math.exp(-dt * 10));
+    const zoomPitch = Math.max(-0.32, Math.min(0.5, Math.log(camDistance / refDist) * 0.2));
+    const pitch = Math.max(0.2, Math.min(1.35, basePitch + zoomPitch + pitchBias));
+    camElevation = camDistance * Math.tan(pitch);
+    seenDist = camDistance;
+    seenElev = camElevation;
     const camX = focusX + Math.sin(camAngle) * camDistance;
     const camZ = focusZ + Math.cos(camAngle) * camDistance;
     camera.position.set(camX, focusY + camElevation, camZ);
-    camera.lookAt(focusX, focusY + (drivingCar ? 0.9 : 1.0), focusZ);
+    // Aim at the character's chest when close, the feet-to-head middle when far
+    const aimY = drivingCar ? 0.9 : 1.1 + 0.4 * Math.min(1, camDistance / 14);
+    camera.lookAt(focusX, focusY + aimY, focusZ);
 
     // Rotate the compass needle so "N" always points toward north (the buses) on screen.
     if (compassNeedle) {

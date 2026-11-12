@@ -1,31 +1,691 @@
 {
-  "_note": "Character customization options (PROJECT.md section 5.1). These are the agreed defaults — Mr. Van Diest reviews the final list at Milestone 16. Skin tones are placeholder hex colors spanning a natural range. This file is the single source of truth for customization options; profile.ts and settings.ts derive from it.",
-  "hairstyles": [
-    { "id": "hair-short", "name": "Short", "category": "all" },
-    { "id": "hair-long", "name": "Long", "category": "all" },
-    { "id": "hair-bob", "name": "Bob", "category": "girl" },
-    { "id": "hair-pixie", "name": "Pixie", "category": "boy" },
-    { "id": "hair-afro", "name": "Afro", "category": "all" },
-    { "id": "hair-bun", "name": "Bun", "category": "girl" }
-  ],
-  "skinTones": [
-    { "id": "skin-1", "name": "Tone 1", "hex": "#FFE0C4" },
-    { "id": "skin-2", "name": "Tone 2", "hex": "#F1C27D" },
-    { "id": "skin-3", "name": "Tone 3", "hex": "#E0AC69" },
-    { "id": "skin-4", "name": "Tone 4", "hex": "#C68642" },
-    { "id": "skin-5", "name": "Tone 5", "hex": "#A76B36" },
-    { "id": "skin-6", "name": "Tone 6", "hex": "#8D5524" },
-    { "id": "skin-7", "name": "Tone 7", "hex": "#5C3317" }
-  ],
-  "genders": [
-    { "id": "boy", "label": "Boy" },
-    { "id": "girl", "label": "Girl" },
-    { "id": "neutral", "label": "Neutral" }
-  ],
-  "topStyles": [
-    { "id": "Top.ButtonUp", "name": "Button-Up" },
-    { "id": "Top.Polo", "name": "Polo" },
-    { "id": "Top.Sweater", "name": "Sweater" },
-    { "id": "Top.Blazer", "name": "Blazer" }
-  ]
+ "_note": "Character customization options (PROJECT.md section 5.1). Single source of truth: client/src/profile.ts reads this file. Quaternius characters have their hair baked into the model, so the old hairstyle picker is now a look picker (each look = one model: outfit + hairstyle + face) plus a hair color. 'shirt' lists the model parts (Mesh suffix:Material) tinted with the homeroom color; 'hair' lists the hair materials (first = full hair color, the rest are shaded darker). Mr. Van Diest reviews the final list at Milestone 16. Props (weapons) are hidden in avatar.ts. Swat and Spacesuit models are not offered: their helmets hide the face and skin. hairStyles/facialHair/hats/shoes with a 'donor' borrow that part from another Quaternius model of the same gender ('parts' = Part:Material entries; first hair part gets the full hair color, the others a darker shade). Items with 'proc' are built from simple shapes in accessories.ts.",
+ "looks": [
+  {
+   "id": "masc-tee",
+   "name": "T-Shirt",
+   "gender": "masculine",
+   "model": "Male/Casual_2",
+   "shirt": [
+    "Body:LightBrown"
+   ],
+   "hair": [
+    "Head:Hair"
+   ],
+   "brows": [
+    "Head:Eyebrows"
+   ]
+  },
+  {
+   "id": "masc-hoodie",
+   "name": "Hoodie",
+   "gender": "masculine",
+   "model": "Male/Casual_Hoodie",
+   "shirt": [
+    "Body:Purple"
+   ],
+   "hair": [
+    "Head:Hair"
+   ],
+   "brows": [
+    "Head:Eyebrows"
+   ]
+  },
+  {
+   "id": "masc-suit",
+   "name": "Business Suit",
+   "gender": "masculine",
+   "model": "Male/Suit",
+   "shirt": [
+    "Body:Suit"
+   ],
+   "hair": [
+    "Head:Hair"
+   ],
+   "brows": [
+    "Head:Eyebrows"
+   ]
+  },
+  {
+   "id": "masc-beach",
+   "name": "Tank Top",
+   "gender": "masculine",
+   "model": "Male/Beach",
+   "shirt": [
+    "Body:LightBrown"
+   ],
+   "hair": [
+    "Head:Hair"
+   ],
+   "brows": [
+    "Head:Eyebrows"
+   ]
+  },
+  {
+   "id": "masc-adventurer",
+   "name": "Explorer",
+   "gender": "masculine",
+   "model": "Male/Adventurer",
+   "shirt": [
+    "Body:Green",
+    "Body:LightGreen"
+   ],
+   "hair": [
+    "Head:Hair"
+   ],
+   "brows": [
+    "Head:Eyebrows"
+   ]
+  },
+  {
+   "id": "masc-farmer",
+   "name": "Farmer",
+   "gender": "masculine",
+   "model": "Male/Farmer",
+   "shirt": [
+    "Body:Brown"
+   ],
+   "hair": [],
+   "brows": [
+    "Head:Eyebrows"
+   ]
+  },
+  {
+   "id": "masc-worker",
+   "name": "Maintenance",
+   "gender": "masculine",
+   "model": "Male/Worker",
+   "shirt": [
+    "Body:Worker_Vest"
+   ],
+   "hair": [],
+   "brows": [
+    "Head:Eyebrows",
+    "Head:Moustache"
+   ]
+  },
+  {
+   "id": "masc-punk",
+   "name": "Punk",
+   "gender": "masculine",
+   "model": "Male/Punk",
+   "shirt": [
+    "Body:White"
+   ],
+   "hair": [
+    "Head:Red",
+    "Head:Red_Dark"
+   ],
+   "brows": [
+    "Head:Eyebrows"
+   ]
+  },
+  {
+   "id": "masc-king",
+   "name": "King",
+   "gender": "masculine",
+   "model": "Male/King",
+   "shirt": [
+    "Body:Blue"
+   ],
+   "hair": [
+    "Head:Hair_White"
+   ],
+   "brows": []
+  },
+  {
+   "id": "fem-casual",
+   "name": "Casual Top",
+   "gender": "feminine",
+   "model": "Female/Casual",
+   "shirt": [
+    "Body:White"
+   ],
+   "hair": [
+    "Head:Hair_Blond",
+    "Head:Hair_Brown"
+   ],
+   "brows": []
+  },
+  {
+   "id": "fem-dress",
+   "name": "Dress",
+   "gender": "feminine",
+   "model": "Female/Formal",
+   "shirt": [
+    "Body:LimeGreen",
+    "Legs:LimeGreen"
+   ],
+   "hair": [
+    "Head:Red"
+   ],
+   "brows": []
+  },
+  {
+   "id": "fem-suit",
+   "name": "Business Suit",
+   "gender": "feminine",
+   "model": "Female/Suit",
+   "shirt": [
+    "Body:Black"
+   ],
+   "hair": [
+    "Head:Hair_Blond",
+    "Head:Hair_Brown"
+   ],
+   "brows": []
+  },
+  {
+   "id": "fem-adventurer",
+   "name": "Explorer",
+   "gender": "feminine",
+   "model": "Female/Adventurer",
+   "shirt": [
+    "Body:Green",
+    "Body:LightGreen"
+   ],
+   "hair": [
+    "Head:Hair_Brown"
+   ],
+   "brows": [],
+   "fillLegs": true
+  },
+  {
+   "id": "fem-worker",
+   "name": "Maintenance",
+   "gender": "feminine",
+   "model": "Female/Worker",
+   "shirt": [
+    "Body:Worker_Vest"
+   ],
+   "hair": [
+    "Head:DarkBrown"
+   ],
+   "brows": []
+  },
+  {
+   "id": "fem-soldier",
+   "name": "Cadet",
+   "gender": "feminine",
+   "model": "Female/Soldier",
+   "shirt": [
+    "Body:Swat"
+   ],
+   "hair": [
+    "Head:Hair_Brown"
+   ],
+   "brows": [],
+   "fillLegs": true
+  },
+  {
+   "id": "fem-scifi",
+   "name": "Sci-Fi",
+   "gender": "feminine",
+   "model": "Female/SciFi",
+   "shirt": [
+    "Body:Blue"
+   ],
+   "hair": [
+    "Head:Hair_Black"
+   ],
+   "brows": [],
+   "fillLegs": true
+  },
+  {
+   "id": "fem-punk",
+   "name": "Punk",
+   "gender": "feminine",
+   "model": "Female/Punk",
+   "shirt": [
+    "Body:Pink"
+   ],
+   "hair": [
+    "Head:Pink",
+    "Head:Hair_Brown"
+   ],
+   "brows": [],
+   "fillLegs": true
+  },
+  {
+   "id": "fem-medieval",
+   "name": "Medieval",
+   "gender": "feminine",
+   "model": "Female/Medieval",
+   "shirt": [
+    "Body:DarkBrown"
+   ],
+   "hair": [
+    "Head:White"
+   ],
+   "brows": [],
+   "fillLegs": true
+  },
+  {
+   "id": "fem-witch",
+   "name": "Witch",
+   "gender": "feminine",
+   "model": "Female/Witch",
+   "shirt": [
+    "Body:Purple",
+    "Legs:Purple",
+    "Head:Purple"
+   ],
+   "hair": [
+    "Head:Hair_Black"
+   ],
+   "brows": [],
+   "fillLegs": true
+  }
+ ],
+ "hairColors": [
+  {
+   "id": "black",
+   "name": "Black",
+   "hex": "#1a1410"
+  },
+  {
+   "id": "dbrown",
+   "name": "Dark Brown",
+   "hex": "#3b2314"
+  },
+  {
+   "id": "brown",
+   "name": "Brown",
+   "hex": "#6a4529"
+  },
+  {
+   "id": "auburn",
+   "name": "Auburn",
+   "hex": "#8b3a1a"
+  },
+  {
+   "id": "ginger",
+   "name": "Ginger",
+   "hex": "#b5541c"
+  },
+  {
+   "id": "blonde",
+   "name": "Blonde",
+   "hex": "#d9b26a"
+  },
+  {
+   "id": "gray",
+   "name": "Gray",
+   "hex": "#9aa0a6"
+  },
+  {
+   "id": "blue",
+   "name": "Blue",
+   "hex": "#2563eb"
+  }
+ ],
+ "skinTones": [
+  {
+   "id": "skin-1",
+   "name": "Tone 1",
+   "hex": "#FFE0C4"
+  },
+  {
+   "id": "skin-2",
+   "name": "Tone 2",
+   "hex": "#F1C27D"
+  },
+  {
+   "id": "skin-3",
+   "name": "Tone 3",
+   "hex": "#E0AC69"
+  },
+  {
+   "id": "skin-4",
+   "name": "Tone 4",
+   "hex": "#C68642"
+  },
+  {
+   "id": "skin-5",
+   "name": "Tone 5",
+   "hex": "#A76B36"
+  },
+  {
+   "id": "skin-6",
+   "name": "Tone 6",
+   "hex": "#8D5524"
+  },
+  {
+   "id": "skin-7",
+   "name": "Tone 7",
+   "hex": "#5C3317"
+  }
+ ],
+ "genders": [
+  {
+   "id": "masculine",
+   "label": "Masculine"
+  },
+  {
+   "id": "feminine",
+   "label": "Feminine"
+  }
+ ],
+ "hairStyles": [
+  {
+   "id": "original",
+   "name": "Original",
+   "gender": "both"
+  },
+  {
+   "id": "f-long",
+   "name": "Bob",
+   "gender": "feminine",
+   "donor": "Female/Casual",
+   "parts": [
+    "Head:Hair_Blond",
+    "Head:Hair_Brown"
+   ]
+  },
+  {
+   "id": "f-wavy",
+   "name": "Wavy",
+   "gender": "feminine",
+   "donor": "Female/Formal",
+   "parts": [
+    "Head:Red"
+   ]
+  },
+  {
+   "id": "f-explorer",
+   "name": "Pixie",
+   "gender": "feminine",
+   "donor": "Female/Adventurer",
+   "parts": [
+    "Head:Hair_Brown"
+   ]
+  },
+  {
+   "id": "f-cadet",
+   "name": "Layered",
+   "gender": "feminine",
+   "donor": "Female/Soldier",
+   "parts": [
+    "Head:Hair_Brown"
+   ]
+  },
+  {
+   "id": "f-punk",
+   "name": "Mohawk",
+   "gender": "feminine",
+   "donor": "Female/Punk",
+   "parts": [
+    "Head:Pink",
+    "Head:Hair_Brown"
+   ]
+  },
+  {
+   "id": "f-scifi",
+   "name": "Side Swept",
+   "gender": "feminine",
+   "donor": "Female/SciFi",
+   "parts": [
+    "Head:Hair_Black"
+   ]
+  },
+  {
+   "id": "f-witch",
+   "name": "Long",
+   "gender": "feminine",
+   "donor": "Female/Witch",
+   "parts": [
+    "Head:Hair_Black"
+   ]
+  },
+  {
+   "id": "m-beach",
+   "name": "Spiky",
+   "gender": "masculine",
+   "donor": "Male/Beach",
+   "parts": [
+    "Head:Hair"
+   ]
+  },
+  {
+   "id": "m-explorer",
+   "name": "Beard",
+   "gender": "masculine",
+   "donor": "Male/Adventurer",
+   "parts": [
+    "Head:Hair"
+   ]
+  },
+  {
+   "id": "m-suit",
+   "name": "Neat",
+   "gender": "masculine",
+   "donor": "Male/Suit",
+   "parts": [
+    "Head:Hair"
+   ]
+  },
+  {
+   "id": "m-punk",
+   "name": "Mohawk & Goatee",
+   "gender": "masculine",
+   "donor": "Male/Punk",
+   "parts": [
+    "Head:Red",
+    "Head:Red_Dark"
+   ]
+  },
+  {
+   "id": "m-king",
+   "name": "Full Beard",
+   "gender": "masculine",
+   "donor": "Male/King",
+   "parts": [
+    "Head:Hair_White"
+   ]
+  }
+ ],
+ "facialHair": [
+  {
+   "id": "none",
+   "name": "None"
+  },
+  {
+   "id": "moustache",
+   "name": "Moustache",
+   "donor": "Male/Worker",
+   "parts": [
+    "Head:Moustache"
+   ]
+  }
+ ],
+ "hats": [
+  {
+   "id": "none",
+   "name": "None"
+  },
+  {
+   "id": "beanie",
+   "name": "Beanie",
+   "proc": "beanie"
+  },
+  {
+   "id": "hardhat",
+   "name": "Hard Hat",
+   "donors": {
+    "masculine": "Male/Worker",
+    "feminine": "Female/Worker"
+   },
+   "parts": [
+    "Head:Worker_Yellow"
+   ]
+  },
+  {
+   "id": "farmer",
+   "name": "Straw Hat",
+   "donors": {
+    "masculine": "Male/Farmer"
+   },
+   "parts": [
+    "Head:Beige",
+    "Head:Red"
+   ]
+  },
+  {
+   "id": "witch",
+   "name": "Witch Hat",
+   "donors": {
+    "feminine": "Female/Witch"
+   },
+   "parts": [
+    "Head:Purple",
+    "Head:Gold"
+   ]
+  }
+ ],
+ "glasses": [
+  {
+   "id": "none",
+   "name": "None"
+  },
+  {
+   "id": "round",
+   "name": "Round",
+   "proc": "round"
+  },
+  {
+   "id": "square",
+   "name": "Square",
+   "proc": "square"
+  },
+  {
+   "id": "shades",
+   "name": "Sunglasses",
+   "proc": "shades"
+  }
+ ],
+ "shoes": [
+  {
+   "id": "default",
+   "name": "Original"
+  },
+  {
+   "id": "sneakers",
+   "name": "Sneakers",
+   "donors": {
+    "masculine": "Male/Casual_2",
+    "feminine": "Female/Casual"
+   },
+   "tint": {
+    "masculine": [
+     "Red_Dark"
+    ],
+    "feminine": [
+     "Grey"
+    ]
+   }
+  },
+  {
+   "id": "dress",
+   "name": "Dress Shoes",
+   "donors": {
+    "masculine": "Male/Suit",
+    "feminine": "Female/Suit"
+   },
+   "tint": {
+    "masculine": [
+     "Black"
+    ],
+    "feminine": [
+     "Black"
+    ]
+   }
+  },
+  {
+   "id": "work",
+   "name": "Work Boots",
+   "donors": {
+    "masculine": "Male/Worker",
+    "feminine": "Female/Worker"
+   },
+   "tint": {
+    "masculine": [
+     "Black"
+    ],
+    "feminine": [
+     "Black"
+    ]
+   }
+  },
+  {
+   "id": "boots",
+   "name": "Boots",
+   "donors": {
+    "masculine": "Male/Farmer",
+    "feminine": "Female/Soldier"
+   },
+   "tint": {
+    "masculine": [
+     "Brown"
+    ],
+    "feminine": [
+     "Black"
+    ]
+   },
+   "tall": true
+  },
+  {
+   "id": "sandals",
+   "name": "Sandals",
+   "donors": {
+    "masculine": "Male/Beach",
+    "feminine": "Female/Formal"
+   },
+   "tint": {
+    "masculine": [
+     "Red_Dark"
+    ],
+    "feminine": [
+     "Red"
+    ]
+   }
+  }
+ ],
+ "accentColors": [
+  {
+   "name": "Black",
+   "hex": "#1f1f24"
+  },
+  {
+   "name": "White",
+   "hex": "#f4f4f5"
+  },
+  {
+   "name": "Gray",
+   "hex": "#71717a"
+  },
+  {
+   "name": "Brown",
+   "hex": "#6b4423"
+  },
+  {
+   "name": "Navy",
+   "hex": "#1e3a8a"
+  },
+  {
+   "name": "Red",
+   "hex": "#dc2626"
+  },
+  {
+   "name": "Green",
+   "hex": "#16a34a"
+  },
+  {
+   "name": "Gold",
+   "hex": "#eab308"
+  },
+  {
+   "name": "Pink",
+   "hex": "#ec4899"
+  }
+ ]
 }
