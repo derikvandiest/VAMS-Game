@@ -879,17 +879,25 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
       const knee = hip.clone().add(u.clone().multiplyScalar(x)).add(pole.multiplyScalar(h));
       aimBone(ups[i], los[i], null, knee.clone().sub(hip), t, true);
       aimBone(los[i], null, rests[i], target.clone().sub(knee), t, true);
-      // feet and toes follow the target (they are not children of the shins)
-      const next = footW[i].clone().lerp(target, t);
+      // Feet and toes are not children of the shins: attach them to the end of the shin so there is no gap,
+      // and pitch them (toes point down on the way up, flex up a little on the way down)
+      const shinEnd = los[i].localToWorld(rests[i].clone());
+      const next = footW[i].clone().lerp(shinEnd, t);
       const delta = next.clone().sub(footW[i]);
       const root = feet[i].parent!;
       root.updateWorldMatrix(true, false);
+      const pitch = air * (0.55 * (1 - fall) - 0.15 * fall) * (1 - Math.min(1, crouch * 2));
+      const pq = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0).applyQuaternion(playerQ), pitch);
+      const fq = feet[i].getWorldQuaternion(new THREE.Quaternion());
       feet[i].position.copy(root.worldToLocal(next.clone()));
+      feet[i].quaternion.copy(root.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(pq.clone().multiply(fq)));
       feet[i].updateMatrixWorld(true);
       const toe = toes[i];
       const tw = toeW[i];
       if (toe && tw && toe.parent) {
-        toe.position.copy(toe.parent.worldToLocal(tw.clone().add(delta)));
+        const tp = tw.clone().add(delta).sub(next).applyQuaternion(pq).add(next);
+        toe.parent.updateWorldMatrix(true, false);
+        toe.position.copy(toe.parent.worldToLocal(tp));
         toe.updateMatrixWorld(true);
       }
     }
