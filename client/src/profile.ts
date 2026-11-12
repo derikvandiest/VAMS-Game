@@ -26,8 +26,8 @@ export interface LookDef {
   fillLegs?: boolean;
 }
 
-export interface HairStyleDef { id: string; name: string; gender: Gender | "both"; donor?: string; parts?: string[] }
-export interface FacialHairDef { id: string; name: string; donor?: string; parts?: string[] }
+export interface HairStyleDef { id: string; name: string; gender: Gender | "both"; donor?: string; parts?: string[]; cut?: "beard" | "rest" }
+export interface FacialHairDef { id: string; name: string; donor?: string; parts?: string[]; cut?: "beard" | "rest" }
 export interface HatDef { id: string; name: string; proc?: "beanie"; donors?: Partial<Record<Gender, string>>; parts?: string[] }
 export interface GlassesDef { id: string; name: string; proc?: "round" | "square" | "shades" }
 export interface ShoeDef { id: string; name: string; /** reaches the knee: no skin legs needed underneath */ tall?: boolean; donors?: Partial<Record<Gender, string>>; tint?: Partial<Record<Gender, string[]>> }

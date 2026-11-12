@@ -421,6 +421,36 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     });
   }
 
+  /**
+   * Some donor hairstyles have a beard modelled into the same mesh. Keep only the beard triangles
+   * (lower face, in front of the ears) or only everything else, so beards can be a separate option.
+   */
+  function cutRegion(objs: THREE.Object3D[] | null, cut?: "beard" | "rest"): THREE.Object3D[] | null {
+    if (!objs || !cut) return objs;
+    for (const o of objs) {
+      const mesh = o as THREE.Mesh;
+      const geo = mesh.geometry.clone();
+      const pos = geo.getAttribute("position");
+      const idx = geo.getIndex();
+      if (!idx) continue;
+      const keep: number[] = [];
+      for (let t = 0; t < idx.count; t += 3) {
+        let y = 0;
+        let z = 0;
+        for (let k = 0; k < 3; k++) {
+          y += pos.getY(idx.getX(t + k)) / 3;
+          z += pos.getZ(idx.getX(t + k)) / 3;
+        }
+        const isBeard = y < 1.655 && z > 0.05;
+        if (isBeard === (cut === "beard")) keep.push(idx.getX(t), idx.getX(t + 1), idx.getX(t + 2));
+      }
+      geo.setIndex(keep);
+      geo.clearGroups();
+      mesh.geometry = geo;
+    }
+    return objs;
+  }
+
   /** Bind-pose size of the head (skin meshes only), measured once per model. */
   function measureHead(): THREE.Box3 | null {
     if (headBox) return headBox;
@@ -525,12 +555,12 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
 
     const hair = getHairStyle(p.hairStyle);
     const hairObjs = setSlot("hair", hair.donor ? L(hair.id) : "", () =>
-      borrow(hair.donor!, hair.parts ?? [], (i) => (i === 0 ? "hair" : "hairDark"))
+      cutRegion(borrow(hair.donor!, hair.parts ?? [], (i) => (i === 0 ? "hair" : "hairDark")), hair.cut)
     );
     hideBakedHair = hairObjs.length > 0;
 
     const fh = getFacialHair(p.facialHair);
-    setSlot("facial", fh.donor ? L(fh.id) : "", () => borrow(fh.donor!, fh.parts ?? [], () => "hairDark"));
+    setSlot("facial", fh.donor ? L(fh.id) : "", () => cutRegion(borrow(fh.donor!, fh.parts ?? [], () => (fh.cut ? "hair" : "hairDark")), fh.cut));
 
     const hat = getHat(p.hat);
     setSlot("hat", hat.id === "none" ? "" : L(hat.id), () =>
