@@ -25,7 +25,7 @@ import {
   getAllClassroomIds,
   ClassroomInstance,
 } from "./classrooms";
-import { createAvatarRig, GAME_AVATAR_SCALE } from "./avatar";
+import { createAvatarRig, GAME_AVATAR_SCALE, KICK_STRIKE_TIME } from "./avatar";
 import { loadCharacterProfile, onProfileChange } from "./profile";
 import { initSettingsModal } from "./settings";
 
@@ -3796,6 +3796,9 @@ export function startPlaceholderScene(
 
   const ballPos = new THREE.Vector3(field.center.x, BALL_GROUND_Y, field.center.z);
   const ballVel = new THREE.Vector3(0, 0, 0);
+  let kickActive = false; // a kick animation is playing; the ball is struck when the foot arrives
+  let kickTimer = 0;
+  let kickCooldown = 0;
   const ballOrientation = new THREE.Quaternion();
   let goalCelebrationTimer = 0;
 
@@ -7619,32 +7622,7 @@ export function startPlaceholderScene(
         rightArmPivot.rotation.z *= 0.8;
       }
 
-      // Basketball holding, dribbling, and shooting arm poses
-      if (bballHeld) {
-        if (moving) {
-          const dribbleArm = Math.sin(bballDribblePhase) * 0.35;
-          rightArmPivot.rotation.x = -0.55 + dribbleArm;
-          rightArmPivot.rotation.z = -0.15;
-          rightElbowPivot.rotation.x = -0.40 + dribbleArm * 0.5;
-          leftArmPivot.rotation.x = -0.35;
-          leftArmPivot.rotation.z = 0.20;
-          leftElbowPivot.rotation.x = -0.40;
-        } else {
-          leftArmPivot.rotation.x = -0.75;
-          rightArmPivot.rotation.x = -0.75;
-          leftArmPivot.rotation.z = 0.22;
-          rightArmPivot.rotation.z = -0.22;
-          leftElbowPivot.rotation.x = -0.50;
-          rightElbowPivot.rotation.x = -0.50;
-        }
-      } else if (bballShootAnimTimer > 0) {
-        leftArmPivot.rotation.x = -1.45;
-        rightArmPivot.rotation.x = -1.55;
-        leftArmPivot.rotation.z = 0.10;
-        rightArmPivot.rotation.z = -0.08;
-        leftElbowPivot.rotation.x = -0.15;
-        rightElbowPivot.rotation.x = -0.15;
-      }
+      // (Basketball arm poses are solved by the avatar from hand targets, see the basketball block below)
 
       if (!moving) rig.setLocomotion?.(0);
 
@@ -7744,28 +7722,42 @@ export function startPlaceholderScene(
       const minBallDist = PLAYER_RADIUS + BALL_RADIUS;
       const playerNearGround = player.position.y <= ballPos.y + 0.6;
 
-      if (distToPlayer < minBallDist && playerNearGround) {
+      kickCooldown = Math.max(0, kickCooldown - dt);
+      const kickReach = minBallDist * 1.5;
+      if (kickActive) {
+        kickTimer += dt;
+        if (kickTimer >= KICK_STRIKE_TIME) {
+          kickActive = false;
+          kickCooldown = 0.3;
+          if (distToPlayer < kickReach && playerNearGround) {
+            const bnx = distToPlayer > 0.0001 ? bdx / distToPlayer : 0;
+            const bnz = distToPlayer > 0.0001 ? bdz / distToPlayer : 1;
+            const pLen = Math.hypot(moveX, moveZ);
+            const moveNx = pLen > 0.001 ? moveX / pLen : 0;
+            const moveNz = pLen > 0.001 ? moveZ / pLen : 0;
+            const kickDirX = bnx * 0.65 + (moving ? moveNx * 0.55 : 0);
+            const kickDirZ = bnz * 0.65 + (moving ? moveNz * 0.55 : 0);
+            const kLen = Math.hypot(kickDirX, kickDirZ) || 1;
+            const kickPower = moving ? (keys.has("shift") ? 14.5 : 7.5) : 4.2;
+            ballVel.x = (kickDirX / kLen) * kickPower;
+            ballVel.z = (kickDirZ / kLen) * kickPower;
+            ballVel.y = moving ? (keys.has("shift") ? 3.6 : 1.4) : 0.6;
+          }
+        }
+      } else if (distToPlayer < minBallDist && playerNearGround && kickCooldown <= 0) {
+        // Start the kick animation; the ball is struck when the foot reaches it
+        kickActive = true;
+        kickTimer = 0;
+        let yaw = Math.atan2(bdx, bdz) - player.rotation.y;
+        yaw = Math.atan2(Math.sin(yaw), Math.cos(yaw));
+        rig.kick?.(yaw);
+      } else if (distToPlayer < minBallDist && playerNearGround) {
+        // Just kicked: keep the ball from sinking into the player while it flies off
         const bnx = distToPlayer > 0.0001 ? bdx / distToPlayer : 0;
         const bnz = distToPlayer > 0.0001 ? bdz / distToPlayer : 1;
         const overlap = minBallDist - distToPlayer;
-
         ballPos.x += bnx * overlap;
         ballPos.z += bnz * overlap;
-
-        const pLen = Math.hypot(moveX, moveZ);
-        const moveNx = pLen > 0.001 ? moveX / pLen : 0;
-        const moveNz = pLen > 0.001 ? moveZ / pLen : 0;
-
-        const kickDirX = bnx * 0.65 + (moving ? moveNx * 0.55 : 0);
-        const kickDirZ = bnz * 0.65 + (moving ? moveNz * 0.55 : 0);
-        const kLen = Math.hypot(kickDirX, kickDirZ) || 1;
-        const kNx = kickDirX / kLen;
-        const kNz = kickDirZ / kLen;
-
-        const kickPower = moving ? (keys.has("shift") ? 14.5 : 7.5) : 3.2;
-        ballVel.x = kNx * kickPower;
-        ballVel.z = kNz * kickPower;
-        ballVel.y = moving ? (keys.has("shift") ? 3.6 : 1.4) : 0.4;
       }
     }
 
@@ -7902,6 +7894,17 @@ export function startPlaceholderScene(
     // --- Basketball Interaction & Real-World Physics -------------------------
     if (bballShootAnimTimer > 0) {
       bballShootAnimTimer -= dt;
+      // follow-through: both hands reach up and forward
+      const fx = Math.sin(player.rotation.y);
+      const fz = Math.cos(player.rotation.y);
+      const sx = Math.cos(player.rotation.y);
+      const sz = -Math.sin(player.rotation.y);
+      const up = Math.min(1, (0.45 - bballShootAnimTimer) / 0.15);
+      const hy = player.position.y + 1.3 + 0.95 * up;
+      rig.setHands?.(
+        new THREE.Vector3(player.position.x + fx * 0.45 + sx * 0.1, hy, player.position.z + fz * 0.45 + sz * 0.1),
+        new THREE.Vector3(player.position.x + fx * 0.45 - sx * 0.1, hy, player.position.z + fz * 0.45 - sz * 0.1)
+      );
     }
 
     const bballDistToPlayer = Math.hypot(bballPos.x - player.position.x, bballPos.z - player.position.z);
@@ -7925,18 +7928,28 @@ export function startPlaceholderScene(
         // Dribble physics: bounces smoothly between hand and ground
         bballDribblePhase += dt * (sprinting ? 15 : 10);
         const bounceCycle = Math.abs(Math.sin(bballDribblePhase));
-        const dribbleY = BASKETBALL_GROUND_Y + bounceCycle * 0.72;
+        const dribbleY = BASKETBALL_GROUND_Y + bounceCycle * 0.85;
+        // dribbled with the character's right hand (the model's +x side is its left)
         bballPos.set(
-          player.position.x + facingX * 0.35 + rightX * 0.28,
+          player.position.x + facingX * 0.38 - rightX * 0.3,
           dribbleY,
-          player.position.z + facingZ * 0.35 + rightZ * 0.28
+          player.position.z + facingZ * 0.38 - rightZ * 0.3
         );
+        // the hand rides on top of the ball and pushes it down; it cannot follow below its natural reach
+        const handY = Math.max(player.position.y + 0.6, bballPos.y + BASKETBALL_RADIUS + 0.04);
+        rig.setHands?.(null, new THREE.Vector3(bballPos.x, handY, bballPos.z));
       } else {
         // Cradled in front of chest
         bballPos.set(
           player.position.x + facingX * 0.32,
           player.position.y + 0.82,
           player.position.z + facingZ * 0.32
+        );
+        // both hands on the sides of the ball
+        const side = BASKETBALL_RADIUS + 0.02;
+        rig.setHands?.(
+          new THREE.Vector3(bballPos.x + rightX * side, bballPos.y, bballPos.z + rightZ * side),
+          new THREE.Vector3(bballPos.x - rightX * side, bballPos.y, bballPos.z - rightZ * side)
         );
       }
 
