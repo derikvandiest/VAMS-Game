@@ -7,6 +7,7 @@ import {
   MPR_ROOM_X,
   MPR_ROOM_Z,
   MPR_ROOM_SIZE,
+  MPR_ROOM_HEIGHT,
   MPR_SPAWN_X,
   MPR_SPAWN_Z,
   MPR_CAMPUS_DOOR_X,
@@ -8255,6 +8256,11 @@ export function startPlaceholderScene(
     const camX = focusX + Math.sin(camAngle) * camDistance;
     const camZ = focusZ + Math.cos(camAngle) * camDistance;
     camera.position.set(camX, focusY + camElevation, camZ);
+    if (currentClassroom) {
+      updateCutaway(getCutaway(currentClassroom.group, currentClassroom.worldX, currentClassroom.worldZ, currentClassroom.size, currentClassroom.height), camX, camera.position.y, camZ, dt);
+    } else if (inMprRoom) {
+      updateCutaway(getCutaway(mprRoomGroup, MPR_ROOM_X, MPR_ROOM_Z, MPR_ROOM_SIZE, MPR_ROOM_HEIGHT), camX, camera.position.y, camZ, dt);
+    }
     // Aim at the character's chest when close, the feet-to-head middle when far
     const aimY = drivingCar ? 0.9 : 1.1 + 0.4 * Math.min(1, camDistance / 14);
     camera.lookAt(focusX, focusY + aimY, focusZ);
@@ -8267,6 +8273,72 @@ export function startPlaceholderScene(
 
     renderer.render(scene, camera);
   });
+
+
+  // --- Room cutaway: walls between the camera and the player fade out -------
+  // The classrooms and the MPR are open-top rooms viewed from an orbiting camera. When the camera swings
+  // outside a wall, that wall (and the thin things mounted on it) fades away so the room stays visible.
+  interface CutawayItem { obj: THREE.Object3D; meshes: THREE.Mesh[]; side: number }
+  interface CutawayRoom { cx: number; cz: number; half: number; height: number; items: CutawayItem[]; fade: number[] }
+  const cutawayRooms = new Map<THREE.Object3D, CutawayRoom>();
+  function getCutaway(group: THREE.Object3D, cx: number, cz: number, size: number, height: number): CutawayRoom {
+    let room = cutawayRooms.get(group);
+    if (room) return room;
+    const half = size / 2;
+    room = { cx, cz, half, height, items: [], fade: [1, 1, 1, 1, 1] };
+    group.updateMatrixWorld(true);
+    for (const child of group.children) {
+      const box = new THREE.Box3().setFromObject(child);
+      if (box.isEmpty()) continue;
+      const sz = box.getSize(new THREE.Vector3());
+      const c = box.getCenter(new THREE.Vector3());
+      // sides: 0 west (x-), 1 east (x+), 2 north (z-), 3 south (z+), 4 ceiling fixtures
+      let side = -1;
+      if (sz.y <= 0.3 && c.y > height - 0.5) side = 4;
+      else
+      if (sz.x <= 0.3 && sz.z > 0.8) {
+        if (Math.abs(c.x - (cx - half)) <= 0.25) side = 0;
+        else if (Math.abs(c.x - (cx + half)) <= 0.25) side = 1;
+      } else if (sz.z <= 0.3 && sz.x > 0.8) {
+        if (Math.abs(c.z - (cz - half)) <= 0.25) side = 2;
+        else if (Math.abs(c.z - (cz + half)) <= 0.25) side = 3;
+      }
+      if (side < 0) continue;
+      const meshes: THREE.Mesh[] = [];
+      child.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (!m.isMesh) return;
+        // private materials, so fading one wall never affects another object that shares the material
+        m.material = Array.isArray(m.material) ? m.material.map((x) => x.clone()) : m.material.clone();
+        meshes.push(m);
+      });
+      room.items.push({ obj: child, meshes, side });
+    }
+    cutawayRooms.set(group, room);
+    return room;
+  }
+  function updateCutaway(room: CutawayRoom, camX: number, camY: number, camZ: number, dt: number): void {
+    const { cx, cz, half } = room;
+    const outside = [camX < cx - half + 0.3, camX > cx + half - 0.3, camZ < cz - half + 0.3, camZ > cz + half - 0.3, camY > room.height - 0.2];
+    for (let i = 0; i < 5; i++) {
+      room.fade[i] += ((outside[i] ? 0 : 1) - room.fade[i]) * Math.min(1, dt * 9);
+      if (room.fade[i] > 0.995) room.fade[i] = 1;
+      if (room.fade[i] < 0.02) room.fade[i] = 0;
+    }
+    for (const item of room.items) {
+      const f = room.fade[item.side];
+      item.obj.visible = f > 0;
+      for (const m of item.meshes) {
+        for (const mat of Array.isArray(m.material) ? m.material : [m.material]) {
+          const wasT = mat.transparent;
+          mat.opacity = f;
+          mat.transparent = f < 1;
+          mat.depthWrite = f >= 0.5;
+          if (wasT !== mat.transparent) mat.needsUpdate = true;
+        }
+      }
+    }
+  }
 
   (window as any).__debug = {
     setPlayer: (x: number, z: number) => { player.position.x = x; player.position.z = z; },
