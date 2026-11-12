@@ -81,7 +81,7 @@ The player creates a character before entering. Fields:
 - **Gender** — body/appearance options **[DECIDED: Masculine and Feminine; no neutral option; labels editable]**.
 - **There is NO shirt-color picker.** Shirt color comes from the homeroom chosen next.
 - A **live 3D preview** of the character that updates as choices change (rotatable or auto-turning).
-- Be careful that typing a name does not trigger game hotkeys (WASD, M, R, E, Space).
+- Be careful that typing a name does not trigger game hotkeys (WASD, M, R, E, Space). Note: E is also the action key, so the emoji hotkey (5.13) needs a different key.
 
 ### 5.2 Homeroom selection
 After creating the look, the player picks **one homeroom**:
@@ -110,7 +110,7 @@ After the player confirms their homeroom, a short **arrival animation** plays be
 4. Control is handed to the player **at the gate**, which is their **starting position** in the game. The HUD (objectives, report card, map, emoji buttons) fades in at that moment.
 
 Details:
-- **Length:** about 6–8 seconds. **[DEFAULT]** The player can skip it with Space or a click (after the first second). Keep it in the time budget (Section 5.14).
+- **Length:** about 6–8 seconds. **[DEFAULT]** The player can skip it with E or a click (after the first second). Keep it in the time budget (Section 5.14).
 - **Local only:** the animation plays on each player’s own screen and uses no server traffic (same idea as the car-exit animation in 5.10). Other players do not see the car. **[DEFAULT]** The player connects to the server during character creation/the animation but stays **hidden from other players and non-interactive** until the animation ends; then they appear at the gate for everyone.
 - **Car:** a generic low-poly car in a random color from a neutral palette **[DEFAULT]** (not the four homeroom colors, to avoid confusion). After the character steps out, the car drives away or fades out of that player’s local view. Reuse the same car and driving code as the ending animation where possible.
 - **Camera:** the normal fixed isometric camera, framed on the parking lot first and then following the character to the gate, ending in the normal gameplay view.
@@ -129,7 +129,8 @@ Details:
   - Many players can be inside the **same classroom** at once. Entry positions must be spread out so avatars don’t stack on one spot, and rooms must be big enough to look reasonable with 10+ players.
   - Wandering/patrolling NPCs, if any, must appear in the **same place for everyone** (server-driven or deterministic), not different per player.
   - The game must stay smooth with 50 avatars on screen (see Section 9).
-- **Interact:** when near an NPC, show a prompt (“Press SPACE to talk”). **Spacebar** starts the conversation and **Spacebar** advances each line of dialogue. The player cannot move while in dialogue.
+- **Action key = E** (talk, doors, gate, sit, drive). **Spacebar jumps.**
+- **Interact:** when near an NPC, show a prompt (“Press E to talk”). **E** starts the conversation and **E** advances each line of dialogue. The player cannot move while in dialogue.
 - **No free-text chat between players [DEFAULT].** Players communicate only through **emojis** (Section 5.13).
 
 ### 5.5 Classrooms (20 total) **[DECIDED]**
@@ -157,8 +158,8 @@ Each grade (5th through 8th) has **four classes**, one for each of CSUN, LMU, UC
 - Entering a classroom: walk through the door (a short fade or camera transition is fine). Interior is a simple room with desks/furniture and the NPC(s). The Theater and Music Room should look distinct (stage, instruments).
 
 ### 5.6 Stamp station flow (the 16 PD classrooms) **[DECIDED]**
-1. Player talks to the classroom teacher NPC (Space).
-2. A **short** dialogue about the PD topic plays (Space to advance).
+1. Player talks to the classroom teacher NPC (E).
+2. A **short** dialogue about the PD topic plays (E to advance).
 3. At the end of the dialogue, the quiz appears: one or more multiple-choice questions, answered by clicking or number keys.
 4. **If the answer is correct:** continue; after the last question is correct, the teacher “stamps” the report card (short stamp animation + message), the stamp is saved, and the objective list updates.
 5. **If the answer is wrong:**
@@ -166,7 +167,7 @@ Each grade (5th through 8th) has **four classes**, one for each of CSUN, LMU, UC
    - Show a gentle message such as “Not quite — let’s go over it again!”, then **restart the dialogue from the beginning** so the player can re-read it, and then return to the quiz so they can **pick a different answer**.
    - **Unlimited retries.** No lockout and no penalty.
    - **[DEFAULT]** For stations with multiple questions: questions already answered correctly stay answered; after the dialogue restarts the player returns to the question they missed.
-   - **[DEFAULT]** On a replay of the dialogue, lines the player has already read can be advanced quickly with Space (no slow text animation).
+   - **[DEFAULT]** On a replay of the dialogue, lines the player has already read can be advanced quickly with E (no slow text animation).
 6. A completed station can be revisited but does not award a second stamp. The teacher shows a short “You already have this stamp” line.
 - Stations can be completed in **any order**.
 - Keep each station short (see time budget, Section 5.14).
@@ -234,7 +235,7 @@ Always visible in the **top-left corner**. Shows:
 - Add a **content-length checker** (a simple script) that warns me if a station’s dialogue/quiz is likely to exceed the time budget.
 
 ### 5.15 Dialogue window with character portraits **[DECIDED]**
-- Whenever a player talks to **any character who has dialogue** (teachers inside classrooms, hallway and outdoor NPCs, admin, and Mr. Van Diest), the dialogue window shows that character’s **cartoonized portrait image**, like a classic RPG: the portrait sits at the **bottom-left of the dialogue window**, with the speaker’s name plate and the dialogue text beside it, and the “Press SPACE” indicator at the bottom-right.
+- Whenever a player talks to **any character who has dialogue** (teachers inside classrooms, hallway and outdoor NPCs, admin, and Mr. Van Diest), the dialogue window shows that character’s **cartoonized portrait image**, like a classic RPG: the portrait sits at the **bottom-left of the dialogue window**, with the speaker’s name plate and the dialogue text beside it, and the “Press E” indicator at the bottom-right.
 - The portrait stays visible for the whole conversation, including quiz questions and the stamp message.
 - **Every character that has dialogue has their own portrait file**, set in `npcs.json` (named by NPC id).
 - **File format:** **PNG with a transparent background** is the standard (so it looks right in both light and dark mode). The build may convert portraits to WebP with transparency to reduce download size; either format is accepted. Size guideline: about 400–600 px tall, optimized to roughly 100–200 KB each. It should look crisp on Retina screens at about 180–260 px tall on screen.
@@ -248,7 +249,7 @@ Always visible in the **top-left corner**. Shows:
 
 - **Teacher and admin NPCs:** one per classroom plus admin NPCs in the office, etc. Their faces are made from **photos I will upload later** (see Section 8).
 - **Hallway/wandering NPCs:** NPCs scattered around the school (hallways, courtyard, cafeteria, office, parking lot). They give short flavor dialogue, may be stationary or do a simple idle/short patrol **[DEFAULT: no complex AI]**.
-- All NPCs use the same talk system (Space to start, Space to advance).
+- All NPCs use the same talk system (E to start, E to advance).
 - Each NPC is defined in data (Section 11): id, display name, role, location, face texture file, **portrait file** (Section 5.15), dialogue.
 
 ---
@@ -320,7 +321,7 @@ Always visible in the **top-left corner**. Shows:
 - Report Card: always-visible clickable button + hotkey (R), see 5.7.
 - Map: button + hotkey (M), see 5.12.
 - Emoji picker: button + hotkey (E), see 5.13.
-- Dialogue box (see 5.15): bottom of screen, with the speaker’s portrait at the bottom-left, speaker name, text, and a “Press SPACE” indicator.
+- Dialogue box (see 5.15): bottom of screen, with the speaker’s portrait at the bottom-left, speaker name, text, and a “Press E” indicator.
 - Quiz panel: question + clickable answer choices (also keyboard-selectable).
 - Light/dark toggle always accessible.
 - Interaction prompt near NPCs/doors/cars.
@@ -375,7 +376,7 @@ Ship these with **clearly marked placeholder content** for all 20 classrooms so 
 3. **Multiplayer basics:** two or more browser tabs see each other move, join/leave handling, name tags. Design for 50 players from the start (see Section 9).
 4. **Character creation + homeroom selection:** full flow, live preview, appearance synced to other players, homeroom-colored shirts and name tags.
 5. **Light/dark mode** across UI and scene.
-6. **NPCs + dialogue system:** proximity prompt, Space to talk/advance, data-driven NPCs and dialogue, hallway NPCs, multiple players talking to the same NPC, dialogue window with character portraits at bottom-left (5.15; placeholder portraits until real ones arrive).
+6. **NPCs + dialogue system:** proximity prompt, E to talk/advance, data-driven NPCs and dialogue, hallway NPCs, multiple players talking to the same NPC, dialogue window with character portraits at bottom-left (5.15; placeholder portraits until real ones arrive).
 7. **Classrooms:** enter/exit all 20 rooms (including Music Room, Learning Center, Theater), interiors, teacher NPCs, using the 16-class grade/homeroom/subject table (Section 5.5) and the CSUN/LMU/UCLA/USC naming rule.
 8. **Quiz + stamp system:** quiz UI, retry-with-dialogue-restart behavior, server-validated stamps, clickable report card grid (5.7), stamp animation, objectives list updates.
 9. **School map (button + M key):** map panel generated from layout data, “You are here” marker, classroom status, completed/remaining objectives.

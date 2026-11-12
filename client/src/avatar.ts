@@ -54,6 +54,8 @@ export interface AvatarRig {
   seatDrop?: (seatY: number) => number;
   /** Actual ground speed in world units/second this frame (0 = standing). Drives walk/run blending and stride. */
   setLocomotion?: (speed: number) => void;
+  /** Jump state each frame: `air` while off the ground, `vy` = vertical speed (up is positive). */
+  setAirborne?: (air: boolean, vy: number) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -318,6 +320,8 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
   let sitBones: SitBones | null = null;
   /** Foot position in each shin bone's own space at rest (the foot bones are not children of the shins) */
   const footRest = { L: new THREE.Vector3(), R: new THREE.Vector3() };
+  /** Rest-pose transforms of the bones the code poses by hand, restored every frame before the mixer runs */
+  let restPose: Array<[THREE.Object3D, THREE.Vector3, THREE.Quaternion]> = [];
   let legPivotHeight = 1.0 * modelScale; // standing height of the hip joint in player space
   // Locomotion: the scene reports the real ground speed and the walk/run cycles are driven from it
   let locoSpeed = 0; // reported speed (world units/s)
@@ -325,6 +329,15 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
   let smoothSpeed = 0;
   let gaitPhase = 0; // 0..1 position in the shared walk/run cycle
   let gait = { walkCycle: 1.85, runCycle: 1.15, walkDur: 1.33, runDur: 0.8 }; // measured per model (native units)
+  // Jump: the scene reports air/vy; the pose is blended in procedurally (the pack has no jump clip)
+  let airFlag = false;
+  let airVy = 0;
+  let airStamp = 0;
+  let wasAir = false;
+  let jumpBlend = 0; // 0 = on the ground, 1 = fully in the airborne pose
+  let landT = 1; // seconds since landing (1 = no landing crouch)
+  let landStrength = 0;
+  let peakFall = 0;
   let lastBob = 0; // torsoGroup bob already applied to bodyGroup
   let lastSyncMs = 0; // per rig: each rig has its own clock
   let seatBlend = 0; // 0 = standing animation, 1 = fully in the seated pose
@@ -673,6 +686,9 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
       loArmL: get("LowerArmL"), loArmR: get("LowerArmR"),
     };
     sitBones = Object.values(b).every(Boolean) ? (b as SitBones) : null;
+    restPose = [...Object.values(b), get("Body"), get("PTL"), get("PTR")]
+      .filter((o): o is THREE.Object3D => !!o)
+      .map((o) => [o, o.position.clone(), o.quaternion.clone()] as [THREE.Object3D, THREE.Vector3, THREE.Quaternion]);
     // Standing height of the hip joint relative to the player origin
     player.updateMatrixWorld(true);
     if (sitBones) {
@@ -696,7 +712,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
    * Rotate `bone` about its joint so that its axis points along dirPlayer (player space).
    * The axis is the direction to `child`, or `axisLocal` (in the bone's own space) when it has no child.
    */
-  function aimBone(bone: THREE.Object3D, child: THREE.Object3D | null, axisLocal: THREE.Vector3 | null, dirPlayer: THREE.Vector3, t: number): void {
+  function aimBone(bone: THREE.Object3D, child: THREE.Object3D | null, axisLocal: THREE.Vector3 | null, dirPlayer: THREE.Vector3, t: number, worldDir = false): void {
     if (t <= 0.001 || !bone.parent) return;
     bone.updateWorldMatrix(true, true);
     if (child) {
@@ -708,7 +724,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
       _v2.copy(axisLocal!).normalize().applyQuaternion(_q1);
     }
     player.getWorldQuaternion(_q1);
-    const dirW = dirPlayer.clone().normalize().applyQuaternion(_q1);
+    const dirW = worldDir ? dirPlayer.clone().normalize() : dirPlayer.clone().normalize().applyQuaternion(_q1);
     _q2.setFromUnitVectors(_v2, dirW); // world-space delta
     bone.getWorldQuaternion(_q3);
     _q2.multiply(_q3); // new world rotation
@@ -814,6 +830,82 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
   }
 
   // ---------------------------------------------------------------------------
+  // Jump pose. Legs are solved with two-bone IK (knees bend forward), arms are aimed by hand.
+  //  - rising: knees tucked, arms swing up and forward
+  //  - falling: legs reach down for the ground, arms out for balance
+  //  - landing: hips drop with the feet planted (a short crouch), then recover
+  // ---------------------------------------------------------------------------
+  function applyJumpPose(air: number, vy: number, crouch: number): void {
+    const s = sitBones;
+    if (!s || !armatureScene || (air < 0.002 && crouch < 0.002)) return;
+    const body = armatureScene.getObjectByName("Body");
+    player.updateMatrixWorld(true);
+    // Where the animation has the feet right now (planted feet stay put during the landing crouch)
+    const feet = [s.footL, s.footR];
+    const toes = [s.toeL, s.toeR];
+    const footW = feet.map((f) => f.getWorldPosition(new THREE.Vector3()));
+    const toeW = toes.map((f) => f?.getWorldPosition(new THREE.Vector3()));
+    if (body && crouch > 0.002) {
+      body.position.y -= crouch * 0.13; // hips drop (native units); the legs below are re-solved
+      player.updateMatrixWorld(true);
+    }
+    const t = Math.max(air, Math.min(1, crouch * 1.6));
+    const playerQ = player.getWorldQuaternion(new THREE.Quaternion());
+    const fall = Math.min(1, Math.max(0, 0.5 - vy / 9)); // 0 = rising fast, 1 = falling fast
+
+    const ups = [s.upLegL, s.upLegR];
+    const los = [s.loLegL, s.loLegR];
+    const rests = [footRest.L, footRest.R];
+    for (let i = 0; i < 2; i++) {
+      const sx = i === 0 ? 1 : -1;
+      const hip = ups[i].getWorldPosition(new THREE.Vector3());
+      const knee0 = los[i].getWorldPosition(new THREE.Vector3());
+      const a1 = hip.distanceTo(knee0);
+      const b1 = knee0.distanceTo(los[i].localToWorld(rests[i].clone()));
+      const L = a1 + b1;
+      // target foot position: planted (crouch) or hanging under the body (air)
+      const rise = new THREE.Vector3(sx * 0.1, -0.66, 0.12).multiplyScalar(L);
+      const drop = new THREE.Vector3(sx * 0.1, -0.94, 0.05).multiplyScalar(L);
+      const airT = hip.clone().add(rise.lerp(drop, fall).applyQuaternion(playerQ));
+      const target = footW[i].clone().lerp(airT, air);
+      // two-bone IK with the knee pointing forward
+      const toTarget = target.clone().sub(hip);
+      const d = Math.min(Math.max(toTarget.length(), Math.abs(a1 - b1) + 1e-3), a1 + b1 - 1e-3);
+      const u = toTarget.normalize();
+      const x = (a1 * a1 - b1 * b1 + d * d) / (2 * d);
+      const h = Math.sqrt(Math.max(a1 * a1 - x * x, 0));
+      const pole = new THREE.Vector3(0, 0, 1).applyQuaternion(playerQ);
+      pole.sub(u.clone().multiplyScalar(pole.dot(u))).normalize();
+      const knee = hip.clone().add(u.clone().multiplyScalar(x)).add(pole.multiplyScalar(h));
+      aimBone(ups[i], los[i], null, knee.clone().sub(hip), t, true);
+      aimBone(los[i], null, rests[i], target.clone().sub(knee), t, true);
+      // feet and toes follow the target (they are not children of the shins)
+      const next = footW[i].clone().lerp(target, t);
+      const delta = next.clone().sub(footW[i]);
+      const root = feet[i].parent!;
+      root.updateWorldMatrix(true, false);
+      feet[i].position.copy(root.worldToLocal(next.clone()));
+      feet[i].updateMatrixWorld(true);
+      const toe = toes[i];
+      const tw = toeW[i];
+      if (toe && tw && toe.parent) {
+        toe.position.copy(toe.parent.worldToLocal(tw.clone().add(delta)));
+        toe.updateMatrixWorld(true);
+      }
+    }
+    // arms: up and forward while rising, out to the sides while falling
+    if (air > 0.002) {
+      const mix = (r: number, f: number) => r + (f - r) * fall;
+      const arm = (bone: THREE.Object3D, child: THREE.Object3D | null, x: number, y: number, z: number) =>
+        aimBone(bone, child, null, new THREE.Vector3(x, y, z), air * 0.9);
+      arm(s.upArmL, s.loArmL, mix(0.45, 0.85), mix(0.55, -0.1), mix(0.6, 0.15));
+      arm(s.upArmR, s.loArmR, -mix(0.45, 0.85), mix(0.55, -0.1), mix(0.6, 0.15));
+      arm(s.loArmL, s.loArmL.children[0] ?? null, mix(0.3, 0.9), mix(0.45, 0.1), mix(0.8, 0.25));
+      arm(s.loArmR, s.loArmR.children[0] ?? null, -mix(0.3, 0.9), mix(0.45, 0.1), mix(0.8, 0.25));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // syncSkeleton — called every frame by scene.ts (also via onBeforeRender)
   // ---------------------------------------------------------------------------
   function syncSkeleton(): void {
@@ -882,6 +974,11 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     if (runAction)  runAction.weight  += (targetRun  - runAction.weight)  * lerpSpeed;
     if (waveAction) waveAction.weight += (targetWave - waveAction.weight) * lerpSpeed;
 
+    // Undo last frame's hand-made poses first; bones the clips animate are overwritten by the mixer anyway
+    for (const [o, p, q] of restPose) {
+      o.position.copy(p);
+      o.quaternion.copy(q);
+    }
     mixer.update(mixerDt);
 
     // Blend into / out of the procedural seated pose
@@ -889,6 +986,27 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     if (seatBlend < 0.002) seatBlend = 0;
     if (seatBlend > 0.998) seatBlend = 1;
     applySeatedPose(seatBlend);
+
+    // Jump: blend the airborne pose in/out, and play a short landing crouch
+    const airNow = airFlag && nowMs - airStamp < 250 && !isSeated;
+    if (airNow) {
+      peakFall = Math.max(peakFall, -airVy);
+      landT = 1;
+    } else if (wasAir) {
+      landT = 0; // just landed
+      landStrength = Math.min(1, Math.max(0.25, peakFall / 7));
+      peakFall = 0;
+    }
+    wasAir = airNow;
+    jumpBlend += ((airNow ? 1 : 0) - jumpBlend) * Math.min(1, dt * (airNow ? 20 : 16));
+    if (jumpBlend < 0.002) jumpBlend = 0;
+    if (jumpBlend > 0.998) jumpBlend = 1;
+    let crouch = 0;
+    if (!airNow && landT < 1) {
+      landT += dt / 0.28;
+      crouch = landT < 1 ? Math.sin(Math.PI * landT) * landStrength : 0;
+    }
+    applyJumpPose(jumpBlend, airVy, crouch);
 
     // Sync bodyGroup height to torsoGroup for scene.ts bob (keeps feet on ground)
     // (apply only the change, so a seat drop set by scene.ts is kept)
@@ -949,6 +1067,11 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     apply,
     setStudioPose,
     syncSkeleton,
+    setAirborne: (air: boolean, vy: number) => {
+      airFlag = air;
+      airVy = vy;
+      airStamp = typeof performance !== "undefined" ? performance.now() : 0;
+    },
     setLocomotion: (speed: number) => {
       locoSpeed = speed;
       locoStamp = typeof performance !== "undefined" ? performance.now() : 0;

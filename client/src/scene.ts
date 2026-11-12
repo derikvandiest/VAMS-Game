@@ -4354,7 +4354,7 @@ export function startPlaceholderScene(
   // Ball interaction HUD prompt
   const bballHint = document.createElement("div");
   bballHint.id = "bball-hint";
-  bballHint.textContent = "Press SPACE to shoot at hoop 🏀";
+  bballHint.textContent = "Press E to shoot at hoop 🏀";
   bballHint.style.cssText =
     "position:fixed;bottom:78px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.92);color:#ea580c;font-family:system-ui,-apple-system,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.4px;padding:9px 22px;border-radius:20px;border:1.5px solid rgba(234,88,12,0.7);box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:none;z-index:900;opacity:0;transition:opacity 0.25s, transform 0.25s;display:none;";
   container.appendChild(bballHint);
@@ -6411,7 +6411,7 @@ export function startPlaceholderScene(
   // between the two buildings (layout.json `gates`). Matches the signature campus red ironwork
   // (terminal posts, tubular frame, security pickets with pointed spear finials, diagonal cross-braces,
   // cane drop bolts, slide latch, and center ground stop). While CLOSED it blocks east-west movement
-  // through the gap (solid in `collides`); the player opens/closes it with SPACE when within ~3.5 units.
+  // through the gap (solid in `collides`); the player opens/closes it with E when within ~3.5 units.
   const GATE_INTERACT_RANGE = 3.5; // units (README controls)
   const GATE_OPEN_ANGLE = 1.5; // radians each panel swings outward (~86 degrees)
   let gateOpen = false;
@@ -6811,6 +6811,18 @@ export function startPlaceholderScene(
 
   // --- Interaction States: Table Seating & Vehicle Driving ---------------
   let seatedChair: ChairSlot | null = null;
+
+  // --- Jumping (Space): simple vertical physics on top of the ground height ---
+  const JUMP_SPEED = 6.4; // initial upward speed (world units/s) -> about 0.9 units high
+  const GRAVITY = 22;
+  let jumpH = 0; // height above the ground
+  let jumpV = 0;
+  let airborne = false;
+  function tryJump(): void {
+    if (airborne || seatedChair || drivingCar) return;
+    airborne = true;
+    jumpV = JUMP_SPEED;
+  }
   let drivingCar: DrivableCar | null = null;
 
   function standUp(): void {
@@ -6866,6 +6878,8 @@ export function startPlaceholderScene(
       bballVel.set(0, 0, 0);
     }
     seatedChair = chair;
+    airborne = false;
+    jumpH = 0;
     // Align with chair seat and backrest
     const seatBackOffset = 0.08;
     const seatedX = chair.chairX - Math.sin(chair.facingAngle) * seatBackOffset;
@@ -7115,9 +7129,23 @@ export function startPlaceholderScene(
     if (e.shiftKey || e.code === "ShiftLeft" || e.code === "ShiftRight") {
       keys.add("shift");
     }
-    // Spacebar shoots basketball if held, enters/exits MPR / classrooms, or opens/closes the gate if near it
-    if (e.code === "Space") {
+    // E is the action key: stand up / leave the car, shoot a held basketball, use doors and the gate,
+    // press the car reset button, sit in a chair or get into a car. Space jumps.
+    if (e.code === "KeyE") {
       e.preventDefault();
+      const distToCarResetBtn = Math.hypot(player.position.x - CAR_RESET_BTN_X, player.position.z - CAR_RESET_BTN_Z);
+      if (distToCarResetBtn <= 2.2) {
+        resetAllCars();
+        return;
+      }
+      if (drivingCar) {
+        exitCar();
+        return;
+      }
+      if (seatedChair) {
+        standUp();
+        return;
+      }
       if (bballHeld) {
         shootBasketball();
         return;
@@ -7167,21 +7195,6 @@ export function startPlaceholderScene(
       }
       if (gateDistance(player.position.x, player.position.z) <= GATE_INTERACT_RANGE) {
         gateOpen = !gateOpen;
-      }
-      return;
-    }
-    if (e.key.toLowerCase() === "e") {
-      const distToCarResetBtn = Math.hypot(player.position.x - CAR_RESET_BTN_X, player.position.z - CAR_RESET_BTN_Z);
-      if (distToCarResetBtn <= 2.2) {
-        resetAllCars();
-        return;
-      }
-      if (drivingCar) {
-        exitCar();
-        return;
-      }
-      if (seatedChair) {
-        standUp();
         return;
       }
       // Check nearest chair (range: 1.8m)
@@ -7212,10 +7225,12 @@ export function startPlaceholderScene(
         enterCar(nearestCar);
         return;
       }
-      if (bballHeld) {
-        shootBasketball();
-        return;
-      }
+      return;
+    }
+    if (e.code === "Space") {
+      e.preventDefault(); // never scroll the page
+      if (!e.repeat) tryJump();
+      return;
     }
     if (e.key.toLowerCase() === "f") {
       if (bballHeld) {
@@ -7647,8 +7662,19 @@ export function startPlaceholderScene(
 
       if (!moving) rig.setLocomotion?.(0);
 
+      // Jump physics: stay in the air until the height returns to the ground
+      if (airborne) {
+        jumpV -= GRAVITY * dt;
+        jumpH += jumpV * dt;
+        if (jumpH <= 0 && jumpV < 0) {
+          jumpH = 0;
+          airborne = false;
+        }
+      }
+      rig.setAirborne?.(airborne, jumpV);
       const targetY = targetFloorY(player.position.x, player.position.z);
-      player.position.y += (targetY - player.position.y) * Math.min(1, dt * 12);
+      const baseY = player.position.y - jumpH; // ground height under the player (before this frame's jump)
+      player.position.y = baseY + (targetY - baseY) * Math.min(1, dt * 12) + jumpH;
       bodyGroup.position.y = 0; // the walk/run clips carry their own bounce
       void bob;
     }
@@ -7666,8 +7692,8 @@ export function startPlaceholderScene(
         gateDistance(player.position.x, player.position.z) <= GATE_INTERACT_RANGE;
       const wanted = nearGate
         ? gateOpen
-          ? "Press SPACE to close the gate"
-          : "Press SPACE to open the gate"
+          ? "Press E to close the gate"
+          : "Press E to open the gate"
         : "";
       if (wanted !== gateHintShown) {
         gateHintShown = wanted;
@@ -7683,20 +7709,20 @@ export function startPlaceholderScene(
         const distToWestExit = Math.hypot(player.position.x - MPR_EXIT_DOOR_X, player.position.z - MPR_EXIT_DOOR_Z);
         const distToEastExit = Math.hypot(player.position.x - MPR_EAST_EXIT_DOOR_X, player.position.z - MPR_EAST_EXIT_DOOR_Z);
         if (distToWestExit <= 2.6) {
-          wanted = "Press SPACE to exit to courtyard";
+          wanted = "Press E to exit to courtyard";
         } else if (distToEastExit <= 2.6) {
-          wanted = "Press SPACE to exit to parking lot";
+          wanted = "Press E to exit to parking lot";
         }
       } else if (currentClassroom) {
         const distToExit = Math.hypot(player.position.x - currentClassroom.exitDoorX, player.position.z - currentClassroom.exitDoorZ);
         if (distToExit <= 2.6) {
-          wanted = "Press SPACE to exit to campus";
+          wanted = "Press E to exit to campus";
         }
       } else {
         const distToEnterEast = Math.hypot(player.position.x - MPR_CAMPUS_DOOR_X, player.position.z - MPR_CAMPUS_DOOR_Z);
         const distToEnterParking = Math.hypot(player.position.x - MPR_CAMPUS_PARKING_DOOR_X, player.position.z - MPR_CAMPUS_PARKING_DOOR_Z);
         if (distToEnterEast <= 2.8 || distToEnterParking <= 2.8) {
-          wanted = "Press SPACE to enter MPR";
+          wanted = "Press E to enter MPR";
         } else {
           // Check nearest classroom
           const pFloor = player.position.y > floor2 * 0.5 ? 1 : 0;
@@ -7706,7 +7732,7 @@ export function startPlaceholderScene(
             if (inst.campusDoor.floor === pFloor) {
               const d = Math.hypot(player.position.x - inst.campusDoor.x, player.position.z - inst.campusDoor.z);
               if (d <= 2.4) {
-                wanted = `Press SPACE to enter ${inst.data.label}`;
+                wanted = `Press E to enter ${inst.data.label}`;
                 break;
               }
             }
@@ -7939,7 +7965,7 @@ export function startPlaceholderScene(
         );
       }
 
-      bballHint.textContent = "Press SPACE or Click to shoot at hoop 🏀";
+      bballHint.textContent = "Press E or Click to shoot at hoop 🏀";
       bballHint.style.display = "block";
       bballHint.style.opacity = "1";
     } else {

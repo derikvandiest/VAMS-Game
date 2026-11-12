@@ -121,7 +121,8 @@ export class StartMenu {
               <span>•</span>
               <span><b>Shift</b> Sprint</span>
               <span>•</span>
-              <span><b>Space</b> Interact</span>
+              <span><b>E</b> Interact</span>
+              <span><b>Space</b> Jump</span>
               <span>•</span>
               <span><b>Scroll</b> Zoom</span>
               <span>•</span>

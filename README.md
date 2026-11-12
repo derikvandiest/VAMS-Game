@@ -3,7 +3,7 @@
 A browser-based, Habbo Hotel–style 3D multiplayer game used in teacher professional development.
 The full specification lives in [PROJECT.md](PROJECT.md) — that file is the source of truth.
 
-**Current status:** Milestone 2 — single-player prototype: walk a two-story campus (two L-shaped buildings around a grass field, parking lot to the west), climb exterior stairs to second floors with walkways to the upstairs classrooms, orbit the camera, click the compass to face north, sprint with Shift, zoom with the scroll wheel, and open/close the gate between the buildings with Spacebar.
+**Current status:** Milestone 2 — single-player prototype: walk a two-story campus (two L-shaped buildings around a grass field, parking lot to the west), climb exterior stairs to second floors with walkways to the upstairs classrooms, orbit the camera, click the compass to face north, sprint with Shift, zoom with the scroll wheel, and open/close the gate between the buildings with **E**, and jump with **Spacebar**.
 
 ---
 
@@ -23,7 +23,7 @@ The full specification lives in [PROJECT.md](PROJECT.md) — that file is the so
 4. Type `npm run dev` and press **Enter**. Leave this window open — it starts the game.
 5. Open Chrome or Edge and go to **<http://localhost:5173>**
 
-**What you should see:** a 3D campus — an asphalt ground with a paved inner courtyard and a rectangular **grass field** in the middle, framed by **two buildings** forming an L (a west building and a north building). To the west of the buildings is a **parking lot** featuring compact stalls with painted divider stripes and concrete wheel stoppers, filled with diverse vehicles (sedans, SUVs, electric cars, compacts, and a white Ford double backdoor van) with **scattered empty spots** open for parking and driving. Facing the parking lot at the Main Office entrance, an official **"VALOR ACADEMY MIDDLE SCHOOL"** gold-framed dimensional sign with the lion crest and twin architectural spotlights is mounted on the second-floor facade directly above the glass double doors, with an architectural **"FRONT OFFICE"** transom plaque mounted above the double doors. Across the courtyard on the MPR building, a matching **"MPR"** header plaque is mounted above the MPR double doors. In the **south-west corner of the parking lot**, a **dumpster enclosure** features a beige brick masonry wall, east-facing steel service gates opening to the drive aisle, a concrete pad with yellow safety bollards, a **green trash dumpster** ("TRASH ONLY"), and a **blue recycling dumpster** ("RECYCLE ONLY") both facing east. In the inner breezeway between the Office and West building sits a **signature red double-door gate** with ornamental ironwork, pickets, spear finials, diagonal braces, cane bolts, and a slide latch that swings open and closed with **Spacebar**. Under the covered awning sit **round tables with umbrellas** where characters can sit.
+**What you should see:** a 3D campus — an asphalt ground with a paved inner courtyard and a rectangular **grass field** in the middle, framed by **two buildings** forming an L (a west building and a north building). To the west of the buildings is a **parking lot** featuring compact stalls with painted divider stripes and concrete wheel stoppers, filled with diverse vehicles (sedans, SUVs, electric cars, compacts, and a white Ford double backdoor van) with **scattered empty spots** open for parking and driving. Facing the parking lot at the Main Office entrance, an official **"VALOR ACADEMY MIDDLE SCHOOL"** gold-framed dimensional sign with the lion crest and twin architectural spotlights is mounted on the second-floor facade directly above the glass double doors, with an architectural **"FRONT OFFICE"** transom plaque mounted above the double doors. Across the courtyard on the MPR building, a matching **"MPR"** header plaque is mounted above the MPR double doors. In the **south-west corner of the parking lot**, a **dumpster enclosure** features a beige brick masonry wall, east-facing steel service gates opening to the drive aisle, a concrete pad with yellow safety bollards, a **green trash dumpster** ("TRASH ONLY"), and a **blue recycling dumpster** ("RECYCLE ONLY") both facing east. In the inner breezeway between the Office and West building sits a **signature red double-door gate** with ornamental ironwork, pickets, spear finials, diagonal braces, cane bolts, and a slide latch that swings open and closed with **E**. Under the covered awning sit **round tables with umbrellas** where characters can sit.
 
 Your blue character starts in the parking lot. Press **W A S D** (or the arrow keys) to walk; the camera follows you. Each building is **two stories**: walk up the **exterior stairs** (south side of the west building, east side of the north building) to the **second floor**, where a **walkway** leads to the 4 upstairs classrooms (railings stop you at the edge of the roof). A **table awning** and the hallway over the second floor overhang the ground-floor door area so they read as supporting structures.
 
@@ -36,10 +36,12 @@ Your blue character starts in the parking lot. Press **W A S D** (or the arrow k
 | Look around | **Right-click + drag** to orbit the camera around you (rotates / raises-lowers) |
 | Clamp to north | Click the **compass** (top-left) to snap the view to north-up |
 | Zoom | **Scroll wheel** zooms smoothly from a close-up of your character to a campus overview; right-drag up/down tilts the view |
-| Open / close the gate | **Spacebar** when standing within ~3.5 units of the gate |
+| Open / close the gate | **E** when standing within ~3.5 units of the gate |
+| Jump | **Spacebar** |
+| Sit / stand, get in / out of a car | **E** near a chair or car |
 | Kick soccer ball | Walk or sprint into the ball on the grass field |
 | Pick up basketball | Walk over the ball on the basketball court |
-| Shoot basketball | Press **Spacebar** or **Click** (or **F** / **E**) while holding basketball |
+| Shoot basketball | Press **E**, **F** or **Click** while holding basketball |
 | Reset balls | Step on the **water runoff vent** in the bottom-right corner of the grass (or press **B**) |
 | Sit at table | Walk up to any outdoor chair under the awning and press **E** (press **E** or **WASD** to stand) |
 | Enter & drive car | Walk up to any car in the parking lot and press **E** to enter |
@@ -47,7 +49,7 @@ Your blue character starts in the parking lot. Press **W A S D** (or the arrow k
 
 <!-- The camera stays locked to your character during orbit + zoom. The W A S D keys move you relative to the **screen** (W is always "up" the screen), so they work no matter what angle you are viewing the campus from or where the compass is pointing. -->
 
-> Milestone 2 is **single-player only** — you will not see other players yet (that arrives in Milestone 3). The "second floor" is currently a walkable platform with walls and a marked walkway (a prototype; real furnished interiors arrive at Milestone 7). The campus shape is a placeholder built from `content/layout.json`; it will be reshaped to match the real school photos in a later milestone. Tabletops are included (with umbrellas and a covered awning), cars are split into two parking rows, and the gate between the buildings opens and closes on **Spacebar** when you are nearby. The camera stays locked to the player and can be zoomed with the scroll wheel.
+> Milestone 2 is **single-player only** — you will not see other players yet (that arrives in Milestone 3). The "second floor" is currently a walkable platform with walls and a marked walkway (a prototype; real furnished interiors arrive at Milestone 7). The campus shape is a placeholder built from `content/layout.json`; it will be reshaped to match the real school photos in a later milestone. Tabletops are included (with umbrellas and a covered awning), cars are split into two parking rows, and the gate between the buildings opens and closes on **E** when you are nearby. The camera stays locked to the player and can be zoomed with the scroll wheel.
 
 ### How to stop
 
@@ -81,13 +83,13 @@ Open **Terminal** (⌘+Space, type "Terminal"), `cd` into the project folder, an
 | Look around | **Right-click + drag** to orbit the camera around you (rotates / raises-lowers) |
 | Clamp to north | Click the **compass** (top-left) to snap the view to north-up |
 | Zoom | **Scroll wheel** zooms smoothly from a close-up of your character to a campus overview; right-drag up/down tilts the view |
-| Shoot basketball | Press **Spacebar** or **Click** (or **F** / **E**) while holding basketball |
+| Shoot basketball | Press **E**, **F** or **Click** while holding basketball |
 | Reset soccer & basketball | Walk onto the **water runoff vent** in the bottom-right corner of the grass (or press **B**) |
 | Sit at table | Press **E** near any chair (press **E** or **WASD** to stand) |
 | Drive car | Press **E** near car to enter; **W** gas, **S** brake/reverse, **A/D** steer, **Shift** boost, **E** exit |
 | Reset cars | Press **E** or **Click** the **Car Reset Button** on the right side of the office double door |
 | Chat | Press **Enter** to focus chat (bottom-right); type `@username` for private DMs; click **👍** or **❤️** to react |
-| Enter / Exit MPR | Press **Spacebar** near the MPR double doors (`x = -14, z = 51.5`) or near the interior exit doors |
+| Enter / Exit MPR | Press **E** near the MPR double doors (`x = -14, z = 51.5`) or near the interior exit doors |
 
 **Parking lot, cars & perimeter:**
 
