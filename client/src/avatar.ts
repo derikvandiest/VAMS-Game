@@ -425,7 +425,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
    * Some donor hairstyles have a beard modelled into the same mesh. Keep only the beard triangles
    * (lower face, in front of the ears) or only everything else, so beards can be a separate option.
    */
-  function cutRegion(objs: THREE.Object3D[] | null, cut?: "beard" | "rest"): THREE.Object3D[] | null {
+  function cutRegion(objs: THREE.Object3D[] | null, cut?: "beard" | "rest" | "rest-nape"): THREE.Object3D[] | null {
     if (!objs || !cut) return objs;
     for (const o of objs) {
       const mesh = o as THREE.Mesh;
@@ -434,6 +434,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
       const idx = geo.getIndex();
       if (!idx) continue;
       const keep: number[] = [];
+      const matName = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material)?.name ?? "";
       for (let t = 0; t < idx.count; t += 3) {
         let y = 0;
         let z = 0;
@@ -442,6 +443,8 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
           z += pos.getZ(idx.getX(t + k)) / 3;
         }
         const isBeard = y < 1.655 && z > 0.05;
+        // the Punk's dark undercut band leaves a patch at the nape: drop it
+        if (cut === "rest-nape" && /dark/i.test(matName) && y < 1.68 && z < 0.0) continue;
         if (isBeard === (cut === "beard")) keep.push(idx.getX(t), idx.getX(t + 1), idx.getX(t + 2));
       }
       geo.setIndex(keep);
