@@ -5316,7 +5316,7 @@ export function startPlaceholderScene(
 
   // --- Double Door Header Signs & Single Classroom Plaques -----------------
   // Crisp white background, high-contrast dark typography, readable from any distance.
-  function makeDoorHeaderSignTexture(mainText: string, subText?: string): THREE.CanvasTexture {
+  function makeDoorHeaderSignTexture(mainText: string, subText?: string, sameSize = false): THREE.CanvasTexture {
     const canvas = document.createElement("canvas");
     canvas.width = 1024;
     canvas.height = 256;
@@ -5359,7 +5359,13 @@ export function startPlaceholderScene(
 
     const cleanSub = subText && subText.trim() !== "" && subText.toLowerCase() !== mainText.toLowerCase() ? subText.trim() : null;
 
-    if (cleanSub) {
+    if (cleanSub && sameSize) {
+      // Two words of a single name (e.g. LEARNING / CENTER): both lines the same size and style
+      ctx.font = "900 84px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Arial Black', sans-serif";
+      ctx.fillStyle = "#0f172a";
+      ctx.fillText(mainText, 512, 92);
+      ctx.fillText(cleanSub.toUpperCase(), 512, 176);
+    } else if (cleanSub) {
       // Main text: bold, pitch dark, highly readable
       ctx.font = "900 86px system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Arial Black', sans-serif";
       ctx.fillStyle = "#0f172a";
@@ -5486,7 +5492,7 @@ export function startPlaceholderScene(
         subLabel = "CENTER";
       }
     }
-    const plaqueTex = makeDoorHeaderSignTexture(mainLabel, subLabel);
+    const plaqueTex = makeDoorHeaderSignTexture(mainLabel, subLabel, inst.data.id === "learning-center");
     const plaqueMesh = createHeaderPlaqueMesh(plaqueTex, 1.42, 0.45);
 
     if (door.axis === "z") {
