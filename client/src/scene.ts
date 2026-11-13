@@ -5240,7 +5240,7 @@ export function startPlaceholderScene(
   });
   const glassDoorHandleMaterial = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.2, metalness: 0.9 });
   const DOOR_HEIGHT = 2.6;
-  const doorParts = new Map<string, { frame: THREE.Mesh; panel: THREE.Mesh; x: number; y: number; z: number; axis: "x" | "z" }>();
+  const doorParts = new Map<string, { frame: THREE.Mesh; panel: THREE.Mesh; x: number; y: number; z: number; axis: "x" | "z"; floor: number }>();
   for (const door of doors) {
     const isDouble = door.id.includes("double");
     const isMpr = door.id.startsWith("mpr");
@@ -5284,7 +5284,7 @@ export function startPlaceholderScene(
       const panel = new THREE.Mesh(new THREE.BoxGeometry(pw, DOOR_HEIGHT - 0.2, pd), panelMat);
       panel.position.set(door.x, dy, door.z);
       scene.add(panel);
-      doorParts.set(door.id, { frame, panel, x: door.x, y: dy, z: door.z, axis: door.axis as "x" | "z" });
+      doorParts.set(door.id, { frame, panel, x: door.x, y: dy, z: door.z, axis: door.axis as "x" | "z", floor: door.floor });
 
       const gw = door.axis === "z" ? 0.38 : 0.8;
       const gd = door.axis === "z" ? 0.8 : 0.38;
@@ -7523,10 +7523,18 @@ export function startPlaceholderScene(
     const cur = doorMarkers.get(roomId);
     if (on && !cur) {
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: markerTexture, transparent: true }));
-      // in front of the wall (doors in west-building walls face +x, doors in north-building walls face +z)
-      sprite.position.set(parts.x + (parts.axis === "z" ? 0.9 : 0), parts.y + DOOR_HEIGHT / 2 + 0.46, parts.z + (parts.axis === "x" ? 0.9 : 0));
+      // In front of the wall (doors in west-building walls face +x, doors in north-building walls face +z).
+      // Ground-floor doors sit under the walkway overhang, so their mark hangs lower, in front of the upper part
+      // of the door, where it is easy to see. Upper-floor doors keep theirs just above the door.
+      const ground = parts.floor === 0;
+      const out = ground ? 1.15 : 0.9;
+      sprite.position.set(
+        parts.x + (parts.axis === "z" ? out : 0),
+        ground ? parts.y + 0.95 : parts.y + DOOR_HEIGHT / 2 + 0.46,
+        parts.z + (parts.axis === "x" ? out : 0)
+      );
       sprite.userData.baseY = sprite.position.y;
-      sprite.scale.set(0.85, 0.85, 1);
+      sprite.scale.set(ground ? 1.1 : 0.85, ground ? 1.1 : 0.85, 1);
       scene.add(sprite);
       doorMarkers.set(roomId, sprite);
     } else if (!on && cur) {
