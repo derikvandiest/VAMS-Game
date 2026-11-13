@@ -560,14 +560,17 @@ export function startPlaceholderScene(
     { name: "south", centerZ: 59.65, spanZ: 3.22, hingeZ: 61.22, meetingZ: 58.08, diagDir: -1 }
   ];
 
+  const vehicleGateLeaves: THREE.Group[] = [];
   for (const leaf of leafConfigs) {
+    // Each leaf is a group that swings about its hinge (the group's origin is the hinge post)
+    const leafGroup = new THREE.Group();
     // Outer perimeter tubular frame (0.08m square steel)
     // Horizontal rails: top, middle, bottom
     for (const ry of [0.25, 1.75, 3.35]) {
       const rail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, leaf.spanZ), gateIronMat);
       rail.position.set(55.0, ry, leaf.centerZ);
       rail.castShadow = true;
-      scene.add(rail);
+      leafGroup.add(rail);
     }
 
     // Vertical stiles: hinge stile & meeting stile
@@ -575,7 +578,7 @@ export function startPlaceholderScene(
       const stile = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.18, 0.08), gateIronMat);
       stile.position.set(55.0, 1.8, sz);
       stile.castShadow = true;
-      scene.add(stile);
+      leafGroup.add(stile);
     }
 
     // Structural diagonal truss braces (classic heavy industrial vehicle gate cross bracing)
@@ -587,13 +590,13 @@ export function startPlaceholderScene(
     diagLower.position.set(55.0, 1.0, leaf.centerZ);
     diagLower.rotation.x = diagAngleLower;
     diagLower.castShadow = true;
-    scene.add(diagLower);
+    leafGroup.add(diagLower);
 
     const diagUpper = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, diagLen), gateIronMat);
     diagUpper.position.set(55.0, 2.55, leaf.centerZ);
     diagUpper.rotation.x = diagAngleUpper;
     diagUpper.castShadow = true;
-    scene.add(diagUpper);
+    leafGroup.add(diagUpper);
 
     // Vertical security pickets (10 pickets per leaf, spaced every 0.30m)
     for (let i = 0; i < 10; i++) {
@@ -601,26 +604,35 @@ export function startPlaceholderScene(
       const picket = new THREE.Mesh(new THREE.BoxGeometry(0.04, 3.26, 0.04), gateIronMat);
       picket.position.set(55.0, 1.82, pz);
       picket.castShadow = true;
-      scene.add(picket);
+      leafGroup.add(picket);
 
       // Spearpoint finial on top of each picket
       const finial = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.14, 4), gateIronMat);
       finial.position.set(55.0, 3.52, pz);
       finial.rotation.y = Math.PI / 4;
-      scene.add(finial);
+      leafGroup.add(finial);
     }
 
     // Bottom caster / ground support wheel under outer meeting stile
     const wheelZ = leaf.meetingZ - (leaf.diagDir * 0.08);
     const wheelBracket = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, 0.08), gateHardwareMat);
     wheelBracket.position.set(55.0, 0.17, wheelZ);
-    scene.add(wheelBracket);
+    leafGroup.add(wheelBracket);
 
     const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.05, 16), rubberWheelMat);
     wheel.position.set(55.0, 0.09, wheelZ);
     wheel.rotation.z = Math.PI / 2;
     wheel.castShadow = true;
-    scene.add(wheel);
+    leafGroup.add(wheel);
+  
+    // Swing about the hinge post: the pivot sits at the hinge, the leaf's parts keep their world positions
+    const pivot = new THREE.Group();
+    pivot.position.set(55.0, 0, leaf.hingeZ);
+    leafGroup.position.set(-55.0, 0, -leaf.hingeZ);
+    pivot.add(leafGroup);
+    scene.add(pivot);
+    pivot.userData.dir = leaf.name === "north" ? -1 : 1; // both leaves swing in toward campus
+    vehicleGateLeaves.push(pivot);
   }
 
   // 4) Center meeting & locking hardware at z = 58.0
@@ -635,18 +647,18 @@ export function startPlaceholderScene(
     const caneBolt = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.85, 10), gateHardwareMat);
     caneBolt.position.set(54.95, 0.45, crz);
     caneBolt.castShadow = true;
-    scene.add(caneBolt);
+    vehicleGateLeaves[0].children[0].add(caneBolt);
 
     // L-shaped handle at top
     const handle = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.12), gateHardwareMat);
     handle.position.set(54.95, 0.88, crz + (crz === 57.92 ? 0.04 : -0.04));
-    scene.add(handle);
+    vehicleGateLeaves[0].children[0].add(handle);
 
     // Guide brackets clamping cane bolt to meeting stile
     for (const by of [0.3, 0.7]) {
       const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.06), gateHardwareMat);
       bracket.position.set(54.96, by, crz);
-      scene.add(bracket);
+      vehicleGateLeaves[0].children[0].add(bracket);
     }
   }
 
@@ -654,7 +666,7 @@ export function startPlaceholderScene(
   const latchBar = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.08, 0.46), gateHardwareMat);
   latchBar.position.set(54.95, 1.75, 58.0);
   latchBar.castShadow = true;
-  scene.add(latchBar);
+  vehicleGateLeaves[0].children[0].add(latchBar);
 
   // Heavy brass industrial padlock securing the latch
   const padlockBody = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.07, 0.05), brassPadlockMat);
@@ -663,7 +675,7 @@ export function startPlaceholderScene(
   const padlockShackle = new THREE.Mesh(new THREE.TorusGeometry(0.025, 0.007, 8, 16, Math.PI), gateHardwareMat);
   padlockShackle.position.set(54.93, 1.72, 58.0);
   padlockShackle.rotation.z = Math.PI;
-  scene.add(padlockBody, padlockShackle);
+  vehicleGateLeaves[0].children[0].add(padlockBody, padlockShackle);
 
   // 5) Reflective warning sign: "EMERGENCY VEHICLE ACCESS - KEEP CLEAR - DO NOT BLOCK GATE"
   function makeGateSignTexture(): THREE.CanvasTexture {
@@ -725,7 +737,7 @@ export function startPlaceholderScene(
   const signTex = makeGateSignTexture();
   const signBacking = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.62, 1.05), gateHardwareMat);
   signBacking.position.set(55.0, 2.05, 58.0);
-  scene.add(signBacking);
+  vehicleGateLeaves[0].children[0].add(signBacking); // the warning sign is on the gate: it swings with it
 
   // Campus-facing sign (faces -X toward basketball court)
   const signFaceCampus = new THREE.Mesh(
@@ -734,7 +746,7 @@ export function startPlaceholderScene(
   );
   signFaceCampus.position.set(54.94, 2.05, 58.0);
   signFaceCampus.rotation.y = -Math.PI / 2;
-  scene.add(signFaceCampus);
+  vehicleGateLeaves[0].children[0].add(signFaceCampus);
 
   // Street-facing sign (faces +X toward outside)
   const signFaceStreet = new THREE.Mesh(
@@ -743,7 +755,7 @@ export function startPlaceholderScene(
   );
   signFaceStreet.position.set(55.06, 2.05, 58.0);
   signFaceStreet.rotation.y = Math.PI / 2;
-  scene.add(signFaceStreet);
+  vehicleGateLeaves[0].children[0].add(signFaceStreet);
 
   // --- 2e-2) Parking Lot North Sliding Gate (Industrial Cantilever Sliding Gate) ---
   // Located on the north perimeter fence at z = -23.0, spanning x in [-45.4, -38.6] (width: 6.8m).
@@ -6449,6 +6461,42 @@ export function startPlaceholderScene(
   const GATE_OPEN_ANGLE = 1.5; // radians each panel swings outward (~86 degrees)
   let gateOpen = false;
 
+  // --- The vehicle gate by the school buses (east fence): opens and closes like the main gate ----------
+  let vehicleGateOpen = false;
+  const VEHICLE_GATE_ANGLE = 1.45; // radians each leaf swings in toward the campus
+  const vehicleGateSolid = buildingSolids.find((s) => s.x === 55 && s.z === 58 && s.d === 6.8)!;
+  // while the gate is open only its two posts (and, fully open, the swung leaves) are solid
+  const vehicleGatePosts: Solid[] = [
+    { x: 55.0, z: 54.6, w: 0.3, d: 0.3, yBase: 0, yTop: 3.8 },
+    { x: 55.0, z: 61.4, w: 0.3, d: 0.3, yBase: 0, yTop: 3.8 },
+  ];
+  const vehicleGateLeafSolids: Solid[] = [
+    { x: 53.4, z: 54.78, w: 3.22, d: 0.2, yBase: 0, yTop: 3.6 },
+    { x: 53.4, z: 61.22, w: 3.22, d: 0.2, yBase: 0, yTop: 3.6 },
+  ];
+  const inList = (list: Solid[], s: Solid): boolean => list.indexOf(s) >= 0;
+  const setSolid = (s: Solid, on: boolean): void => {
+    const i = buildingSolids.indexOf(s);
+    if (on && i < 0) buildingSolids.push(s);
+    else if (!on && i >= 0) buildingSolids.splice(i, 1);
+  };
+  /** Collision follows the animation: the barrier goes as soon as it starts opening, the swung leaves only count once open */
+  function syncVehicleGateSolids(): void {
+    const openness = Math.abs(vehicleGateLeaves[0].rotation.y) / VEHICLE_GATE_ANGLE;
+    setSolid(vehicleGateSolid, openness < 0.2 && !vehicleGateOpen);
+    for (const p of vehicleGatePosts) setSolid(p, true);
+    for (const l of vehicleGateLeafSolids) setSolid(l, openness > 0.97);
+  }
+  void inList;
+  function toggleVehicleGate(): void {
+    vehicleGateOpen = !vehicleGateOpen;
+    mp?.emit("world:vgate", vehicleGateOpen);
+  }
+  /** Distance to the vehicle gate opening (x = 55, z from 54.6 to 61.4) */
+  function vehicleGateDistance(px: number, pz: number): number {
+    return Math.hypot(px - 55, Math.max(54.6, Math.min(61.4, pz)) - pz);
+  }
+
   const gatePanels: THREE.Group[] = [];
 
   for (const gate of gates) {
@@ -7467,6 +7515,10 @@ export function startPlaceholderScene(
         mp?.emit("world:gate", gateOpen);
         return;
       }
+      if (!inMprRoom && !currentClassroom && !drivingCar && player.position.y < 1.5 && vehicleGateDistance(player.position.x, player.position.z) <= 3.5) {
+        toggleVehicleGate();
+        return;
+      }
       // Check nearest chair (range: 1.8m)
       let nearestChair: ChairSlot | null = null;
       let minChairDist = 1.8;
@@ -7818,6 +7870,7 @@ export function startPlaceholderScene(
   }
   mpOn("world:snapshot", (s: any) => {
     gateOpen = !!s.gate;
+    vehicleGateOpen = !!s.vehicleGate;
     elevator.setLevel(s.elevatorLevel === 1 ? 1 : 0);
     for (const c of s.cars ?? []) {
       const car = parkingCars[c.id];
@@ -7845,6 +7898,9 @@ export function startPlaceholderScene(
   }
   mpOn("world:gate", (open: boolean) => {
     gateOpen = !!open;
+  });
+  mpOn("world:vgate", (open: boolean) => {
+    vehicleGateOpen = !!open;
   });
   if (mp) elevator.setNetwork((dest, call) => mp.emit("world:elevator:request", { dest, call }));
   mpOn("world:elevator:go", (d: { dest: 0 | 1; call: boolean }) => {
@@ -8240,6 +8296,14 @@ export function startPlaceholderScene(
       if (room === "mpr" ? inMprRoom : !inMprRoom && !currentClassroom) npcRigs[i].syncSkeleton?.();
     }
 
+    // --- Vehicle gate: swing the leaves toward their open/closed target ----------
+    for (const pivot of vehicleGateLeaves) {
+      const target = (pivot.userData.dir as number) * (vehicleGateOpen ? VEHICLE_GATE_ANGLE : 0);
+      pivot.rotation.y += (target - pivot.rotation.y) * Math.min(1, dt * 3);
+      if (Math.abs(target - pivot.rotation.y) < 0.005) pivot.rotation.y = target;
+    }
+    syncVehicleGateSolids();
+
     // --- Gate: swing the panels toward their open/closed target ----------
     gatePanels.forEach((pivot, i) => {
       const target = (i % 2 === 0 ? 1 : -1) * (gateOpen ? GATE_OPEN_ANGLE : 0);
@@ -8250,11 +8314,16 @@ export function startPlaceholderScene(
     if (gateHint) {
       const nearGate =
         gateDistance(player.position.x, player.position.z) <= GATE_INTERACT_RANGE;
+      const nearVehicleGate = !inMprRoom && !currentClassroom && !drivingCar && player.position.y < 1.5 && vehicleGateDistance(player.position.x, player.position.z) <= 3.5;
       const wanted = nearGate
         ? gateOpen
           ? "Press E to close the gate"
           : "Press E to open the gate"
-        : "";
+        : nearVehicleGate
+          ? vehicleGateOpen
+            ? "Press E to close the vehicle gate"
+            : "Press E to open the vehicle gate"
+          : "";
       if (wanted !== gateHintShown) {
         gateHintShown = wanted;
         gateHint.style.display = wanted === "" ? "none" : "block";

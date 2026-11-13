@@ -179,6 +179,7 @@ const ELEVATOR_CALL_TIME = 12; // the slow trip to a caller (seconds); must matc
 const ELEVATOR_RIDE_TIME = 3.2;
 const world = {
   gate: false,
+  vehicleGate: false,
   elevator: { level: 0 as 0 | 1, busyUntil: 0 },
   cars: new Map<number, CarSync>(),
   balls: { soccer: { owner: null, state: null } as BallSync, basket: { owner: null, state: null } as BallSync },
@@ -441,6 +442,7 @@ io.on("connection", (socket) => {
   const sendWorldSnapshot = (): void => {
     socket.emit("world:snapshot", {
       gate: world.gate,
+      vehicleGate: world.vehicleGate,
       elevatorLevel: world.elevator.level,
       cars: Array.from(world.cars, ([id, c]) => ({ id, driver: c.driver, state: c.state })),
       balls: { soccer: world.balls.soccer, basket: world.balls.basket },
@@ -453,6 +455,11 @@ io.on("connection", (socket) => {
   socket.on("world:gate", (open: unknown) => {
     world.gate = open === true;
     socket.broadcast.emit("world:gate", world.gate);
+  });
+
+  socket.on("world:vgate", (open: unknown) => {
+    world.vehicleGate = open === true;
+    socket.broadcast.emit("world:vgate", world.vehicleGate);
   });
 
   socket.on("world:elevator:request", (d: { dest?: unknown; call?: unknown }) => {
