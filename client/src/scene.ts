@@ -10,6 +10,7 @@ import { showDialog } from "./dialog";
 import { confirmAction } from "./confirm";
 import { assignmentDialog } from "./assignments";
 import { eldDoorDialog } from "./eldTurnIn";
+import { DOOR_TALK } from "./doorTalk";
 import { roomById } from "./rooms";
 import { startPresence } from "./presence";
 import { getSocket, isMultiplayerActive } from "./net";
@@ -7454,7 +7455,8 @@ export function startPlaceholderScene(
             const d = Math.hypot(player.position.x - inst.campusDoor.x, player.position.z - inst.campusDoor.z);
             if (d <= 2.4) {
               if (cId === "eld") openEldDoor();
-              else if (roomById(cId)?.type === "stamp") enterClassroom(cId); // the Learning Center, Music room and Theater stay closed (the hint says so)
+              else if (DOOR_TALK[cId]) showDialog(DOOR_TALK[cId].speaker, DOOR_TALK[cId].tree); // Theater / Music room: their teachers greet you at the door
+              else if (roomById(cId)?.type === "stamp") enterClassroom(cId); // the Learning Center stays closed (the hint says so)
               return;
             }
           }
@@ -8295,8 +8297,10 @@ export function startPlaceholderScene(
                 wanted =
                   cId === "eld"
                     ? "Press E to speak with Mr. Van Diest at the ELD door 🚪"
-                    : roomById(cId)?.type !== "stamp"
-                      ? `${inst.data.label}: closed 🔒`
+                    : DOOR_TALK[cId]
+                      ? DOOR_TALK[cId].hint
+                      : roomById(cId)?.type !== "stamp"
+                        ? `${inst.data.label}: closed 🔒`
                       : `Press E to enter ${inst.data.label}`;
                 break;
               }
