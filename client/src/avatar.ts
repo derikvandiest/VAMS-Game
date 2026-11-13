@@ -148,13 +148,49 @@ export function areAvatarAssetsReady(): boolean {
 // Name-tag sprite helper (unchanged from previous system)
 // ---------------------------------------------------------------------------
 
-function makeNameTagTexture(name: string, homeroom: Homeroom, noHomeroom = false): THREE.CanvasTexture {
+function makeNameTagTexture(name: string, homeroom: Homeroom, noHomeroom = false, title = ""): THREE.CanvasTexture {
   const info = HOMEROOM_INFO[homeroom] ?? HOMEROOM_INFO.UCLA;
   const c = document.createElement("canvas");
   c.width = 512;
   c.height = 128;
   const ctx = c.getContext("2d")!;
   ctx.clearRect(0, 0, c.width, c.height);
+
+  if (title) {
+    // Name with a job title underneath (NPCs)
+    ctx.font = "bold 36px system-ui, -apple-system, Segoe UI, sans-serif";
+    const nameW = ctx.measureText(name).width;
+    ctx.font = "600 23px system-ui, -apple-system, Segoe UI, sans-serif";
+    const titleW = ctx.measureText(title).width;
+    const w = Math.min(500, Math.max(220, Math.ceil(Math.max(nameW, titleW) + 56)));
+    const h = 108;
+    const x = (c.width - w) / 2;
+    const y = (c.height - h) / 2;
+    const r = 30;
+    ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.88)";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 36px system-ui, -apple-system, Segoe UI, sans-serif";
+    ctx.fillText(name, c.width / 2, y + 38);
+    ctx.fillStyle = "#facc15";
+    ctx.font = "600 23px system-ui, -apple-system, Segoe UI, sans-serif";
+    ctx.fillText(title, c.width / 2, y + 78);
+    const t = new THREE.CanvasTexture(c);
+    t.needsUpdate = true;
+    return t;
+  }
 
   ctx.font = "bold 36px system-ui, -apple-system, Segoe UI, sans-serif";
   const nameW = ctx.measureText(name).width;
@@ -1174,15 +1210,15 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     scaleContainer.scale.set(s, s, s);
 
     if (nameTagSprite) {
-      const key = `${profile.name}|${profile.homeroom}|${profile.noHomeroom}`;
+      const key = `${profile.name}|${profile.homeroom}|${profile.noHomeroom}|${profile.title}`;
       if (key !== lastTagKey) {
         lastTagKey = key;
         const mat = nameTagSprite.material as THREE.SpriteMaterial;
         if (mat.map) mat.map.dispose();
-        mat.map = makeNameTagTexture(profile.name, profile.homeroom, profile.noHomeroom);
+        mat.map = makeNameTagTexture(profile.name, profile.homeroom, profile.noHomeroom, profile.title);
         mat.needsUpdate = true;
       }
-      nameTagSprite.position.y = (1.73 * modelScale + 0.32 + (profile.hat === "crown" ? 0.2 : 0)) * s;
+      nameTagSprite.position.y = (1.73 * modelScale + 0.32 + (profile.hat === "crown" ? 0.2 : 0) + (profile.title ? 0.05 : 0)) * s;
     }
 
     rebuildAvatarMeshes();

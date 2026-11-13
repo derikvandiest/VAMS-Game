@@ -53,6 +53,8 @@ export interface CharacterProfile {
   outfitColor: string;
   /** NPCs: no homeroom (no homeroom tag on the name, no homeroom shirt color) */
   noHomeroom: boolean;
+  /** NPCs: job title shown under the name */
+  title: string;
 }
 
 export const HOMEROOM_INFO: Record<Homeroom, { label: string; shirtColor: string; textHex: string }> = {
@@ -124,6 +126,7 @@ export function getDefaultProfile(): CharacterProfile {
     hairColor: HAIR_COLORS[1].hex,
     outfitColor: "",
     noHomeroom: false,
+    title: "",
   };
 }
 
@@ -158,6 +161,7 @@ export function sanitizeProfile(raw: unknown): CharacterProfile {
     hairColor: isHex(p.hairColor) ? p.hairColor : fb.hairColor,
     outfitColor: isHex(p.outfitColor) ? p.outfitColor : "",
     noHomeroom: npc,
+    title: npc && typeof p.title === "string" ? p.title.slice(0, 40) : "",
   };
 }
 

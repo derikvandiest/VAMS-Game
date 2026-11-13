@@ -13,6 +13,8 @@ export interface NpcDef {
   /** Rotation about Y in radians (0 faces +z, PI faces -z) */
   rotY: number;
   profile: CharacterProfile;
+  /** What the NPC says when a player talks to him/her (shown in a pop-up) */
+  dialog?: { paragraphs: string[] };
 }
 
 const BLACK = "#1f1f24";
@@ -28,6 +30,7 @@ export const NPC_VAN_DIEST: NpcDef = {
   profile: {
     ...getDefaultProfile(),
     name: "Mr. Van Diest",
+    title: "ELD Coordinator/Teacher",
     noHomeroom: true,
     gender: "masculine",
     look: "masc-suit",
@@ -37,6 +40,13 @@ export const NPC_VAN_DIEST: NpcDef = {
     hat: "crown",
     shoes: "dress",
     shoeColor: BLACK,
+  },
+  dialog: {
+    paragraphs: [
+      "Thanks so much for participating in our unique ELD PD!",
+      "I used AI to make this game. I built it inside of Google's Antigravity, using a combination of models, including Gemini, Sonnet, Space Alpha Bunny, Laguna, Solar Mini, Nemotron 3.5, and more. The character models were created using Claude Code.",
+      "If you enjoy this presentation, let me know, so we can potentially introduce this to our students!",
+    ],
   },
 };
 

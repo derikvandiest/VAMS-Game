@@ -22,6 +22,9 @@ export const MPR_ROOM_X = 400.0;
 export const MPR_ROOM_Z = 400.0;
 export const MPR_ROOM_SIZE = 24.0; // 24m x 24m square room
 export const MPR_ROOM_HEIGHT = 5.2; // 5.2m ceiling height
+/** Presenter podium in front of the projection screen (Mr. Van Diest stands just south of it) */
+export const MPR_PODIUM_X = 400.0;
+export const MPR_PODIUM_Z = 408.15;
 export const MPR_SPAWN_X = 389.8; // just inside the west doors in North-West corner
 export const MPR_SPAWN_Z = 390.0;
 export const MPR_CAMPUS_DOOR_X = -13.2; // outdoor courtyard double doors location
@@ -637,6 +640,89 @@ export function buildMprRoom(): MprRoomBuildResult {
   cartGroup.add(cartLedLight);
 
   mprGroup.add(cartGroup);
+
+  // =========================================================================
+  // 3c) PRESENTER PODIUM WITH A LAPTOP (in front of Mr. Van Diest, who stands just south of it)
+  // =========================================================================
+  {
+    const px = MPR_PODIUM_X;
+    const pz = MPR_PODIUM_Z;
+    const podium = new THREE.Group();
+    podium.position.set(px, 0, pz);
+    const wood = new THREE.MeshStandardMaterial({ color: 0x5a3a24, roughness: 0.6 });
+    const woodDark = new THREE.MeshStandardMaterial({ color: 0x3f2616, roughness: 0.65 });
+    const redTrim = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.5 });
+    const goldTrim = new THREE.MeshStandardMaterial({ color: 0xd4a017, roughness: 0.3, metalness: 0.6 });
+    const PW = 0.95;
+    const PD = 0.62;
+    const PH = 1.12;
+    const add = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number): THREE.Mesh => {
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(x, y, z);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      podium.add(m);
+      return m;
+    };
+    add(new THREE.BoxGeometry(PW + 0.06, 0.08, PD + 0.06), woodDark, 0, 0.04, 0); // plinth
+    add(new THREE.BoxGeometry(PW, PH - 0.1, PD), wood, 0, 0.08 + (PH - 0.1) / 2, 0); // body
+    add(new THREE.BoxGeometry(PW + 0.1, 0.07, PD + 0.1), woodDark, 0, PH - 0.02, 0); // top slab
+    add(new THREE.BoxGeometry(PW - 0.2, 0.5, 0.02), redTrim, 0, 0.62, -PD / 2 - 0.005); // red panel on the audience side (north = -z)
+    add(new THREE.BoxGeometry(PW - 0.2, 0.025, 0.025), goldTrim, 0, 0.88, -PD / 2 - 0.015); // gold trim above it
+    add(new THREE.BoxGeometry(PW - 0.2, 0.025, 0.025), goldTrim, 0, 0.37, -PD / 2 - 0.015); // gold trim below it
+    const emblem = add(new THREE.CylinderGeometry(0.1, 0.1, 0.02, 24), goldTrim, 0, 0.62, -PD / 2 - 0.02);
+    emblem.rotation.x = Math.PI / 2;
+
+    // Laptop on top: hinge toward the audience, screen facing the presenter (south, +z)
+    const top = PH + 0.015;
+    const laptop = new THREE.Group();
+    laptop.position.set(0, top, -0.02);
+    const silver = new THREE.MeshStandardMaterial({ color: 0xb8bcc4, roughness: 0.35, metalness: 0.7 });
+    const keys = new THREE.MeshStandardMaterial({ color: 0x1f2430, roughness: 0.8 });
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.03, 0.32), silver);
+    base.position.y = 0.015;
+    base.castShadow = true;
+    laptop.add(base);
+    const keyboard = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.005, 0.15), keys);
+    keyboard.position.set(0, 0.032, 0.04);
+    laptop.add(keyboard);
+    const touchpad = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.004, 0.08), new THREE.MeshStandardMaterial({ color: 0x9aa0aa, roughness: 0.4, metalness: 0.5 }));
+    touchpad.position.set(0, 0.032, 0.125);
+    laptop.add(touchpad);
+    const lid = new THREE.Group();
+    lid.position.set(0, 0.03, -0.16); // hinge at the back edge (audience side)
+    lid.rotation.x = -0.28; // leaning back, away from the presenter
+    const shell = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.3, 0.015), silver);
+    shell.position.y = 0.15;
+    shell.castShadow = true;
+    lid.add(shell);
+    const screenTex = (() => {
+      const c = document.createElement("canvas");
+      c.width = 256;
+      c.height = 160;
+      const g = c.getContext("2d")!;
+      const grad = g.createLinearGradient(0, 0, 256, 160);
+      grad.addColorStop(0, "#1e3a8a");
+      grad.addColorStop(1, "#0f172a");
+      g.fillStyle = grad;
+      g.fillRect(0, 0, 256, 160);
+      g.fillStyle = "#facc15";
+      g.fillRect(24, 24, 208, 10);
+      g.fillStyle = "#e2e8f0";
+      g.fillRect(24, 54, 150, 8);
+      g.fillRect(24, 74, 190, 8);
+      g.fillRect(24, 94, 120, 8);
+      return new THREE.CanvasTexture(c);
+    })();
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.26), new THREE.MeshBasicMaterial({ map: screenTex }));
+    screen.position.set(0, 0.15, 0.009); // front face of the lid = facing +z (the presenter)
+    lid.add(screen);
+    laptop.add(lid);
+    podium.add(laptop);
+    mprGroup.add(podium);
+
+    solids.push({ x: px, z: pz, w: PW + 0.1, d: PD + 0.1, yBase: 0, yTop: PH + 0.05 });
+  }
 
   // Physical collision box for the tech cart
   solids.push({

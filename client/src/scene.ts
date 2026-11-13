@@ -3,7 +3,8 @@ import layout from "../../content/layout.json";
 import classroomsData from "../../content/classrooms.json";
 import officeSignUrl from "./assets/office_sign.png";
 import { showWelcomePopup } from "./welcome";
-import { NPCS } from "./npcs";
+import { NPCS, NpcDef } from "./npcs";
+import { showDialog } from "./dialog";
 import { loadSlot, getActiveSlotId } from "./saveManager";
 import {
   buildMprRoom,
@@ -6631,6 +6632,7 @@ export function startPlaceholderScene(
 
   // NPCs standing in the MPR (they hide and show with the room)
   const npcRigs: AvatarRig[] = [];
+  const npcList: Array<{ def: NpcDef; rig: AvatarRig }> = [];
   for (const def of NPCS.filter((n) => n.room === "mpr")) {
     const npcRig = createAvatarRig({ nameTag: true, scale: GAME_AVATAR_SCALE });
     npcRig.apply(def.profile);
@@ -6639,6 +6641,35 @@ export function startPlaceholderScene(
     mprRoomGroup.add(npcRig.player);
     mprSolids.push({ x: def.x, z: def.z, w: 0.7, d: 0.7, yBase: 0, yTop: 2.6 });
     npcRigs.push(npcRig);
+    npcList.push({ def, rig: npcRig });
+  }
+
+
+  /** The NPC the player is close enough to talk to (inside the MPR only) */
+  const NPC_TALK_RANGE = 3.8;
+  function nearbyNpc(): { def: NpcDef; rig: AvatarRig } | null {
+    if (!inMprRoom || seatedChair || drivingCar) return null;
+    let best: { def: NpcDef; rig: AvatarRig } | null = null;
+    let bestD = NPC_TALK_RANGE;
+    for (const n of npcList) {
+      if (!n.def.dialog) continue;
+      const d = Math.hypot(player.position.x - n.def.x, player.position.z - n.def.z);
+      if (d <= bestD) {
+        bestD = d;
+        best = n;
+      }
+    }
+    return best;
+  }
+  function talkToNpc(n: { def: NpcDef; rig: AvatarRig }): void {
+    if (!n.def.dialog) return;
+    // Face each other while talking
+    const toNpc = Math.atan2(n.def.x - player.position.x, n.def.z - player.position.z);
+    player.rotation.y = toNpc;
+    n.rig.player.rotation.y = toNpc + Math.PI;
+    showDialog({ speaker: n.def.profile.name, title: n.def.profile.title, paragraphs: n.def.dialog.paragraphs }, () => {
+      n.rig.player.rotation.y = n.def.rotY;
+    });
   }
 
   // Register all 40 MPR teacher chairs
@@ -7159,6 +7190,11 @@ export function startPlaceholderScene(
       }
       if (bballHeld) {
         shootBasketball();
+        return;
+      }
+      const talkNpc = nearbyNpc();
+      if (talkNpc) {
+        talkToNpc(talkNpc);
         return;
       }
       if (inMprRoom) {
@@ -8289,7 +8325,10 @@ export function startPlaceholderScene(
           nearestCar = car;
         }
       }
-      if (distToCarResetBtn <= 2.2) {
+      const hintNpc = nearbyNpc();
+      if (hintNpc) {
+        hintText = `Press E to talk to ${hintNpc.def.profile.name} 💬`;
+      } else if (distToCarResetBtn <= 2.2) {
         hintText = "Press E or Click to reset cars 🚗";
       } else if (nearestChairDist <= 1.8) {
         hintText = "Press E to take a seat 🪑";

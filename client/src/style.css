@@ -1943,3 +1943,55 @@ body {
     font-size: 20px;
   }
 }
+
+/* NPC dialogue pop-up */
+.dialog-overlay {
+  z-index: 130;
+}
+.dialog-card {
+  max-width: 540px;
+  text-align: left;
+  padding: 24px 28px 20px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.dialog-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.dialog-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  background: linear-gradient(135deg, #800020, #991b1b);
+  border: 2px solid #d4a017;
+}
+.dialog-speaker {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+}
+.dialog-title {
+  font-size: 13px;
+  color: #d4a017;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.dialog-body p {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #e5e7eb;
+}
+.dialog-card .modal-actions {
+  justify-content: center;
+  margin-top: 6px;
+}
