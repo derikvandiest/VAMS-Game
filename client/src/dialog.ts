@@ -73,21 +73,24 @@ export function showDialog(speaker: DialogSpeaker, tree: DialogTree, onClose?: (
   overlay.id = "dialog-overlay";
   overlay.className = "modal-overlay dialog-overlay";
   overlay.innerHTML = `
-    <div class="modal-card dialog-card" role="dialog" aria-modal="true" aria-labelledby="dialog-speaker">
-      <div class="dialog-head">
-        ${
-          speaker.portrait
-            ? `<img class="dialog-portrait" src="${esc(speaker.portrait)}" alt="${esc(speaker.name)}" />`
-            : `<div class="dialog-avatar" aria-hidden="true">🎓</div>`
-        }
-        <div>
-          <div id="dialog-speaker" class="dialog-speaker">${esc(speaker.name)}</div>
-          ${speaker.title ? `<div class="dialog-title">${esc(speaker.title)}</div>` : ""}
+    <div class="modal-card dialog-card${speaker.portrait ? " has-portrait" : ""}" role="dialog" aria-modal="true" aria-labelledby="dialog-speaker">
+      ${
+        speaker.portrait
+          ? `<div class="dialog-side"><img class="dialog-portrait" src="${esc(speaker.portrait)}" alt="${esc(speaker.name)}" /></div>`
+          : ""
+      }
+      <div class="dialog-main">
+        <div class="dialog-head">
+          ${speaker.portrait ? "" : `<div class="dialog-avatar" aria-hidden="true">🎓</div>`}
+          <div>
+            <div id="dialog-speaker" class="dialog-speaker">${esc(speaker.name)}</div>
+            ${speaker.title ? `<div class="dialog-title">${esc(speaker.title)}</div>` : ""}
+          </div>
         </div>
+        <div class="dialog-body" id="dialog-body"></div>
+        <div class="dialog-options" id="dialog-options" role="list"></div>
+        <p class="welcome-hint">Click an answer or press its number</p>
       </div>
-      <div class="dialog-body" id="dialog-body"></div>
-      <div class="dialog-options" id="dialog-options" role="list"></div>
-      <p class="welcome-hint">Click an answer or press its number</p>
     </div>`;
   document.body.appendChild(overlay);
   const bodyEl = overlay.querySelector<HTMLElement>("#dialog-body")!;

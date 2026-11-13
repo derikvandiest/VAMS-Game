@@ -2343,15 +2343,53 @@ body {
   50% { box-shadow: 0 0 16px rgba(250, 204, 21, 1); }
 }
 
-/* NPC portrait in the dialogue box */
+/* NPC portrait on the left side of the dialogue box (inside the box, not in a circle) */
+.dialog-card.has-portrait {
+  display: flex;
+  align-items: stretch;
+  max-width: 780px;
+  padding: 0;
+  overflow: hidden;
+}
+.dialog-side {
+  flex: 0 0 210px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: linear-gradient(170deg, #1e3a8a 0%, #172554 55%, #0f172a 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
 .dialog-portrait {
-  width: 84px;
-  height: 84px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  object-fit: cover;
-  object-position: 50% 18%;
-  background: linear-gradient(160deg, #1e3a8a, #0f172a);
-  border: 3px solid #d4a017;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: bottom;
+}
+.dialog-main {
+  flex: 1;
+  min-width: 0;
+  padding: 24px 28px 20px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.dialog-card.has-portrait .dialog-head {
+  margin-bottom: 12px;
+}
+@media (max-width: 620px) {
+  .dialog-card.has-portrait {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .dialog-side {
+    flex: 0 0 auto;
+    height: 150px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .dialog-portrait {
+    width: auto;
+    height: 100%;
+  }
 }
