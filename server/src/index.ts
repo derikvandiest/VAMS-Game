@@ -122,6 +122,23 @@ interface Presence {
 }
 const presence = new Map<string, Presence>();
 
+/** How many players are in each classroom (zones other than the campus and the MPR); sent whenever it changes */
+let lastOccupancy = "{}";
+function occupancy(): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const p of presence.values()) {
+    if (p.zone && p.zone !== "campus" && p.zone !== "mpr") counts[p.zone] = (counts[p.zone] ?? 0) + 1;
+  }
+  return counts;
+}
+function broadcastOccupancy(): void {
+  const counts = occupancy();
+  const json = JSON.stringify(counts);
+  if (json === lastOccupancy) return;
+  lastOccupancy = json;
+  io.emit("world:occupancy", counts);
+}
+
 const zoneRoom = (zone: string): string => `zone:${zone}`;
 function cleanZone(raw: unknown): string {
   return typeof raw === "string" && /^[a-z0-9-]{1,40}$/.test(raw) ? raw : "campus";
@@ -159,6 +176,7 @@ function enterZone(socket: import("socket.io").Socket, p: Presence, zone: string
   }
   socket.emit("presence:snapshot", others);
   socket.to(zoneRoom(zone)).emit("presence:update", { ...publicState(socket.id, p), profile: p.profile });
+  broadcastOccupancy();
 }
 
 
@@ -443,6 +461,7 @@ io.on("connection", (socket) => {
     socket.emit("world:snapshot", {
       gate: world.gate,
       vehicleGate: world.vehicleGate,
+      occupancy: occupancy(),
       elevatorLevel: world.elevator.level,
       cars: Array.from(world.cars, ([id, c]) => ({ id, driver: c.driver, state: c.state })),
       balls: { soccer: world.balls.soccer, basket: world.balls.basket },
@@ -555,6 +574,7 @@ io.on("connection", (socket) => {
     if (gone) {
       socket.to(zoneRoom(gone.zone)).emit("presence:left", socket.id);
       presence.delete(socket.id);
+      broadcastOccupancy();
     }
     players.delete(socket.id);
     broadcastOnlineUsers();

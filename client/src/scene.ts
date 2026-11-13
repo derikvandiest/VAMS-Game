@@ -4541,16 +4541,16 @@ export function startPlaceholderScene(
     depthWrite: false,
   });
   /** What you glimpse of the room through the glass: back wall, ceiling lights and blinds at some height */
-  function makeWindowInteriorMaterial(blinds: number, tint: string): THREE.MeshStandardMaterial {
+  function makeWindowInteriorMaterial(blinds: number, tint: string, lit = false, person = 0): THREE.MeshStandardMaterial {
     const c = document.createElement("canvas");
     c.width = 256;
     c.height = 256;
     const g = c.getContext("2d")!;
     // back wall, lit from above
     const wall = g.createLinearGradient(0, 0, 0, 256);
-    wall.addColorStop(0, "#8d887a");
-    wall.addColorStop(0.35, tint);
-    wall.addColorStop(1, "#1c1b19");
+    wall.addColorStop(0, lit ? "#f7e9b8" : "#8d887a");
+    wall.addColorStop(0.35, lit ? "#e1cf93" : tint);
+    wall.addColorStop(1, lit ? "#8c7a52" : "#1c1b19");
     g.fillStyle = wall;
     g.fillRect(0, 0, 256, 256);
     // ceiling light panels glowing along the top
@@ -4563,10 +4563,24 @@ export function startPlaceholderScene(
     g.fillRect(150, 214, 86, 42);
     g.fillStyle = "rgba(190,60,60,0.55)";
     g.fillRect(168, 120, 40, 52);
+    // someone is in the room: a silhouette moving about behind the glass (the blinds cover its upper part)
+    if (person > 0) {
+      const px = person === 1 ? 82 : 176;
+      g.fillStyle = "rgba(38,30,26,0.9)";
+      g.beginPath();
+      g.arc(px, 126, 17, 0, Math.PI * 2); // head
+      g.fill();
+      g.beginPath();
+      g.ellipse(px, 196, 36, 56, 0, Math.PI, 0); // shoulders and torso
+      g.lineTo(px + 36, 256);
+      g.lineTo(px - 36, 256);
+      g.closePath();
+      g.fill();
+    }
     // venetian blinds drawn down from the top to the given fraction
     const bottom = Math.round(256 * blinds);
     for (let y = 0; y < bottom; y += 9) {
-      g.fillStyle = (y / 9) % 2 === 0 ? "#d9d1ba" : "#a39b85";
+      g.fillStyle = (y / 9) % 2 === 0 ? (lit ? "#f3ead0" : "#d9d1ba") : (lit ? "#cdbf97" : "#a39b85");
       g.fillRect(0, y, 256, 7);
       g.fillStyle = "rgba(0,0,0,0.18)";
       g.fillRect(0, y + 7, 256, 2);
@@ -4577,7 +4591,8 @@ export function startPlaceholderScene(
     }
     const t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace;
-    return new THREE.MeshStandardMaterial({ map: t, roughness: 0.9 });
+    // lit rooms glow a little, so they read as "lights on" even in shade
+    return new THREE.MeshStandardMaterial({ map: t, roughness: 0.9, ...(lit ? { emissive: 0xffe2a0, emissiveMap: t, emissiveIntensity: 0.55 } : {}) });
   }
   const windowInteriors = [
     makeWindowInteriorMaterial(0.45, "#5a564d"),
@@ -4585,8 +4600,31 @@ export function startPlaceholderScene(
     makeWindowInteriorMaterial(0, "#605b51"),
     makeWindowInteriorMaterial(0.25, "#5d594f"),
   ];
+  // the same four looks with the lights on and someone inside
+  const windowLitInteriors = [
+    makeWindowInteriorMaterial(0.45, "#5a564d", true, 1),
+    makeWindowInteriorMaterial(0.8, "#524e45", true, 2),
+    makeWindowInteriorMaterial(0, "#605b51", true, 1),
+    makeWindowInteriorMaterial(0.25, "#5d594f", true, 2),
+  ];
   let windowCounter = 0;
-  const nextWindowInterior = (): THREE.MeshStandardMaterial => windowInteriors[windowCounter++ % windowInteriors.length];
+  /** Windows by classroom: their lit panels switch on while somebody is in that room (multiplayer) */
+  const roomWindows = new Map<string, Array<{ mesh: THREE.Mesh; variant: number }>>();
+  function setRoomLit(roomId: string, lit: boolean): void {
+    for (const w of roomWindows.get(roomId) ?? []) w.mesh.material = (lit ? windowLitInteriors : windowInteriors)[w.variant];
+  }
+  /** Which homeroom classroom a window belongs to: the stamp room whose door is the nearest one before it along the wall */
+  function windowRoomId(building: "west" | "north", along: number, upper: boolean): string | undefined {
+    let best: { id: string; c: number } | undefined;
+    for (const d of layoutData.doors) {
+      if (d.floor !== (upper ? 1 : 0) || roomById(d.id)?.type !== "stamp") continue;
+      const onBuilding = building === "west" ? d.axis === "z" && d.x === -14 : d.axis === "x" && d.z === -2;
+      if (!onBuilding) continue;
+      const c = building === "west" ? d.z : d.x;
+      if (c <= along + 0.01 && (!best || c > best.c)) best = { id: d.id, c };
+    }
+    return best?.id;
+  }
   const frameMaterial = new THREE.MeshStandardMaterial({ color: 0xf4f1e8, roughness: 0.8 });
   const sillMaterial = new THREE.MeshStandardMaterial({ color: 0xd9d4c6, roughness: 0.85 });
   /** A sill under the window and a horizontal muntin across it (so the glass reads as framed panes) */
@@ -4648,7 +4686,7 @@ export function startPlaceholderScene(
    * and a real frame around it (four bars, a centre mullion and a cross bar) with a sill underneath.
    * planeCoord = the wall's position on its normal axis, along = where the window is along the wall.
    */
-  function buildWindow(planeCoord: number, along: number, cy: number, w: number, h: number, alongZ: boolean, outward: number, barY: number): void {
+  function buildWindow(planeCoord: number, along: number, cy: number, w: number, h: number, alongZ: boolean, outward: number, barY: number, roomId?: string): void {
     const place = (m: THREE.Mesh, n: number, a: number, y: number): THREE.Mesh => {
       m.position.set(alongZ ? planeCoord + outward * n : along + a, y, alongZ ? along + a : planeCoord + outward * n);
       scene.add(m);
@@ -4657,7 +4695,12 @@ export function startPlaceholderScene(
     const box = (dn: number, dy: number, da: number, mat: THREE.Material): THREE.Mesh =>
       new THREE.Mesh(new THREE.BoxGeometry(alongZ ? dn : da, dy, alongZ ? da : dn), mat);
     const inner = 0.09; // frame bar width
-    place(box(0.02, h - inner * 2, w - inner * 2, nextWindowInterior()), 0.012, 0, cy); // the lit room
+    const variant = windowCounter++ % windowInteriors.length;
+    const room = place(box(0.02, h - inner * 2, w - inner * 2, windowInteriors[variant]), 0.012, 0, cy); // the room behind the glass
+    if (roomId) {
+      if (!roomWindows.has(roomId)) roomWindows.set(roomId, []);
+      roomWindows.get(roomId)!.push({ mesh: room, variant });
+    }
     place(box(0.02, h - inner * 2, w - inner * 2, glassMaterial), 0.05, 0, cy); // the glass
     // frame
     place(box(0.14, inner, w, frameMaterial), 0.07, 0, cy + h / 2 - inner / 2);
@@ -4674,26 +4717,27 @@ export function startPlaceholderScene(
 
   // Standard second-floor window helpers
   function addWindowZ(xWall: number, z: number, outward: number) {
-    buildWindow(xWall, z, winY, 1.6, 2.0, true, outward, winY + 0.1);
+    buildWindow(xWall, z, winY, 1.6, 2.0, true, outward, winY + 0.1, windowRoomId("west", z, true));
   }
   function addWindowX(x: number, zWall: number, outward: number) {
-    buildWindow(zWall, x, winY, 1.6, 2.0, false, outward, winY + 0.1);
+    buildWindow(zWall, x, winY, 1.6, 2.0, false, outward, winY + 0.1, windowRoomId("north", x, true));
   }
 
   // First-floor high horizontal window helpers (closer to top of ground wall)
   function addFirstFloorHighWindowZ(xWall: number, z: number, outward: number) {
-    buildWindow(xWall, z, firstFloorHighWinY, HIGH_WIN_W + 0.1, HIGH_WIN_H + 0.1, true, outward, firstFloorHighWinY);
+    buildWindow(xWall, z, firstFloorHighWinY, HIGH_WIN_W + 0.1, HIGH_WIN_H + 0.1, true, outward, firstFloorHighWinY, windowRoomId("west", z, false));
   }
   function addFirstFloorHighWindowX(x: number, zWall: number, outward: number) {
-    buildWindow(zWall, x, firstFloorHighWinY, HIGH_WIN_W + 0.1, HIGH_WIN_H + 0.1, false, outward, firstFloorHighWinY);
+    buildWindow(zWall, x, firstFloorHighWinY, HIGH_WIN_W + 0.1, HIGH_WIN_H + 0.1, false, outward, firstFloorHighWinY, windowRoomId("north", x, false));
   }
 
   // Large walkway window helpers (touching the walkway at floor2)
   function addLargeWindowZ(xWall: number, z: number, outward: number) {
-    buildWindow(xWall, z, largeWinY, LARGE_WIN_W, LARGE_WIN_H, true, outward, floor2 + 1.8);
+    buildWindow(xWall, z, largeWinY, LARGE_WIN_W, LARGE_WIN_H, true, outward, floor2 + 1.8, windowRoomId("west", z, true));
   }
   function addLargeWindowX(x: number, zWall: number, outward: number) {
-    buildWindow(zWall, x, largeWinY, LARGE_WIN_W, LARGE_WIN_H, false, outward, floor2 + 1.8);
+    // the office windows (zWall -10.5) belong to rooms that stay closed, so only the north building's get a room
+    buildWindow(zWall, x, largeWinY, LARGE_WIN_W, LARGE_WIN_H, false, outward, floor2 + 1.8, zWall === -2 ? windowRoomId("north", x, true) : undefined);
   }
 
   // West building:
@@ -7930,6 +7974,7 @@ export function startPlaceholderScene(
   mpOn("world:snapshot", (s: any) => {
     gateOpen = !!s.gate;
     vehicleGateOpen = !!s.vehicleGate;
+    applyOccupancy(s.occupancy ?? {});
     elevator.setLevel(s.elevatorLevel === 1 ? 1 : 0);
     for (const c of s.cars ?? []) {
       const car = parkingCars[c.id];
@@ -7955,6 +8000,11 @@ export function startPlaceholderScene(
     if (mp.connected) sync();
     mpOn("connect", sync);
   }
+  /** Windows light up (with a silhouette inside) for every classroom somebody is in */
+  function applyOccupancy(counts: Record<string, number>): void {
+    for (const roomId of roomWindows.keys()) setRoomLit(roomId, (counts[roomId] ?? 0) > 0);
+  }
+  mpOn("world:occupancy", (counts: Record<string, number>) => applyOccupancy(counts));
   mpOn("world:gate", (open: boolean) => {
     gateOpen = !!open;
   });
