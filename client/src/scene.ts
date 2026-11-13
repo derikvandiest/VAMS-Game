@@ -4746,7 +4746,7 @@ export function startPlaceholderScene(
   // - 2nd floor west: 4 standard exterior windows
   // - 1st floor west: 4 horizontal rectangular windows closer to top of wall
   // Upstairs, from the stairs on the MPR side: window, CSUN door, LMU door, window, window, UCLA door, USC door, window
-  for (const z of [38, 23, 18, 3]) {
+  for (const z of [37.2, 23.8, 17.2, 3.8]) {
     addLargeWindowZ(-14, z, 1);             // 2nd floor East side (large, begins from floor touching walkway)
     addWindowZ(-30, z, -1);                  // 2nd floor West side (standard exterior)
   }
@@ -4759,7 +4759,7 @@ export function startPlaceholderScene(
   // - 2nd floor north: 4 standard exterior windows
   // - 1st floor north: 4 horizontal rectangular windows closer to top of wall
   // Upstairs, from the stairs on the east end: window, CSUN door, LMU door, window, window, UCLA door, USC door, window
-  for (const x of [39, 24, 19, 4]) {
+  for (const x of [38.2, 24.8, 18.2, 4.8]) {
     addLargeWindowX(x, -2, 1);              // 2nd floor South side (large, begins from floor touching walkway)
     addWindowX(x, -20, -1);                 // 2nd floor North side (standard exterior)
   }
@@ -5622,7 +5622,8 @@ export function startPlaceholderScene(
     const plaqueMesh = createHeaderPlaqueMesh(plaqueTex, 1.42, 0.45);
 
     // upstairs the LMU and USC signs sit on the side away from their partner door (toward the window)
-    const signSide = door.floor === 1 && /-(lmu|usc)-/.test(door.id) ? -1.75 : 1.75;
+    // (centered in the gap between the door frame and the window)
+    const signSide = door.floor === 1 && /-(csun|lmu|ucla|usc)-/.test(door.id) ? (/-(lmu|usc)-/.test(door.id) ? -2.0 : 2.0) : 1.75;
     if (door.axis === "z") {
       // West building facing east
       plaqueMesh.position.set(-13.92, dy + 0.35, door.z + signSide); // clear of the door frame (it is 1.0 either side)
