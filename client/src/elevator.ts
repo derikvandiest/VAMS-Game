@@ -104,12 +104,9 @@ export class Elevator {
     // Exterior: the school's cream walls and red trim
     const wallMat = new THREE.MeshStandardMaterial({ color: this.cfg.wallColor, roughness: 0.9 });
     const plinthMat = new THREE.MeshStandardMaterial({ color: 0xb9b3a6, roughness: 0.9 }); // plain concrete base
-    // Roof: the same as the classroom roofs (cool-roof membrane, metal coping, a rooftop HVAC unit)
+    // Roof: the same as the classroom roofs (cool-roof membrane and metal coping)
     const roofMat = new THREE.MeshStandardMaterial({ color: 0xbac2ca, roughness: 0.95 });
     const copingMat = new THREE.MeshStandardMaterial({ color: 0x8a929a, roughness: 0.5, metalness: 0.25 });
-    const curbMat = new THREE.MeshStandardMaterial({ color: 0x3e454d, roughness: 0.9 });
-    const hvacMat = new THREE.MeshStandardMaterial({ color: 0x98a0a8, roughness: 0.45, metalness: 0.35 });
-    const grilleMat = new THREE.MeshStandardMaterial({ color: 0x2e353c, roughness: 0.8 });
     // Inside the cab: plain light panels and a neutral floor (no red, no glass)
     const cabWall = new THREE.MeshStandardMaterial({ color: 0xdfe1e4, roughness: 0.6, metalness: 0.15 });
     const cabFloor = new THREE.MeshStandardMaterial({ color: 0x555a62, roughness: 0.7 });
@@ -218,7 +215,7 @@ export class Elevator {
       add(g, new THREE.BoxGeometry(DOOR_W + 0.5, 0.3, padDepth + 0.05), new THREE.MeshStandardMaterial({ color: 0x7a6a58, roughness: 0.8 }), cx, F - 0.15, this.cfg.deckEdgeZ + padDepth / 2);
     }
 
-    // ---- roof, like the classroom roofs: flat membrane, metal coping, an HVAC unit ----
+    // ---- roof, like the classroom roofs: flat membrane and metal coping ----
     const roof = new THREE.Group();
     const R = S + 0.3;
     add(roof, new THREE.BoxGeometry(R, 0.16, R), roofMat, cx, H + 0.08, cz, "T");
@@ -228,11 +225,6 @@ export class Elevator {
     add(roof, new THREE.BoxGeometry(R, ch, cope), copingMat, cx, H + 0.16 + ch / 2 - 0.04, cz + R / 2 - cope / 2, "T");
     add(roof, new THREE.BoxGeometry(cope, ch, R - 2 * cope), copingMat, cx - R / 2 + cope / 2, H + 0.16 + ch / 2 - 0.04, cz, "T");
     add(roof, new THREE.BoxGeometry(cope, ch, R - 2 * cope), copingMat, cx + R / 2 - cope / 2, H + 0.16 + ch / 2 - 0.04, cz, "T");
-    const hx = cx + 0.45;
-    const hz = cz + 0.5;
-    add(roof, new THREE.BoxGeometry(1.5, 0.12, 1.1), curbMat, hx, H + 0.22, hz, "T");
-    add(roof, new THREE.BoxGeometry(1.35, 0.6, 0.95), hvacMat, hx, H + 0.58, hz, "T");
-    add(roof, new THREE.BoxGeometry(0.62, 0.05, 0.62), grilleMat, hx, H + 0.9, hz, "T");
     g.add(roof);
 
     // ---- cab (moves up and down inside the tower) ----
