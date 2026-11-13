@@ -606,6 +606,44 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     });
   }
 
+  /**
+   * Tall hairstyles (spikes, a mohawk) would poke through a hat. While a hat is worn, squash the hair that
+   * rises above the crown so it stays underneath; restore the original shape when the hat comes off.
+   */
+  function fitHairUnderHat(hair: THREE.Object3D[], hat: THREE.Object3D[] | null): void {
+    let limit = Infinity;
+    for (const o of hat ?? []) {
+      const geo = (o as THREE.Mesh).geometry;
+      geo.computeBoundingBox();
+      limit = Math.min(limit, geo.boundingBox!.max.y);
+    }
+    limit -= 0.045; // the crown has some thickness
+    for (const o of hair) {
+      const m = o as THREE.Mesh;
+      if (!m.userData.hairGeo) m.userData.hairGeo = m.geometry;
+      const orig = m.userData.hairGeo as THREE.BufferGeometry;
+      if (!hat) {
+        m.geometry = orig;
+        continue;
+      }
+      const geo = orig.clone();
+      const pos = geo.getAttribute("position");
+      const start = limit - 0.07; // hair below this is left alone
+      const room = limit - start;
+      for (let v = 0; v < pos.count; v++) {
+        const y = pos.getY(v);
+        if (y <= start) continue;
+        const over = y - start;
+        pos.setY(v, start + room * (1 - Math.exp(-over / room)));
+        const shrink = 1 - Math.min(0.35, over * 2.5); // pull the tips in towards the head
+        pos.setX(v, pos.getX(v) * shrink);
+        pos.setZ(v, (pos.getZ(v) - 0.04) * shrink + 0.04);
+      }
+      pos.needsUpdate = true;
+      m.geometry = geo;
+    }
+  }
+
   /** Donor hats are sized for a bare head: enlarge them slightly so they sit over the hair. */
   function growOverHair(objs: THREE.Object3D[] | null): THREE.Object3D[] | null {
     const box = measureHead();
@@ -634,9 +672,10 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     setSlot("facial", fh.donor ? L(fh.id) : "", () => cutRegion(borrow(fh.donor!, fh.parts ?? [], () => (fh.cut ? "hair" : "hairDark")), fh.cut));
 
     const hat = getHat(p.hat);
-    setSlot("hat", hat.id === "none" ? "" : L(hat.id), () =>
+    const hatObjs = setSlot("hat", hat.id === "none" ? "" : L(hat.id), () =>
       growOverHair(borrow(hat.donors![g]!, hat.parts ?? [], () => "fixed"))
     );
+    fitHairUnderHat(hairObjs, hatObjs.length > 0 ? hatObjs : null);
 
     const gl = getGlasses(p.glasses);
     setSlot("glasses", gl.proc ? L(gl.id) : "", () => buildOnHead(gl.proc!));
