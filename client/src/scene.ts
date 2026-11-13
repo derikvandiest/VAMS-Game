@@ -473,6 +473,10 @@ export function startPlaceholderScene(
     }
   }
 
+  // Draw only the instances that were actually placed: unused ones keep the identity matrix and would all
+  // show up as stray posts and pickets standing at the world origin (0, 0).
+  postMesh.count = fPostIdx;
+  picketMesh.count = fPicketIdx;
   postMesh.instanceMatrix.needsUpdate = true;
   picketMesh.instanceMatrix.needsUpdate = true;
   scene.add(postMesh, picketMesh);
@@ -5487,12 +5491,12 @@ export function startPlaceholderScene(
 
     if (door.axis === "z") {
       // West building facing east
-      plaqueMesh.position.set(-13.92, dy + 0.35, door.z + 1.25);
+      plaqueMesh.position.set(-13.92, dy + 0.35, door.z + 1.75); // clear of the door frame (it is 1.0 either side)
       plaqueMesh.rotation.y = Math.PI / 2;
     } else {
       // North & Office buildings facing south
       const wallZ = door.z < -5 ? -10.38 : -1.88;
-      plaqueMesh.position.set(door.x + 1.25, dy + 0.35, wallZ);
+      plaqueMesh.position.set(door.x + 1.75, dy + 0.35, wallZ);
       plaqueMesh.rotation.y = 0;
     }
     scene.add(plaqueMesh);
