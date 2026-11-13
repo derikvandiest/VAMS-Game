@@ -572,19 +572,36 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
         m.geometry = orig;
         return;
       }
+      // Flatten everything below the boot top onto one plane (no gaps, no jagged edge): the legs end cleanly
+      // inside the boot and the triangles underneath collapse to nothing.
       const geo = orig.clone();
       const pos = geo.getAttribute("position");
-      const idx = geo.getIndex();
-      if (!idx) return;
       const cut = top - 0.06;
-      const keep: number[] = [];
-      for (let t = 0; t < idx.count; t += 3) {
-        const y = (pos.getY(idx.getX(t)) + pos.getY(idx.getX(t + 1)) + pos.getY(idx.getX(t + 2))) / 3;
-        if (y >= cut) keep.push(idx.getX(t), idx.getX(t + 1), idx.getX(t + 2));
+      // Leg axis of each side at the boot top (mean of the vertices just above it), used to slim the leg
+      // towards the boot opening so it never pokes through the shaft.
+      const axis = [{ x: 0, z: 0, n: 0 }, { x: 0, z: 0, n: 0 }];
+      for (let v = 0; v < pos.count; v++) {
+        const y = pos.getY(v);
+        if (y < cut || y > top + 0.12) continue;
+        const a2 = axis[pos.getX(v) >= 0 ? 0 : 1];
+        a2.x += pos.getX(v);
+        a2.z += pos.getZ(v);
+        a2.n++;
       }
-      geo.setIndex(keep);
-      geo.clearGroups();
-      if (Array.isArray(m.material)) geo.addGroup(0, keep.length, 0); // keep the one-element material array rendering
+      for (let v = 0; v < pos.count; v++) {
+        let y = pos.getY(v);
+        const a2 = axis[pos.getX(v) >= 0 ? 0 : 1];
+        if (y < top + 0.1 && a2.n > 0) {
+          const k = 0.8 + 0.2 * Math.min(1, Math.max(0, (y - (top - 0.02)) / 0.12));
+          const cx = a2.x / a2.n;
+          const cz = a2.z / a2.n;
+          pos.setX(v, cx + (pos.getX(v) - cx) * k);
+          pos.setZ(v, cz + (pos.getZ(v) - cz) * k);
+        }
+        if (y < cut) y = cut;
+        pos.setY(v, y);
+      }
+      pos.needsUpdate = true;
       m.geometry = geo;
     });
   }

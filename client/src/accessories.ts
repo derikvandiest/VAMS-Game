@@ -124,7 +124,7 @@ export function buildProcedural(kind: ProceduralKind, head: THREE.Box3, bulk = 1
   const gap = e.span * 0.36; // eye centre to face centre
   const lensR = e.span * 0.29;
   const t = e.span * 0.035;
-  const zf = e.z + t * 1.1; // lens ring touching the face
+  const zf = e.z + t * 0.1; // lens ring resting on the face
   for (const sx of [-1, 1]) {
     const cx = c.x + sx * gap;
     g.add(withGeo(std("accent"), new THREE.TorusGeometry(lensR, t, 8, 24), cx, e.y, zf));

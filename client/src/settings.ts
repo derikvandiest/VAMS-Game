@@ -30,6 +30,7 @@ import {
   hatsFor,
   looksForGender,
   loadCharacterProfile,
+  getDefaultProfile,
   randomizeProfile,
   saveCharacterProfile,
   sanitizeProfile,
@@ -424,7 +425,8 @@ export function initSettingsModal(onSave?: SaveCb): void {
   function openModal(customOnSave?: SaveCb): void {
     currentOnSave = customOnSave ?? onSave;
     isNewCharacter = !!customOnSave;
-    current = loadCharacterProfile();
+    // a new character starts from the defaults (first outfit, first hairstyle, no accessories)
+    current = isNewCharacter ? getDefaultProfile() : loadCharacterProfile();
     draft = { ...current };
     nameInput.value = draft.name;
     errorEl.textContent = "";

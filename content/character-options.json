@@ -210,11 +210,6 @@
   ],
   "hairStyles": [
     {
-      "id": "original",
-      "name": "Ponytail",
-      "gender": "masculine"
-    },
-    {
       "id": "f-long",
       "name": "Bob",
       "gender": "feminine",
@@ -278,6 +273,15 @@
       "donor": "Female/Witch",
       "parts": [
         "Head:Hair_Black"
+      ]
+    },
+    {
+      "id": "m-ponytail",
+      "name": "Ponytail",
+      "gender": "masculine",
+      "donor": "Male/Casual_2",
+      "parts": [
+        "Head:Hair"
       ]
     },
     {
@@ -456,13 +460,9 @@
       "id": "work",
       "name": "Work Boots",
       "donors": {
-        "masculine": "Male/Worker",
         "feminine": "Female/Punk"
       },
       "tint": {
-        "masculine": [
-          "Black"
-        ],
         "feminine": [
           "Black"
         ]
