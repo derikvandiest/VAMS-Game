@@ -6465,6 +6465,8 @@ export function startPlaceholderScene(
     tableX: number;
     tableZ: number;
     facingAngle: number;
+    /** Ground-floor bench seats are not used from the walkway above; they stand up at a fixed spot in front */
+    bench?: { exitX: number; exitZ: number };
   };
   const chairSlots: ChairSlot[] = [];
 
@@ -6532,6 +6534,42 @@ export function startPlaceholderScene(
     }
     scene.add(group);
   });
+
+  // --- Orange bench on the left of the 7th USC door (as you face the door), against the west building's wall
+  {
+    const BENCH_X = -13.5; // center (the wall face is at -13.8 where the door frames stand out)
+    const BENCH_Z = 6.7;
+    const BENCH_LEN = 2.2;
+    const wood = new THREE.MeshStandardMaterial({ color: 0xf47a20, roughness: 0.7 });
+    const metal = new THREE.MeshStandardMaterial({ color: 0x2b2f36, roughness: 0.5, metalness: 0.5 });
+    const bench = new THREE.Group();
+    bench.position.set(BENCH_X, 0, BENCH_Z);
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, BENCH_LEN), wood);
+    seat.position.set(0, 0.39, 0);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, BENCH_LEN), wood);
+    back.position.set(-0.22, 0.66, 0);
+    seat.castShadow = back.castShadow = true;
+    seat.receiveShadow = back.receiveShadow = true;
+    bench.add(seat, back);
+    for (const lz of [-BENCH_LEN / 2 + 0.15, BENCH_LEN / 2 - 0.15]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.36, 0.06), metal);
+      leg.position.set(0, 0.18, lz);
+      bench.add(leg);
+    }
+    scene.add(bench);
+    buildingSolids.push({ x: BENCH_X, z: BENCH_Z, w: 0.5, d: BENCH_LEN, yBase: 0, yTop: 0.9 });
+    for (const dz of [-0.5, 0.5]) {
+      chairSlots.push({
+        chairX: BENCH_X + 0.05,
+        chairZ: BENCH_Z + dz,
+        seatY: 0.4,
+        tableX: BENCH_X + 2,
+        tableZ: BENCH_Z + dz,
+        facingAngle: Math.PI / 2, // looking out over the walkway
+        bench: { exitX: -12.7, exitZ: BENCH_Z + dz },
+      });
+    }
+  }
 
   // --- Lunch cover: the red roof over the tables (layout.json `cover`, ~35x10 m
   // from the aerial photo), on corner + intermediate posts.
@@ -7232,6 +7270,11 @@ export function startPlaceholderScene(
     ];
     let standX = seatedChair.chairX - sinF * 0.22;
     let standZ = seatedChair.chairZ - cosF * 0.22;
+    if (seatedChair.bench) {
+      standX = seatedChair.bench.exitX;
+      standZ = seatedChair.bench.exitZ;
+      candidates.length = 0;
+    }
     for (const c of candidates) {
       const tx = seatedChair.chairX + sinF * c.fwd + cosF * c.side;
       const tz = seatedChair.chairZ + cosF * c.fwd - sinF * c.side;
@@ -7633,6 +7676,7 @@ export function startPlaceholderScene(
       let nearestChair: ChairSlot | null = null;
       let minChairDist = 1.8;
       for (const c of chairSlots) {
+        if (c.bench && (player.position.y > 1.5 || presence?.seatTaken(c.chairX - 0.08, c.chairZ))) continue; // not from the walkway above, not an occupied seat
         const d = Math.hypot(player.position.x - c.chairX, player.position.z - c.chairZ);
         if (d < minChairDist) {
           minChairDist = d;
@@ -9049,6 +9093,7 @@ export function startPlaceholderScene(
       const distToCarResetBtn = Math.hypot(player.position.x - CAR_RESET_BTN_X, player.position.z - CAR_RESET_BTN_Z);
       let nearestChairDist = 999;
       for (const c of chairSlots) {
+        if (c.bench && (player.position.y > 1.5 || presence?.seatTaken(c.chairX - 0.08, c.chairZ))) continue;
         const d = Math.hypot(player.position.x - c.chairX, player.position.z - c.chairZ);
         if (d < nearestChairDist) nearestChairDist = d;
       }
