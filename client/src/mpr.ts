@@ -34,9 +34,9 @@ export const MPR_CAMPUS_PARKING_DOOR_Z = 43.0;
 export const MPR_EXIT_DOOR_X = 388.2; // West doors inside MPR (to courtyard)
 export const MPR_EXIT_DOOR_Z = 390.0;
 export const MPR_EAST_EXIT_DOOR_X = 411.8; // East doors inside MPR (to parking lot)
-export const MPR_EAST_EXIT_DOOR_Z = 409.0; // far-left (south-east) corner as seen when entering and facing Mr. Van Diest
+export const MPR_EAST_EXIT_DOOR_Z = 391.0; // far end of the east wall, on the north side (the parking exit)
 export const MPR_EAST_SPAWN_X = 410.2;
-export const MPR_EAST_SPAWN_Z = 409.0;
+export const MPR_EAST_SPAWN_Z = 391.0;
 
 export interface MprRoomBuildResult {
   group: THREE.Group;
@@ -457,7 +457,7 @@ export function buildMprRoom(): MprRoomBuildResult {
   // =========================================================================
 
   const cartGroup = new THREE.Group();
-  const cartX = maxX - 5.4; // 406.6 (beside the projection screen; the south-east corner is the parking exit door)
+  const cartX = maxX - 2.2; // 409.8 (South-East corner close to projector)
   const cartZ = maxZ - 2.2; // 409.8
   cartGroup.position.set(cartX, 0, cartZ);
   cartGroup.rotation.y = -Math.PI / 4; // angled toward the room

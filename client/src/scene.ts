@@ -7,6 +7,7 @@ import { NPCS, NpcDef } from "./npcs";
 import { roomIdByObjective } from "./rooms";
 import { Elevator } from "./elevator";
 import { showDialog } from "./dialog";
+import { confirmAction } from "./confirm";
 import { loadSlot, getActiveSlotId } from "./saveManager";
 import {
   buildMprRoom,
@@ -7093,8 +7094,9 @@ export function startPlaceholderScene(
   }
 
   function resetAllCars(): void {
-    if (drivingCar) exitCar();
+    // Only cars with nobody inside are reset; a car the player is driving stays where it is.
     parkingCars.forEach((c) => {
+      if (c === drivingCar) return;
       const orig = cars[c.id];
       if (orig) {
         c.group.position.set(orig.x, 0, orig.z);
@@ -7107,7 +7109,7 @@ export function startPlaceholderScene(
     carResetPlungerTimer = 0.35;
     carResetBtnMat.emissiveIntensity = 2.8;
     carResetToastTimer = 2.5;
-    carResetToast.textContent = "🚗 All cars & van were reset to parking spots!";
+    carResetToast.textContent = drivingCar ? "🚗 All empty cars were reset to their parking spots!" : "🚗 All cars & van were reset to parking spots!";
     carResetToast.style.transform = "translateX(-50%) scale(1)";
     carResetToast.style.opacity = "1";
   }
@@ -7369,8 +7371,7 @@ export function startPlaceholderScene(
       }
     }
     if (e.key.toLowerCase() === "b") {
-      resetBall();
-      resetBasketball();
+      requestBallReset();
     }
     const key = e.key.toLowerCase();
     if (seatedChair && HANDLED_KEYS.has(key) && key !== "shift") {
@@ -7609,6 +7610,25 @@ export function startPlaceholderScene(
     // never closer than a little behind the character
     const len = Math.hypot(cx - fx, cy - fy, cz - fz) || 1;
     return Math.min(1, Math.max(best, 2.4 / len));
+  }
+
+  // Resetting the balls (stepping on the vent or pressing B) asks for confirmation first
+  function doBallReset(): void {
+    resetBall();
+    resetBasketball();
+    resetBannerTimer = 2.0;
+    resetBanner.style.transform = "translateX(-50%) scale(1)";
+    resetBanner.style.opacity = "1";
+    shockwaveScale = 0.2;
+    shockwaveOpacity = 1.0;
+    padTopMat.emissive.setHex(0x0284c7);
+    padTopMat.emissiveIntensity = 0.9;
+  }
+  function requestBallReset(): void {
+    confirmAction(
+      { title: "Reset the balls?", message: "The soccer ball and basketball will go back to their starting spots.", confirmLabel: "Yes, reset them", cancelLabel: "Cancel" },
+      doBallReset
+    );
   }
 
   // --- Animation loop ------------------------------------------------------
@@ -8382,16 +8402,8 @@ export function startPlaceholderScene(
     padMesh.position.y += (targetPadY - padMesh.position.y) * Math.min(1, dt * 14);
 
     if (onPlate && !plateIsPressed) {
-      plateIsPressed = true;
-      resetBall();
-      resetBasketball();
-      resetBannerTimer = 2.0;
-      resetBanner.style.transform = "translateX(-50%) scale(1)";
-      resetBanner.style.opacity = "1";
-      shockwaveScale = 0.2;
-      shockwaveOpacity = 1.0;
-      padTopMat.emissive.setHex(0x0284c7);
-      padTopMat.emissiveIntensity = 0.9;
+      plateIsPressed = true; // only asks once per visit to the plate
+      requestBallReset();
     } else if (!onPlate && plateIsPressed) {
       plateIsPressed = false;
     }
