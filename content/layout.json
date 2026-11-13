@@ -737,42 +737,42 @@
     {
       "id": "7th-lmu-humanities",
       "x": -14,
-      "z": 23.5,
+      "z": 26,
       "axis": "z",
       "floor": 0
     },
     {
       "id": "7th-csun-math",
       "x": -14,
-      "z": 33.5,
+      "z": 31,
       "axis": "z",
       "floor": 0
     },
     {
       "id": "6th-usc-english",
       "x": -14,
-      "z": 3.5,
+      "z": 6,
       "axis": "z",
       "floor": 1
     },
     {
       "id": "6th-ucla-humanities",
       "x": -14,
-      "z": 13.5,
+      "z": 11,
       "axis": "z",
       "floor": 1
     },
     {
       "id": "6th-lmu-science",
       "x": -14,
-      "z": 23.5,
+      "z": 26,
       "axis": "z",
       "floor": 1
     },
     {
       "id": "6th-csun-math",
       "x": -14,
-      "z": 33.5,
+      "z": 31,
       "axis": "z",
       "floor": 1
     },
@@ -799,14 +799,14 @@
     },
     {
       "id": "8th-lmu-humanities",
-      "x": 26,
+      "x": 29.5,
       "z": -2,
       "axis": "x",
       "floor": 0
     },
     {
       "id": "8th-csun-english",
-      "x": 38,
+      "x": 34.5,
       "z": -2,
       "axis": "x",
       "floor": 0
@@ -820,28 +820,28 @@
     },
     {
       "id": "5th-usc-science",
-      "x": 2,
+      "x": 5.5,
       "z": -2,
       "axis": "x",
       "floor": 1
     },
     {
       "id": "5th-ucla-english",
-      "x": 14,
+      "x": 10.5,
       "z": -2,
       "axis": "x",
       "floor": 1
     },
     {
       "id": "5th-lmu-math",
-      "x": 26,
+      "x": 29.5,
       "z": -2,
       "axis": "x",
       "floor": 1
     },
     {
       "id": "5th-csun-humanities",
-      "x": 38,
+      "x": 34.5,
       "z": -2,
       "axis": "x",
       "floor": 1
