@@ -7562,6 +7562,45 @@ export function startPlaceholderScene(
     return 0;
   }
 
+
+  // --- Camera clearance near the elevator --------------------------------------------------
+  // Returns 0..1: how far along the line from the character (f) to the wanted camera position (c) the camera
+  // can go before it would be behind a building wall.
+  let camOcc = 1;
+  const camWallTop = floor2 + layoutData.boundary.railingHeight;
+  function cameraClearance(fx: number, fy: number, fz: number, cx: number, cy: number, cz: number): number {
+    let best = 1;
+    const dx = cx - fx;
+    const dz = cz - fz;
+    for (const w of walls) {
+      // segment vs rectangle in the XZ plane (slab method)
+      let t0 = 0;
+      let t1 = 1;
+      let hit = true;
+      for (const [o, d, lo, hi] of [
+        [fx, dx, w.x - w.w / 2, w.x + w.w / 2],
+        [fz, dz, w.z - w.d / 2, w.z + w.d / 2],
+      ] as Array<[number, number, number, number]>) {
+        if (Math.abs(d) < 1e-9) {
+          if (o < lo || o > hi) hit = false;
+        } else {
+          let a = (lo - o) / d;
+          let b = (hi - o) / d;
+          if (a > b) [a, b] = [b, a];
+          t0 = Math.max(t0, a);
+          t1 = Math.min(t1, b);
+          if (t0 > t1) hit = false;
+        }
+      }
+      if (!hit || t0 <= 0 || t0 >= 1) continue; // no hit, or the character is inside the wall rectangle
+      const yAtEntry = fy + (cy - fy) * t0;
+      if (yAtEntry < camWallTop) best = Math.min(best, t0 - 0.03);
+    }
+    // never closer than a little behind the character
+    const len = Math.hypot(cx - fx, cy - fy, cz - fz) || 1;
+    return Math.min(1, Math.max(best, 2.4 / len));
+  }
+
   // --- Animation loop ------------------------------------------------------
   const clock = new THREE.Clock();
   let walkTime = 0;
@@ -8489,7 +8528,19 @@ export function startPlaceholderScene(
     seenElev = camElevation;
     const camX = focusX + Math.sin(camAngle) * camDistance;
     const camZ = focusZ + Math.cos(camAngle) * camDistance;
-    camera.position.set(camX, focusY + camElevation, camZ);
+    // Near the elevator the school walls often sit between the camera and the character. Pull the camera in
+    // along its line of sight until it is in front of any wall (eased, so it never snaps).
+    let occTarget = 1;
+    if (!drivingCar && Math.hypot(focusX - elevator.cx, focusZ - elevator.cz) < 12) {
+      const fy = focusY + 1.2;
+      occTarget = cameraClearance(focusX, fy, focusZ, camX, focusY + camElevation, camZ);
+    }
+    camOcc += (occTarget - camOcc) * Math.min(1, dt * (occTarget < camOcc ? 14 : 4));
+    camera.position.set(
+      focusX + (camX - focusX) * camOcc,
+      focusY + 1.2 + (focusY + camElevation - (focusY + 1.2)) * camOcc,
+      focusZ + (camZ - focusZ) * camOcc
+    );
     if (currentClassroom) {
       updateCutaway(getCutaway(currentClassroom.group, currentClassroom.worldX, currentClassroom.worldZ, currentClassroom.size, currentClassroom.height), camX, camera.position.y, camZ, dt);
     } else if (inMprRoom) {

@@ -16,6 +16,10 @@ export interface ElevatorConfig {
   size?: number;
   /** z where the upper walkway deck ends (the elevator pad bridges from here to the door) */
   deckEdgeZ: number;
+  /** Exterior wall color (same as the school walls) */
+  wallColor?: number;
+  /** Trim color (same as the school's red posts and railings) */
+  trimColor?: number;
 }
 
 export interface ElevatorSolid {
@@ -56,9 +60,12 @@ export class Elevator {
   readonly cx: number;
   readonly cz: number;
   readonly half: number;
+  /** Meshes that turn see-through while someone is inside, so the camera can always see the passenger */
+  private fadeMeshes: THREE.Mesh[] = [];
+  private fade = 1;
 
   constructor(scene: THREE.Scene, cfg: ElevatorConfig) {
-    this.cfg = { size: 3.2, ...cfg };
+    this.cfg = { size: 3.2, wallColor: 0xe8e0d2, trimColor: 0x7a2f2f, ...cfg };
     this.half = this.cfg.size / 2;
     this.cx = cfg.x;
     this.cz = cfg.zFront + this.half;
@@ -71,16 +78,19 @@ export class Elevator {
     const { floorHeight: F, size: S, zFront } = this.cfg;
     const H = F + 3.7; // tower height: the upper door plus a header and a roof
     const g = this.group;
-    const steel = new THREE.MeshStandardMaterial({ color: 0x59606b, roughness: 0.45, metalness: 0.7 });
-    const darkSteel = new THREE.MeshStandardMaterial({ color: 0x2a2f38, roughness: 0.5, metalness: 0.6 });
-    const glass = new THREE.MeshStandardMaterial({ color: 0x9fd3e8, roughness: 0.1, metalness: 0.1, transparent: true, opacity: 0.3, depthWrite: false });
-    const brushed = new THREE.MeshStandardMaterial({ color: 0xaeb4bd, roughness: 0.35, metalness: 0.8 });
+    // Exterior: the same cream walls and red trim as the school buildings
+    const steel = new THREE.MeshStandardMaterial({ color: this.cfg.trimColor, roughness: 0.7, metalness: 0.2 }); // red posts / bands
+    const darkSteel = new THREE.MeshStandardMaterial({ color: 0x5e2222, roughness: 0.6, metalness: 0.2 }); // plinth and roof cap
+    const glass = new THREE.MeshStandardMaterial({ color: this.cfg.wallColor, roughness: 0.9 }); // solid school-colored walls
+    const brushed = new THREE.MeshStandardMaterial({ color: this.cfg.wallColor, roughness: 0.9 });
+    const fadeSet = new Set<THREE.Material>([glass, brushed, steel]);
     const add = (parent: THREE.Object3D, geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number, shadow = true): THREE.Mesh => {
       const m = new THREE.Mesh(geo, mat);
       m.position.set(x, y, z);
       m.castShadow = shadow;
       m.receiveShadow = true;
       parent.add(m);
+      if (fadeSet.has(mat)) this.fadeMeshes.push(m);
       return m;
     };
     const cx = this.cx;
@@ -97,9 +107,9 @@ export class Elevator {
       for (const sz of [-1, 1]) add(g, new THREE.BoxGeometry(0.2, H, 0.2), steel, cx + sx * (h - 0.1), H / 2, cz + sz * (h - 0.1));
     }
     // glass: west, east and back (south) walls
-    add(g, new THREE.BoxGeometry(0.05, H - 0.2, S - 0.4), glass, cx - h + 0.1, H / 2, cz, false);
-    add(g, new THREE.BoxGeometry(0.05, H - 0.2, S - 0.4), glass, cx + h - 0.1, H / 2, cz, false);
-    add(g, new THREE.BoxGeometry(S - 0.4, H - 0.2, 0.05), glass, cx, H / 2, cz + h - 0.1, false);
+    add(g, new THREE.BoxGeometry(0.2, H, S - 0.2), glass, cx - h + 0.1, H / 2, cz);
+    add(g, new THREE.BoxGeometry(0.2, H, S - 0.2), glass, cx + h - 0.1, H / 2, cz);
+    add(g, new THREE.BoxGeometry(S - 0.2, H, 0.2), glass, cx, H / 2, cz + h - 0.1);
     // horizontal frame bands at the floor lines and the top
     for (const y of [0.18, F - 0.05, H - 0.05]) {
       add(g, new THREE.BoxGeometry(S, 0.1, 0.12), steel, cx, y, cz - h + 0.06);
@@ -201,6 +211,9 @@ export class Elevator {
     cab.position.set(cx, 0, cz);
     const wall = new THREE.MeshStandardMaterial({ color: 0x8b929d, roughness: 0.4, metalness: 0.75 });
     const inner = new THREE.MeshStandardMaterial({ color: 0xd8dce2, roughness: 0.5, metalness: 0.3 });
+    fadeSet.add(wall);
+    fadeSet.add(inner);
+    fadeSet.add(doorMat);
     add(cab, new THREE.BoxGeometry(CS, 0.14, CS), darkSteel, 0, 0.07, 0); // floor
     add(cab, new THREE.BoxGeometry(CS, 0.12, CS), steel, 0, CH + 0.06, 0); // ceiling
     add(cab, new THREE.BoxGeometry(CS, CH, 0.1), wall, 0, CH / 2, ch - 0.05); // back
@@ -321,9 +334,36 @@ export class Elevator {
     this.doorTarget = 0;
   }
 
+  // ------------------------------------------------------------------ see-through while occupied
+  private applyFade(): void {
+    const f = this.fade;
+    for (const m of this.fadeMeshes) {
+      const mat = m.material as THREE.MeshStandardMaterial;
+      if (!mat.userData.private) {
+        // private copy, so fading one part never affects another that shares the material
+        m.material = mat.clone();
+        (m.material as THREE.MeshStandardMaterial).userData.private = true;
+      }
+      const mm = m.material as THREE.MeshStandardMaterial;
+      const was = mm.transparent;
+      mm.opacity = f;
+      mm.transparent = f < 0.99;
+      mm.depthWrite = f > 0.5;
+      if (was !== mm.transparent) mm.needsUpdate = true;
+      m.castShadow = f > 0.5;
+    }
+  }
+
   // ------------------------------------------------------------------ per-frame
   update(dt: number, px: number, py: number, pz: number): void {
     const inside = this.inShaft(px, pz);
+    // walls and cab turn see-through while a passenger is inside (or riding), so the camera never loses them
+    const target = inside || this.riding ? 0.13 : 1;
+    if (Math.abs(this.fade - target) > 0.002) {
+      this.fade += (target - this.fade) * Math.min(1, dt * 8);
+      if (Math.abs(this.fade - target) < 0.01) this.fade = target;
+      this.applyFade();
+    }
     switch (this.phase) {
       case "idle": {
         const wantOpen = inside || this.nearDoor(px, pz, py, this.level);
