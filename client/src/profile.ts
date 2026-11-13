@@ -27,8 +27,8 @@ export interface LookDef {
 }
 
 export interface HairStyleDef { id: string; name: string; gender: Gender | "both"; donor?: string; parts?: string[]; cut?: "beard" | "rest" | "rest-nape" | "rest-sideburns"; /** materials of a mohawk crest, removed under hats */ crest?: string[] }
-export interface FacialHairDef { id: string; name: string; donor?: string; parts?: string[]; cut?: "beard" | "rest" | "rest-nape" | "rest-sideburns" }
-export interface HatDef { id: string; name: string; donors?: Partial<Record<Gender, string>>; parts?: string[] }
+export interface FacialHairDef { id: string; name: string; /** only for NPCs, not offered to players */ npcOnly?: boolean; donor?: string; parts?: string[]; cut?: "beard" | "rest" | "rest-nape" | "rest-sideburns" }
+export interface HatDef { id: string; name: string; /** only for NPCs, not offered to players */ npcOnly?: boolean; donors?: Partial<Record<Gender, string>>; parts?: string[] }
 export interface GlassesDef { id: string; name: string; proc?: "round" }
 export interface ShoeDef { id: string; name: string; /** shoes without donors (the model's own) are limited to these genders */ genders?: Gender[]; /** reaches the knee: no skin legs needed underneath */ tall?: boolean | Gender[]; donors?: Partial<Record<Gender, string>>; tint?: Partial<Record<Gender, string[]>> }
 
@@ -49,6 +49,10 @@ export interface CharacterProfile {
   shoeColor: string;
   skinTone: string;
   hairColor: string;
+  /** NPCs: outfit color ("" = the homeroom color) */
+  outfitColor: string;
+  /** NPCs: no homeroom (no homeroom tag on the name, no homeroom shirt color) */
+  noHomeroom: boolean;
 }
 
 export const HOMEROOM_INFO: Record<Homeroom, { label: string; shirtColor: string; textHex: string }> = {
@@ -83,8 +87,9 @@ export function looksForGender(gender: Gender): LookDef[] {
 
 export const hairStylesFor = (g: Gender): HairStyleDef[] => HAIR_STYLES.filter((h) => h.gender === "both" || h.gender === g);
 /** Facial hair is offered to the masculine models only. */
-export const facialHairFor = (g: Gender): FacialHairDef[] => (g === "masculine" ? FACIAL_HAIR : [FACIAL_HAIR[0]]);
-export const hatsFor = (g: Gender): HatDef[] => HATS.filter((h) => !h.donors || h.donors[g]);
+export const facialHairFor = (g: Gender, npc = false): FacialHairDef[] =>
+  g === "masculine" ? FACIAL_HAIR.filter((f) => npc || !f.npcOnly) : [FACIAL_HAIR[0]];
+export const hatsFor = (g: Gender, npc = false): HatDef[] => HATS.filter((h) => (npc || !h.npcOnly) && (!h.donors || h.donors[g]));
 export const shoesFor = (g: Gender): ShoeDef[] => SHOES.filter((s) => (s.donors ? !!s.donors[g] : !s.genders || s.genders.includes(g)));
 const byId = <T extends { id: string }>(list: T[], id: unknown, fallback: T): T => list.find((x) => x.id === id) ?? fallback;
 export const getHairStyle = (id: string): HairStyleDef => byId(HAIR_STYLES, id, HAIR_STYLES[0]);
@@ -117,6 +122,8 @@ export function getDefaultProfile(): CharacterProfile {
     shoeColor: ACCENT_COLORS[0].hex,
     skinTone: SKIN_TONES[1].hex,
     hairColor: HAIR_COLORS[1].hex,
+    outfitColor: "",
+    noHomeroom: false,
   };
 }
 
@@ -133,14 +140,15 @@ export function sanitizeProfile(raw: unknown): CharacterProfile {
   const lookId = typeof p.look === "string" ? p.look.replace(/^boy-/, "masc-").replace(/^girl-/, "fem-") : "";
   const allowed = looksForGender(gender);
   const look = allowed.find((l) => l.id === lookId) ?? allowed[0];
+  const npc = p.noHomeroom === true; // NPC profiles may use NPC-only options
   return {
     name: (typeof p.name === "string" ? p.name.trim() : fb.name).slice(0, MAX_NAME_LENGTH),
     homeroom: HOMEROOMS.includes(p.homeroom as Homeroom) ? (p.homeroom as Homeroom) : fb.homeroom,
     gender,
     look: look.id,
     hairStyle: byId(hairStylesFor(gender), p.hairStyle, hairStylesFor(gender)[0]).id,
-    facialHair: byId(facialHairFor(gender), p.facialHair, FACIAL_HAIR[0]).id,
-    hat: byId(hatsFor(gender), p.hat, HATS[0]).id,
+    facialHair: byId(facialHairFor(gender, npc), p.facialHair, FACIAL_HAIR[0]).id,
+    hat: byId(hatsFor(gender, npc), p.hat, HATS[0]).id,
     hatColor: isHex(p.hatColor) ? p.hatColor : "",
     glasses: getGlasses(p.glasses as string).id,
     glassesColor: isHex(p.glassesColor) ? p.glassesColor : fb.glassesColor,
@@ -148,6 +156,8 @@ export function sanitizeProfile(raw: unknown): CharacterProfile {
     shoeColor: isHex(p.shoeColor) ? p.shoeColor : fb.shoeColor,
     skinTone: isHex(p.skinTone) ? p.skinTone : fb.skinTone,
     hairColor: isHex(p.hairColor) ? p.hairColor : fb.hairColor,
+    outfitColor: isHex(p.outfitColor) ? p.outfitColor : "",
+    noHomeroom: npc,
   };
 }
 

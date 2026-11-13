@@ -148,7 +148,7 @@ export function areAvatarAssetsReady(): boolean {
 // Name-tag sprite helper (unchanged from previous system)
 // ---------------------------------------------------------------------------
 
-function makeNameTagTexture(name: string, homeroom: Homeroom): THREE.CanvasTexture {
+function makeNameTagTexture(name: string, homeroom: Homeroom, noHomeroom = false): THREE.CanvasTexture {
   const info = HOMEROOM_INFO[homeroom] ?? HOMEROOM_INFO.UCLA;
   const c = document.createElement("canvas");
   c.width = 512;
@@ -159,9 +159,9 @@ function makeNameTagTexture(name: string, homeroom: Homeroom): THREE.CanvasTextu
   ctx.font = "bold 36px system-ui, -apple-system, Segoe UI, sans-serif";
   const nameW = ctx.measureText(name).width;
   ctx.font = "bold 26px system-ui, -apple-system, Segoe UI, sans-serif";
-  const tagW = ctx.measureText(info.label).width + 28;
+  const tagW = noHomeroom ? 0 : ctx.measureText(info.label).width + 28;
   const padX = 28;
-  const gap = 14;
+  const gap = noHomeroom ? 0 : 14;
   const w = Math.min(492, Math.max(200, Math.ceil(nameW + tagW + padX * 2 + gap)));
   const h = 76;
   const x = (c.width - w) / 2;
@@ -181,30 +181,33 @@ function makeNameTagTexture(name: string, homeroom: Homeroom): THREE.CanvasTextu
   ctx.fill();
   ctx.stroke();
 
-  const pillH = 44;
-  const pillY = y + (h - pillH) / 2;
-  const pillX = x + 16;
-  const pillR = pillH / 2;
-  ctx.fillStyle = info.shirtColor;
-  ctx.beginPath();
-  ctx.moveTo(pillX + pillR, pillY);
-  ctx.arcTo(pillX + tagW, pillY, pillX + tagW, pillY + pillH, pillR);
-  ctx.arcTo(pillX + tagW, pillY + pillH, pillX, pillY + pillH, pillR);
-  ctx.arcTo(pillX, pillY + pillH, pillX, pillY, pillR);
-  ctx.arcTo(pillX, pillY, pillX + tagW, pillY, pillR);
-  ctx.closePath();
-  ctx.fill();
+  if (!noHomeroom) {
+    const pillH = 44;
+    const pillY = y + (h - pillH) / 2;
+    const pillX = x + 16;
+    const pillR = pillH / 2;
+    ctx.fillStyle = info.shirtColor;
+    ctx.beginPath();
+    ctx.moveTo(pillX + pillR, pillY);
+    ctx.arcTo(pillX + tagW, pillY, pillX + tagW, pillY + pillH, pillR);
+    ctx.arcTo(pillX + tagW, pillY + pillH, pillX, pillY + pillH, pillR);
+    ctx.arcTo(pillX, pillY + pillH, pillX, pillY, pillR);
+    ctx.arcTo(pillX, pillY, pillX + tagW, pillY, pillR);
+    ctx.closePath();
+    ctx.fill();
 
-  ctx.fillStyle = info.textHex;
-  ctx.font = "bold 26px system-ui, -apple-system, Segoe UI, sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(info.label, pillX + tagW / 2, c.height / 2 + 1);
+    ctx.fillStyle = info.textHex;
+    ctx.font = "bold 26px system-ui, -apple-system, Segoe UI, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(info.label, pillX + tagW / 2, c.height / 2 + 1);
+
+  }
 
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 36px system-ui, -apple-system, Segoe UI, sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText(name, pillX + tagW + gap, c.height / 2 + 2);
+  ctx.fillText(name, x + (noHomeroom ? padX : 16) + tagW + gap, c.height / 2 + 2);
 
   const tex = new THREE.CanvasTexture(c);
   tex.needsUpdate = true;
@@ -367,7 +370,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     const look = getLook(p.look);
     const skin = new THREE.Color(p.skinTone);
     const skinDark = skin.clone().multiplyScalar(0.85);
-    const shirt = new THREE.Color(shirtColorFor(p.homeroom));
+    const shirt = new THREE.Color(p.outfitColor || shirtColorFor(p.homeroom));
     const hair = new THREE.Color(p.hairColor);
     const hairDark = hair.clone().multiplyScalar(0.55);
     const brows = hair.clone().multiplyScalar(0.7);
@@ -1171,15 +1174,15 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     scaleContainer.scale.set(s, s, s);
 
     if (nameTagSprite) {
-      const key = `${profile.name}|${profile.homeroom}`;
+      const key = `${profile.name}|${profile.homeroom}|${profile.noHomeroom}`;
       if (key !== lastTagKey) {
         lastTagKey = key;
         const mat = nameTagSprite.material as THREE.SpriteMaterial;
         if (mat.map) mat.map.dispose();
-        mat.map = makeNameTagTexture(profile.name, profile.homeroom);
+        mat.map = makeNameTagTexture(profile.name, profile.homeroom, profile.noHomeroom);
         mat.needsUpdate = true;
       }
-      nameTagSprite.position.y = (1.73 * modelScale + 0.32) * s;
+      nameTagSprite.position.y = (1.73 * modelScale + 0.32 + (profile.hat === "crown" ? 0.2 : 0)) * s;
     }
 
     rebuildAvatarMeshes();

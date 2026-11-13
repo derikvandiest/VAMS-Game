@@ -370,6 +370,16 @@
         "Head:Hair"
       ],
       "cut": "beard"
+    },
+    {
+      "id": "full-beard",
+      "name": "Full Beard",
+      "donor": "Male/King",
+      "parts": [
+        "Head:Hair_White"
+      ],
+      "cut": "beard",
+      "npcOnly": true
     }
   ],
   "hats": [
@@ -409,6 +419,17 @@
         "Head:Purple",
         "Head:Gold"
       ]
+    },
+    {
+      "id": "crown",
+      "name": "Gold Crown",
+      "donors": {
+        "masculine": "Male/King"
+      },
+      "parts": [
+        "Head:Gold"
+      ],
+      "npcOnly": true
     }
   ],
   "glasses": [

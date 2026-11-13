@@ -3,6 +3,7 @@ import layout from "../../content/layout.json";
 import classroomsData from "../../content/classrooms.json";
 import officeSignUrl from "./assets/office_sign.png";
 import { showWelcomePopup } from "./welcome";
+import { NPCS } from "./npcs";
 import { loadSlot, getActiveSlotId } from "./saveManager";
 import {
   buildMprRoom,
@@ -28,7 +29,7 @@ import {
   getAllClassroomIds,
   ClassroomInstance,
 } from "./classrooms";
-import { createAvatarRig, GAME_AVATAR_SCALE } from "./avatar";
+import { createAvatarRig, GAME_AVATAR_SCALE, AvatarRig } from "./avatar";
 import { loadCharacterProfile, onProfileChange } from "./profile";
 import { initSettingsModal } from "./settings";
 
@@ -6628,6 +6629,18 @@ export function startPlaceholderScene(
   mprRoomGroup.visible = false;
   scene.add(mprRoomGroup);
 
+  // NPCs standing in the MPR (they hide and show with the room)
+  const npcRigs: AvatarRig[] = [];
+  for (const def of NPCS.filter((n) => n.room === "mpr")) {
+    const npcRig = createAvatarRig({ nameTag: true, scale: GAME_AVATAR_SCALE });
+    npcRig.apply(def.profile);
+    npcRig.player.position.set(def.x, 0, def.z);
+    npcRig.player.rotation.y = def.rotY;
+    mprRoomGroup.add(npcRig.player);
+    mprSolids.push({ x: def.x, z: def.z, w: 0.7, d: 0.7, yBase: 0, yTop: 2.6 });
+    npcRigs.push(npcRig);
+  }
+
   // Register all 40 MPR teacher chairs
   for (const c of mprChairs) {
     chairSlots.push(c);
@@ -7704,6 +7717,7 @@ export function startPlaceholderScene(
       void bob;
     }
     rig.syncSkeleton?.();
+    if (inMprRoom) for (const n of npcRigs) n.syncSkeleton?.();
 
     // --- Gate: swing the panels toward their open/closed target ----------
     gatePanels.forEach((pivot, i) => {
