@@ -116,6 +116,7 @@ interface Presence {
   z: number;
   rotY: number;
   seatY: number | null; // height of the seat when sitting
+  driving: number | null; // id of the car being driven
   hidden: boolean; // e.g. driving a car (the car itself is not synced yet)
   lastTs: number;
 }
@@ -141,7 +142,7 @@ function cleanProfile(raw: unknown): Record<string, string | boolean> {
   return out;
 }
 function publicState(id: string, p: Presence): Record<string, unknown> {
-  return { id, x: p.x, y: p.y, z: p.z, rotY: p.rotY, seatY: p.seatY, hidden: p.hidden };
+  return { id, x: p.x, y: p.y, z: p.z, rotY: p.rotY, seatY: p.seatY, driving: p.driving, hidden: p.hidden };
 }
 /** Put a player into a zone: tell the old zone they left, give them the zone's current players, announce them. */
 function enterZone(socket: import("socket.io").Socket, p: Presence, zone: string): void {
@@ -158,6 +159,67 @@ function enterZone(socket: import("socket.io").Socket, p: Presence, zone: string
   }
   socket.emit("presence:snapshot", others);
   socket.to(zoneRoom(zone)).emit("presence:update", { ...publicState(socket.id, p), profile: p.profile });
+}
+
+
+// --- Shared world: gate, elevator, cars, soccer ball, basketball ------------
+// The gate and the elevator are shared switches. Each car has at most one driver, who simulates it and sends its
+// position. Each ball has an owner (the last player to touch it) who simulates it and sends its position; everybody
+// else sees the owner's version. The server keeps the latest of everything so that late joiners see the same world.
+type Vec = Record<string, number>;
+interface CarSync {
+  driver: string | null;
+  state: Vec | null;
+}
+interface BallSync {
+  owner: string | null;
+  state: (Vec & { held?: number }) | null;
+}
+const ELEVATOR_CALL_TIME = 12; // the slow trip to a caller (seconds); must match client/src/elevator.ts
+const ELEVATOR_RIDE_TIME = 3.2;
+const world = {
+  gate: false,
+  elevator: { level: 0 as 0 | 1, busyUntil: 0 },
+  cars: new Map<number, CarSync>(),
+  balls: { soccer: { owner: null, state: null } as BallSync, basket: { owner: null, state: null } as BallSync },
+};
+const ballKey = (raw: unknown): "soccer" | "basket" | null => (raw === "soccer" || raw === "basket" ? raw : null);
+const carId = (raw: unknown): number | null => (typeof raw === "number" && Number.isInteger(raw) && raw >= 0 && raw < 64 ? raw : null);
+function cleanVec(raw: unknown, keys: string[]): Vec | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const out: Vec = {};
+  for (const k of keys) {
+    const v = o[k];
+    if (typeof v !== "number" || !Number.isFinite(v)) return null;
+    out[k] = Math.min(5000, Math.max(-5000, v));
+  }
+  return out;
+}
+const CAR_KEYS = ["x", "z", "rotY", "speed", "steer"];
+const BALL_KEYS = ["x", "y", "z", "vx", "vy", "vz", "held"];
+function carSync(id: number): CarSync {
+  let c = world.cars.get(id);
+  if (!c) {
+    c = { driver: null, state: null };
+    world.cars.set(id, c);
+  }
+  return c;
+}
+function releaseWorldItems(socketId: string): void {
+  for (const [id, car] of world.cars) {
+    if (car.driver === socketId) {
+      car.driver = null;
+      io.emit("world:car:driver", { id, driver: null });
+    }
+  }
+  for (const key of ["soccer", "basket"] as const) {
+    const b = world.balls[key];
+    if (b.owner === socketId) {
+      b.owner = null;
+      io.emit("world:ball:owner", { ball: key, owner: null });
+    }
+  }
 }
 
 io.on("connection", (socket) => {
@@ -335,6 +397,7 @@ io.on("connection", (socket) => {
       z: 0,
       rotY: 0,
       seatY: null,
+      driving: null,
       hidden: false,
       lastTs: 0,
     };
@@ -351,7 +414,7 @@ io.on("connection", (socket) => {
 
   socket.on(
     "presence:state",
-    (d: { zone?: unknown; x?: unknown; y?: unknown; z?: unknown; rotY?: unknown; seatY?: unknown; hidden?: unknown }) => {
+    (d: { zone?: unknown; x?: unknown; y?: unknown; z?: unknown; rotY?: unknown; seatY?: unknown; driving?: unknown; hidden?: unknown }) => {
       const p = presence.get(socket.id);
       if (!p) return;
       const now = Date.now();
@@ -362,18 +425,125 @@ io.on("connection", (socket) => {
       p.z = num(d?.z, -2000, 2000);
       p.rotY = num(d?.rotY, -10, 10);
       p.seatY = typeof d?.seatY === "number" && Number.isFinite(d.seatY) ? num(d.seatY, 0, 5) : null;
+      p.driving = carId(d?.driving);
       p.hidden = d?.hidden === true;
       const zone = cleanZone(d?.zone);
       if (zone !== p.zone) {
         enterZone(socket, p, zone);
       } else {
-        socket.to(zoneRoom(zone)).volatile.emit("presence:update", publicState(socket.id, p));
+        socket.to(zoneRoom(zone)).emit("presence:update", publicState(socket.id, p));
       }
     }
   );
 
+
+  // 6) Shared world
+  const sendWorldSnapshot = (): void => {
+    socket.emit("world:snapshot", {
+      gate: world.gate,
+      elevatorLevel: world.elevator.level,
+      cars: Array.from(world.cars, ([id, c]) => ({ id, driver: c.driver, state: c.state })),
+      balls: { soccer: world.balls.soccer, basket: world.balls.basket },
+    });
+  };
+  sendWorldSnapshot();
+  // the game scene asks again once it is ready to listen (it starts after the connection is made)
+  socket.on("world:sync", sendWorldSnapshot);
+
+  socket.on("world:gate", (open: unknown) => {
+    world.gate = open === true;
+    socket.broadcast.emit("world:gate", world.gate);
+  });
+
+  socket.on("world:elevator:request", (d: { dest?: unknown; call?: unknown }) => {
+    const dest = d?.dest === 1 ? 1 : 0;
+    const now = Date.now();
+    if (now < world.elevator.busyUntil || dest === world.elevator.level) {
+      socket.emit("world:elevator:denied");
+      return;
+    }
+    const call = d?.call === true;
+    world.elevator.level = dest;
+    // closing doors + the trip + opening doors (a little extra margin)
+    world.elevator.busyUntil = now + ((call ? ELEVATOR_CALL_TIME : ELEVATOR_RIDE_TIME) + 2.6) * 1000;
+    io.emit("world:elevator:go", { dest, call });
+  });
+
+  socket.on("world:car:claim", (d: { id?: unknown }) => {
+    const id = carId(d?.id);
+    if (id === null) return;
+    const car = carSync(id);
+    if (car.driver && car.driver !== socket.id) {
+      socket.emit("world:car:denied", { id });
+      return;
+    }
+    car.driver = socket.id;
+    io.emit("world:car:driver", { id, driver: socket.id });
+  });
+
+  socket.on("world:car:state", (d: { id?: unknown } & Record<string, unknown>) => {
+    const id = carId(d?.id);
+    if (id === null) return;
+    const car = carSync(id);
+    if (car.driver !== socket.id) return;
+    const st = cleanVec(d, CAR_KEYS);
+    if (!st) return;
+    car.state = st;
+    socket.broadcast.emit("world:car:state", { id, ...st });
+  });
+
+  socket.on("world:car:release", (d: { id?: unknown } & Record<string, unknown>) => {
+    const id = carId(d?.id);
+    if (id === null) return;
+    const car = carSync(id);
+    if (car.driver !== socket.id) return;
+    const st = cleanVec(d, CAR_KEYS);
+    if (st) {
+      car.state = st;
+      socket.broadcast.emit("world:car:state", { id, ...st });
+    }
+    car.driver = null;
+    io.emit("world:car:driver", { id, driver: null });
+  });
+
+  socket.on("world:cars:reset", () => {
+    for (const [id, car] of world.cars) {
+      if (!car.driver) world.cars.set(id, { driver: null, state: null });
+    }
+    socket.broadcast.emit("world:cars:reset");
+  });
+
+  socket.on("world:ball:claim", (d: { ball?: unknown }) => {
+    const key = ballKey(d?.ball);
+    if (!key) return;
+    world.balls[key].owner = socket.id;
+    io.emit("world:ball:owner", { ball: key, owner: socket.id });
+  });
+
+  socket.on("world:ball:state", (d: { ball?: unknown } & Record<string, unknown>) => {
+    const key = ballKey(d?.ball);
+    if (!key) return;
+    const b = world.balls[key];
+    if (b.owner !== socket.id) return;
+    const st = cleanVec(d, BALL_KEYS);
+    if (!st) return;
+    b.state = st;
+    socket.broadcast.emit("world:ball:state", { ball: key, ...st });
+  });
+
+  socket.on("world:balls:reset", () => {
+    for (const key of ["soccer", "basket"] as const) world.balls[key] = { owner: null, state: null };
+    socket.broadcast.emit("world:balls:reset");
+  });
+
+  socket.on("world:event", (d: { type?: unknown; text?: unknown }) => {
+    if ((d?.type !== "goal" && d?.type !== "bucket") || typeof d.text !== "string") return;
+    socket.broadcast.emit("world:event", { type: d.type, text: d.text.slice(0, 60) });
+  });
+
   socket.on("disconnect", () => {
     console.log(`[server] player disconnected (${socket.id})`);
+    releaseWorldItems(socket.id);
     const gone = presence.get(socket.id);
     if (gone) {
       socket.to(zoneRoom(gone.zone)).emit("presence:left", socket.id);

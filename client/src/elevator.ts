@@ -374,26 +374,59 @@ export class Elevator {
     return "";
   }
 
+  /**
+   * Multiplayer: instead of starting a trip itself, the elevator asks the server (it is shared by everyone).
+   * The server answers with a "go" for all players, which calls go().
+   */
+  private net: ((dest: 0 | 1, call: boolean) => void) | null = null;
+  setNetwork(request: ((dest: 0 | 1, call: boolean) => void) | null): void {
+    this.net = request;
+  }
+
+  /** The cab rests at this floor (used when joining a game in progress). */
+  setLevel(level: 0 | 1): void {
+    if (this.phase !== "idle") return;
+    this.level = level;
+    this.cabY = level === 1 ? this.cfg.floorHeight : 0;
+  }
+
+  /** Start a trip (everyone's elevator runs it). Anyone standing inside the cab rides along. */
+  go(dest: 0 | 1, call: boolean, px: number, pz: number): void {
+    if (this.phase !== "idle") return;
+    this.dest = dest;
+    if (!call && this.inShaft(px, pz)) this.riding = true;
+    this.begin(call);
+  }
+
   /** E pressed. Returns true if the elevator handled it. */
   press(x: number, y: number, z: number): boolean {
     if (this.riding || this.phase !== "idle") return false;
     if (this.inShaft(x, z)) {
-      this.dest = this.level === 0 ? 1 : 0;
+      const dest: 0 | 1 = this.level === 0 ? 1 : 0;
+      if (this.net) {
+        this.net(dest, false);
+        return true;
+      }
+      this.dest = dest;
       this.riding = true;
-      this.begin();
+      this.begin(false);
       return true;
     }
     const lvl = this.playerLevel(y);
     if (this.nearDoor(x, z, y, lvl) && Math.hypot(x - this.cx, z - this.cfg.zFront) < 3.0 && this.level !== lvl) {
-      this.dest = lvl; // call: the cab comes to the player
-      this.begin();
+      if (this.net) {
+        this.net(lvl, true); // call: the cab comes to the player
+        return true;
+      }
+      this.dest = lvl;
+      this.begin(true);
       return true;
     }
     return false;
   }
 
-  private begin(): void {
-    this.isCall = !this.riding;
+  private begin(isCall: boolean): void {
+    this.isCall = isCall;
     this.callT = 0;
     this.phase = "closing";
     this.doorTarget = 0;

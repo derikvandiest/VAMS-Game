@@ -19,8 +19,15 @@ export interface LocalPresence {
   rotY: number;
   /** Height of the seat while sitting, otherwise null */
   seatY: number | null;
-  /** Not drawn for others (for example while driving a car) */
+  /** Id of the car being driven (the player is then drawn at the wheel), otherwise null */
+  driving: number | null;
+  /** Not drawn for others */
   hidden: boolean;
+}
+
+/** Lets presence put a remote driver at the wheel of the (shared) car they are driving */
+export interface CarSeats {
+  getCar(id: number): { group: THREE.Group; seat: THREE.Vector3 } | null;
 }
 
 interface Remote {
@@ -31,6 +38,8 @@ interface Remote {
   rotY: number;
   targetRotY: number;
   seatY: number | null;
+  driving: number | null;
+  inCar: THREE.Group | null;
   lastSeen: number;
   clock: number;
   speed: number;
@@ -43,6 +52,7 @@ interface WireState {
   z: number;
   rotY: number;
   seatY: number | null;
+  driving?: number | null;
   hidden: boolean;
   profile?: Record<string, unknown>;
 }
@@ -58,7 +68,7 @@ export interface Presence {
 }
 
 /** Starts presence for this scene, or returns null when not playing on the multiplayer server. */
-export function startPresence(scene: THREE.Scene): Presence | null {
+export function startPresence(scene: THREE.Scene, cars?: CarSeats): Presence | null {
   if (!isMultiplayerActive()) return null;
   const socket: Socket = getSocket();
 
@@ -69,7 +79,7 @@ export function startPresence(scene: THREE.Scene): Presence | null {
   let last: LocalPresence | null = null;
 
   const clearRemotes = (): void => {
-    for (const r of remotes.values()) scene.remove(r.rig.player);
+    for (const r of remotes.values()) r.rig.player.removeFromParent();
     remotes.clear();
   };
 
@@ -77,7 +87,7 @@ export function startPresence(scene: THREE.Scene): Presence | null {
     if (w.hidden) {
       const gone = remotes.get(w.id);
       if (gone) {
-        scene.remove(gone.rig.player);
+        gone.rig.player.removeFromParent();
         remotes.delete(w.id);
       }
       return;
@@ -91,7 +101,7 @@ export function startPresence(scene: THREE.Scene): Presence | null {
       rig.player.position.copy(pos);
       rig.player.rotation.y = w.rotY;
       scene.add(rig.player);
-      r = { id: w.id, rig, pos, target: pos.clone(), rotY: w.rotY, targetRotY: w.rotY, seatY: w.seatY, lastSeen: 0, clock: Math.random() * 10, speed: 0 };
+      r = { id: w.id, rig, pos, target: pos.clone(), rotY: w.rotY, targetRotY: w.rotY, seatY: w.seatY, driving: w.driving ?? null, inCar: null, lastSeen: 0, clock: Math.random() * 10, speed: 0 };
       remotes.set(w.id, r);
     } else if (w.profile) {
       r.rig.apply(sanitizeProfile(w.profile)); // they changed their look
@@ -99,6 +109,7 @@ export function startPresence(scene: THREE.Scene): Presence | null {
     r.target.set(w.x, w.y, w.z);
     r.targetRotY = w.rotY;
     r.seatY = w.seatY;
+    r.driving = w.driving ?? null;
     r.lastSeen = 0;
   }
 
@@ -110,7 +121,7 @@ export function startPresence(scene: THREE.Scene): Presence | null {
   const onLeft = (id: string): void => {
     const r = remotes.get(id);
     if (r) {
-      scene.remove(r.rig.player);
+      r.rig.player.removeFromParent();
       remotes.delete(id);
     }
   };
@@ -134,7 +145,7 @@ export function startPresence(scene: THREE.Scene): Presence | null {
   });
 
   const sendState = (l: LocalPresence): void => {
-    socket.emit("presence:state", { zone: l.zone, x: l.x, y: l.y, z: l.z, rotY: l.rotY, seatY: l.seatY, hidden: l.hidden });
+    socket.emit("presence:state", { zone: l.zone, x: l.x, y: l.y, z: l.z, rotY: l.rotY, seatY: l.seatY, driving: l.driving, hidden: l.hidden });
   };
 
   return {
@@ -163,9 +174,35 @@ export function startPresence(scene: THREE.Scene): Presence | null {
       for (const r of remotes.values()) {
         r.lastSeen += dt;
         if (r.lastSeen > STALE_AFTER) {
-          scene.remove(r.rig.player);
+          r.rig.player.removeFromParent();
           remotes.delete(r.id);
           continue;
+        }
+        // At the wheel of a shared car: sit in the driver's seat of that car (it moves with the car)
+        const car = r.driving !== null ? cars?.getCar(r.driving) : null;
+        if (car) {
+          if (r.inCar !== car.group) {
+            car.group.add(r.rig.player);
+            r.rig.player.scale.setScalar(0.55);
+            r.inCar = car.group;
+          }
+          r.rig.player.position.copy(car.seat);
+          r.rig.player.rotation.y = Math.PI / 2;
+          r.clock += dt;
+          animateAvatar(r.rig, r.clock, 0, { seated: true });
+          r.rig.bodyGroup.position.y = r.rig.seatDrop ? r.rig.seatDrop(0.37 / 0.55) : 0;
+          r.rig.setLocomotion?.(0);
+          r.rig.syncSkeleton?.();
+          r.pos.copy(r.target); // so they step out where the car stopped
+          continue;
+        }
+        if (r.inCar) {
+          // stepped out of the car
+          r.inCar = null;
+          r.rig.player.scale.setScalar(1);
+          scene.add(r.rig.player);
+          r.pos.copy(r.target);
+          r.rig.bodyGroup.position.y = 0;
         }
         const before = r.pos.clone();
         r.pos.lerp(r.target, k);

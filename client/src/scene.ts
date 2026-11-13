@@ -11,6 +11,7 @@ import { confirmAction } from "./confirm";
 import { assignmentDialog } from "./assignments";
 import { roomById } from "./rooms";
 import { startPresence } from "./presence";
+import { getSocket, isMultiplayerActive } from "./net";
 import { loadSlot, getActiveSlotId } from "./saveManager";
 import {
   buildMprRoom,
@@ -5536,6 +5537,10 @@ export function startPlaceholderScene(
     bumperFront: number;
     bumperRear: number;
     collisionRadius: number;
+    /** Multiplayer: socket id of whoever is driving it (null = free) */
+    driver?: string | null;
+    /** Multiplayer: where the driver says the car is (others glide to it) */
+    remote?: { x: number; z: number; rotY: number; speed: number; steer: number } | null;
   };
   const parkingCars: DrivableCar[] = [];
 
@@ -6624,7 +6629,12 @@ export function startPlaceholderScene(
   onProfileChange((updated) => rig.apply(updated));
 
   // Multiplayer: other players in the same place (campus, MPR or the same classroom) are drawn and move live
-  const presence = startPresence(scene);
+  const presence = startPresence(scene, {
+    getCar: (id) => {
+      const c = parkingCars[id];
+      return c ? { group: c.group, seat: c.driverSeatPos } : null;
+    },
+  });
 
   // --- Camera: orbits the player at a fixed distance ----------------------
   const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 260);
@@ -7122,7 +7132,12 @@ export function startPlaceholderScene(
   }
 
   function enterCar(car: DrivableCar): void {
+    if (mp && car.driver && car.driver !== mp.id) return; // someone else is driving it
     if (seatedChair) standUp();
+    if (mp) {
+      car.driver = mp.id ?? null;
+      mp.emit("world:car:claim", { id: car.id });
+    }
     if (bballHeld) {
       bballHeld = false;
       bballPos.set(player.position.x + 0.6, BASKETBALL_GROUND_Y, player.position.z);
@@ -7176,14 +7191,28 @@ export function startPlaceholderScene(
     rightElbowPivot.rotation.set(0, 0, 0);
     bodyGroup.position.y = 0;
     drivingCar.speed = 0;
+    if (mp) {
+      // hand the car back, leaving it where it stands
+      mp.emit("world:car:release", {
+        id: drivingCar.id,
+        x: drivingCar.group.position.x,
+        z: drivingCar.group.position.z,
+        rotY: drivingCar.group.rotation.y,
+        speed: 0,
+        steer: 0,
+      });
+      drivingCar.driver = null;
+    }
     drivingCar = null;
     rig.syncSkeleton?.();
   }
 
-  function resetAllCars(): void {
-    // Only cars with nobody inside are reset; a car the player is driving stays where it is.
+  function resetAllCars(fromNetwork = false): void {
+    // Only cars with nobody inside are reset; a car anyone is driving stays where it is.
+    if (mp && !fromNetwork) mp.emit("world:cars:reset");
     parkingCars.forEach((c) => {
-      if (c === drivingCar) return;
+      if (c === drivingCar || c.driver) return;
+      c.remote = null;
       const orig = cars[c.id];
       if (orig) {
         c.group.position.set(orig.x, 0, orig.z);
@@ -7196,7 +7225,7 @@ export function startPlaceholderScene(
     carResetPlungerTimer = 0.35;
     carResetBtnMat.emissiveIntensity = 2.8;
     carResetToastTimer = 2.5;
-    carResetToast.textContent = drivingCar ? "🚗 All empty cars were reset to their parking spots!" : "🚗 All cars & van were reset to parking spots!";
+    carResetToast.textContent = drivingCar || parkingCars.some((c) => c.driver) ? "🚗 All empty cars were reset to their parking spots!" : "🚗 All cars & van were reset to parking spots!";
     carResetToast.style.transform = "translateX(-50%) scale(1)";
     carResetToast.style.opacity = "1";
   }
@@ -7419,6 +7448,7 @@ export function startPlaceholderScene(
       }
       if (gateDistance(player.position.x, player.position.z) <= GATE_INTERACT_RANGE) {
         gateOpen = !gateOpen;
+        mp?.emit("world:gate", gateOpen);
         return;
       }
       // Check nearest chair (range: 1.8m)
@@ -7439,6 +7469,7 @@ export function startPlaceholderScene(
       let nearestCar: DrivableCar | null = null;
       let minCarDist = 3.8;
       for (const car of parkingCars) {
+        if (car.driver && car.driver !== mp?.id) continue; // taken
         const d = Math.hypot(player.position.x - car.group.position.x, player.position.z - car.group.position.z);
         if (d < minCarDist) {
           minCarDist = d;
@@ -7704,7 +7735,15 @@ export function startPlaceholderScene(
   }
 
   // Resetting the balls (stepping on the vent or pressing B) asks for confirmation first
-  function doBallReset(): void {
+  function doBallReset(fromNetwork = false): void {
+    if (mp && !fromNetwork) mp.emit("world:balls:reset");
+    ballSync.soccer.own = !mp;
+    ballSync.soccer.ownerId = null;
+    ballSync.soccer.hasState = false;
+    ballSync.basket.own = !mp;
+    ballSync.basket.ownerId = null;
+    ballSync.basket.hasState = false;
+    ballSync.basket.held = false;
     resetBall();
     resetBasketball();
     resetBannerTimer = 2.0;
@@ -7718,9 +7757,120 @@ export function startPlaceholderScene(
   function requestBallReset(): void {
     confirmAction(
       { title: "Reset the balls?", message: "The soccer ball and basketball will go back to their starting spots.", confirmLabel: "Yes, reset them", cancelLabel: "Cancel" },
-      doBallReset
+      () => doBallReset()
     );
   }
+
+
+  // --- Multiplayer: the shared world ------------------------------------------------------------------
+  // The gate and the elevator are shared switches; each car has one driver who reports its position; each ball has an
+  // owner (the last player to touch it) who simulates it and reports its position. Everyone else sees that version.
+  const mp = isMultiplayerActive() ? getSocket() : null;
+  type BallSync = { own: boolean; ownerId: string | null; target: THREE.Vector3; vel: THREE.Vector3; held: boolean; hasState: boolean; lastSend: number; lastClaim: number };
+  const newBallSync = (): BallSync => ({ own: !mp, ownerId: null, target: new THREE.Vector3(), vel: new THREE.Vector3(), held: false, hasState: false, lastSend: 0, lastClaim: 0 });
+  const ballSync = { soccer: newBallSync(), basket: newBallSync() };
+  let carSendTimer = 0;
+
+  /** Take over simulating a ball (called when this player touches it) */
+  function claimBall(which: "soccer" | "basket"): void {
+    if (!mp) return;
+    const b = ballSync[which];
+    if (b.own) return;
+    const now = performance.now();
+    if (now - b.lastClaim < 250) return;
+    b.lastClaim = now;
+    b.own = true;
+    b.ownerId = mp.id ?? null;
+    mp.emit("world:ball:claim", { ball: which });
+  }
+
+  const mpHandlers: Array<[string, (...args: any[]) => void]> = [];
+  function mpOn(event: string, fn: (...args: any[]) => void): void {
+    if (!mp) return;
+    mp.on(event, fn);
+    mpHandlers.push([event, fn]);
+  }
+  function applyBallState(which: "soccer" | "basket", st: { x: number; y: number; z: number; vx: number; vy: number; vz: number; held?: number }, snap: boolean): void {
+    const b = ballSync[which];
+    b.target.set(st.x, st.y, st.z);
+    b.vel.set(st.vx, st.vy, st.vz);
+    b.held = !!st.held;
+    if (snap || !b.hasState) {
+      (which === "soccer" ? ballPos : bballPos).copy(b.target);
+    }
+    b.hasState = true;
+  }
+  mpOn("world:snapshot", (s: any) => {
+    gateOpen = !!s.gate;
+    elevator.setLevel(s.elevatorLevel === 1 ? 1 : 0);
+    for (const c of s.cars ?? []) {
+      const car = parkingCars[c.id];
+      if (!car) continue;
+      car.driver = c.driver ?? null;
+      if (c.state) {
+        car.group.position.set(c.state.x, 0, c.state.z);
+        car.group.rotation.y = c.state.rotY;
+        car.remote = { x: c.state.x, z: c.state.z, rotY: c.state.rotY, speed: 0, steer: 0 };
+      }
+    }
+    for (const key of ["soccer", "basket"] as const) {
+      const b = s.balls?.[key];
+      if (!b) continue;
+      ballSync[key].ownerId = b.owner ?? null;
+      ballSync[key].own = b.owner === mp!.id;
+      if (b.state) applyBallState(key, b.state, true);
+    }
+  });
+  if (mp) {
+    // get the world as it is right now (also after a reconnect)
+    const sync = (): void => void mp.emit("world:sync");
+    if (mp.connected) sync();
+    mpOn("connect", sync);
+  }
+  mpOn("world:gate", (open: boolean) => {
+    gateOpen = !!open;
+  });
+  if (mp) elevator.setNetwork((dest, call) => mp.emit("world:elevator:request", { dest, call }));
+  mpOn("world:elevator:go", (d: { dest: 0 | 1; call: boolean }) => {
+    if (!inMprRoom && !currentClassroom) elevator.go(d.dest, d.call, player.position.x, player.position.z);
+    else elevator.go(d.dest, d.call, -9999, -9999); // indoors: runs for show, nobody to carry
+  });
+  mpOn("world:car:driver", (d: { id: number; driver: string | null }) => {
+    const car = parkingCars[d.id];
+    if (!car) return;
+    car.driver = d.driver;
+    if (d.driver && d.driver !== mp!.id) {
+      if (drivingCar === car) exitCar(); // someone else got there first
+    }
+    if (!d.driver && car !== drivingCar) car.remote = car.remote; // keep the last reported spot
+  });
+  mpOn("world:car:denied", (d: { id: number }) => {
+    if (drivingCar && drivingCar.id === d.id) exitCar();
+  });
+  mpOn("world:car:state", (d: { id: number; x: number; z: number; rotY: number; speed: number; steer: number }) => {
+    const car = parkingCars[d.id];
+    if (!car || car === drivingCar) return;
+    car.remote = { x: d.x, z: d.z, rotY: d.rotY, speed: d.speed, steer: d.steer };
+  });
+  mpOn("world:cars:reset", () => resetAllCars(true));
+  mpOn("world:ball:owner", (d: { ball: "soccer" | "basket"; owner: string | null }) => {
+    const b = ballSync[d.ball];
+    if (!b) return;
+    b.ownerId = d.owner;
+    b.own = d.owner === mp!.id;
+    if (!b.own && d.ball === "basket" && bballHeld) {
+      bballHeld = false; // someone took the ball away
+    }
+  });
+  mpOn("world:ball:state", (d: { ball: "soccer" | "basket"; x: number; y: number; z: number; vx: number; vy: number; vz: number; held?: number }) => {
+    if (!ballSync[d.ball] || ballSync[d.ball].own) return;
+    applyBallState(d.ball, d, false);
+  });
+  mpOn("world:balls:reset", () => doBallReset(true));
+  mpOn("world:event", (d: { type: "goal" | "bucket"; text: string }) => {
+    if (d.type === "goal") triggerGoal(d.text);
+    else triggerBucket(d.text);
+  });
 
   // --- Animation loop ------------------------------------------------------
   const clock = new THREE.Clock();
@@ -7825,6 +7975,19 @@ export function startPlaceholderScene(
       for (const m of doorMarkers.values()) m.position.y = (m.userData.baseY as number) + Math.sin(t) * 0.12;
     }
     elevator.update(dt, player.position.x, player.position.y, player.position.z, camera.position.x, camera.position.z);
+    // Multiplayer: cars someone else is driving glide to the position they report
+    for (const c of parkingCars) {
+      const r = c.remote;
+      if (!r || c === drivingCar) continue;
+      const k = 1 - Math.exp(-dt * 12);
+      c.group.position.x += (r.x - c.group.position.x) * k;
+      c.group.position.z += (r.z - c.group.position.z) * k;
+      const dr = Math.atan2(Math.sin(r.rotY - c.group.rotation.y), Math.cos(r.rotY - c.group.rotation.y));
+      c.group.rotation.y += dr * k;
+      for (const pivot of c.steerPivots) pivot.rotation.y += (r.steer - pivot.rotation.y) * k;
+      const roll = -(r.speed * dt) / c.tireRadius;
+      for (const wm of c.wheelMeshes) wm.parent!.rotation.z += roll;
+    }
     let inRight = 0;
     let inForward = 0;
     if (keys.has("w") || keys.has("arrowup")) inForward += 1;
@@ -7935,6 +8098,21 @@ export function startPlaceholderScene(
       rightElbowPivot.rotation.set(-0.45, 0, 0);
       bodyGroup.position.y = rig.seatDrop ? rig.seatDrop(0.37 / 0.55) : 0;
       bodyGroup.rotation.x = 0;
+      // Multiplayer: tell everyone where the car is (about 15 times a second)
+      if (mp) {
+        carSendTimer += dt;
+        if (carSendTimer >= 0.066) {
+          carSendTimer = 0;
+          mp.emit("world:car:state", {
+            id: drivingCar.id,
+            x: drivingCar.group.position.x,
+            z: drivingCar.group.position.z,
+            rotY: drivingCar.group.rotation.y,
+            speed: drivingCar.speed,
+            steer: drivingCar.steerAngle,
+          });
+        }
+      }
     } else if (seatedChair) {
       // Keep realistic seated pose on chair
       const seatBackOffset = 0.08;
@@ -8031,12 +8209,14 @@ export function startPlaceholderScene(
     rig.syncSkeleton?.();
     presence?.update(dt, {
       zone: inMprRoom ? "mpr" : currentClassroom ? currentClassroom.id : "campus",
-      x: player.position.x,
-      y: player.position.y,
-      z: player.position.z,
+      // while driving, the player's own position is relative to the car: share the car's place in the world
+      x: drivingCar ? drivingCar.group.position.x : player.position.x,
+      y: drivingCar ? 0 : player.position.y,
+      z: drivingCar ? drivingCar.group.position.z : player.position.z,
       rotY: player.rotation.y,
       seatY: seatedChair ? seatedChair.seatY : null,
-      hidden: !!drivingCar, // cars are not shared yet
+      driving: drivingCar ? drivingCar.id : null,
+      hidden: false,
     });
     // NPCs animate only where the player can see them
     for (let i = 0; i < npcList.length; i++) {
@@ -8119,6 +8299,7 @@ export function startPlaceholderScene(
       const cdz = ballPos.z - drivingCar.group.position.z;
       const cdist = Math.hypot(cdx, cdz);
       if (cdist < 2.6 && ballPos.y <= 1.5) {
+        claimBall("soccer");
         const cnx = cdist > 0.0001 ? cdx / cdist : 1;
         const cnz = cdist > 0.0001 ? cdz / cdist : 0;
         const carFwdX = Math.cos(drivingCar.group.rotation.y);
@@ -8136,6 +8317,7 @@ export function startPlaceholderScene(
       const playerNearGround = player.position.y <= ballPos.y + 0.6;
 
       if (distToPlayer < minBallDist && playerNearGround) {
+        claimBall("soccer");
         const bnx = distToPlayer > 0.0001 ? bdx / distToPlayer : 0;
         const bnz = distToPlayer > 0.0001 ? bdz / distToPlayer : 1;
         const overlap = minBallDist - distToPlayer;
@@ -8160,6 +8342,26 @@ export function startPlaceholderScene(
       }
     }
 
+    soccerPhysics: {
+    // Multiplayer: while someone else owns the ball, show their version instead of simulating
+    if (mp && !ballSync.soccer.own) {
+      const b = ballSync.soccer;
+      if (b.hasState) {
+        const prev = ballPos.clone();
+        ballPos.lerp(b.target, 1 - Math.exp(-dt * 14));
+        ballVel.copy(b.vel);
+        const mdx = ballPos.x - prev.x;
+        const mdz = ballPos.z - prev.z;
+        const mdist = Math.hypot(mdx, mdz);
+        if (mdist > 1e-4 && ballPos.y <= BALL_GROUND_Y + 0.1) {
+          ballOrientation.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(-mdz, 0, mdx).normalize(), mdist / BALL_RADIUS));
+          ballMesh.quaternion.copy(ballOrientation);
+        }
+      }
+      ballMesh.position.copy(ballPos);
+      ballShadowMesh.position.set(ballPos.x, 0.043, ballPos.z);
+      break soccerPhysics;
+    }
     // 2) Flight & Gravity
     ballVel.y -= BALL_GRAVITY * dt;
     ballPos.x += ballVel.x * dt;
@@ -8224,6 +8426,7 @@ export function startPlaceholderScene(
           ballVel.x *= 0.5;
         }
         triggerGoal("North Goal");
+        mp?.emit("world:event", { type: "goal", text: "North Goal" });
       }
     }
     if (ballPos.x > 24.5 && ballPos.x < 30.5 && ballPos.y < 2.5) {
@@ -8234,6 +8437,7 @@ export function startPlaceholderScene(
           ballVel.x *= 0.5;
         }
         triggerGoal("South Goal");
+        mp?.emit("world:event", { type: "goal", text: "South Goal" });
       }
     }
 
@@ -8280,6 +8484,18 @@ export function startPlaceholderScene(
     ballShadowMesh.scale.set(shadowScale, shadowScale, shadowScale);
     (ballShadowMesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0.08, 0.45 - hAbove * 0.12);
 
+    } // end soccerPhysics
+    // Multiplayer: the owner shares the ball's position
+    if (mp && ballSync.soccer.own) {
+      const b = ballSync.soccer;
+      b.lastSend += dt;
+      const moving = Math.hypot(ballVel.x, ballVel.y, ballVel.z) > 0.05;
+      if (b.lastSend >= (moving ? 0.066 : 0.5)) {
+        b.lastSend = 0;
+        mp.emit("world:ball:state", { ball: "soccer", x: ballPos.x, y: ballPos.y, z: ballPos.z, vx: ballVel.x, vy: ballVel.y, vz: ballVel.z, held: 0 });
+      }
+    }
+
     // Goal celebration timer & auto-reset
     if (goalCelebrationTimer > 0) {
       goalCelebrationTimer -= dt;
@@ -8310,14 +8526,30 @@ export function startPlaceholderScene(
     const playerNearBballGround = player.position.y <= bballPos.y + 0.6;
 
     // 1) Pickup basketball when player walks over it
-    if (!bballHeld && !drivingCar && !seatedChair && bballShootAnimTimer <= 0 && bballDistToPlayer < 0.85 && playerNearBballGround) {
+    if (!bballHeld && !drivingCar && !seatedChair && bballShootAnimTimer <= 0 && bballDistToPlayer < 0.85 && playerNearBballGround && !(mp && !ballSync.basket.own && ballSync.basket.held)) {
+      claimBall("basket");
       bballHeld = true;
       bballVel.set(0, 0, 0);
       bballAngVel.set(0, 0, 0);
     }
 
     // 2) Held / Dribbling State
-    if (bballHeld) {
+    if (mp && !ballSync.basket.own) {
+      // someone else is playing with the ball: show their version
+      const b = ballSync.basket;
+      if (b.hasState) {
+        const prev = bballPos.clone();
+        bballPos.lerp(b.target, 1 - Math.exp(-dt * 14));
+        bballVel.copy(b.vel);
+        const mdx = bballPos.x - prev.x;
+        const mdz = bballPos.z - prev.z;
+        const mdist = Math.hypot(mdx, mdz);
+        if (mdist > 1e-4 && bballPos.y <= BASKETBALL_GROUND_Y + 0.1) {
+          bballOrientation.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(-mdz, 0, mdx).normalize(), mdist / BASKETBALL_RADIUS));
+          bballMesh.quaternion.copy(bballOrientation);
+        }
+      }
+    } else if (bballHeld) {
       const facingX = Math.sin(player.rotation.y);
       const facingZ = Math.cos(player.rotation.y);
       const rightX = Math.cos(player.rotation.y);
@@ -8465,7 +8697,9 @@ export function startPlaceholderScene(
           if (sDist < 0.18) {
             // SWISH!
             const isThreePointer = Math.hypot(player.position.x - h.rimX, player.position.z - h.rimZ) > 7.0;
-            triggerBucket(isThreePointer ? "🏀 THREE-POINTER! 🏀" : (sDist < 0.10 ? "🏀 SWISH! PERFECT BUCKET! 🏀" : "🏀 BUCKET! +2 PTS 🏀"));
+            const bucketText = isThreePointer ? "🏀 THREE-POINTER! 🏀" : (sDist < 0.10 ? "🏀 SWISH! PERFECT BUCKET! 🏀" : "🏀 BUCKET! +2 PTS 🏀");
+            triggerBucket(bucketText);
+            mp?.emit("world:event", { type: "bucket", text: bucketText });
             // Net dampening
             bballVel.y *= 0.60;
             bballVel.x *= 0.35;
@@ -8498,6 +8732,17 @@ export function startPlaceholderScene(
     const bShadowScale = Math.max(0.2, 1 - bballHeightAbove * 0.25);
     bballShadowMesh.scale.set(bShadowScale, bShadowScale, bShadowScale);
     (bballShadowMesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0.04, 0.45 - bballHeightAbove * 0.12);
+
+    // Multiplayer: the owner shares the basketball (also while it is being held / dribbled)
+    if (mp && ballSync.basket.own) {
+      const b = ballSync.basket;
+      b.lastSend += dt;
+      const moving = bballHeld || Math.hypot(bballVel.x, bballVel.y, bballVel.z) > 0.05;
+      if (b.lastSend >= (moving ? 0.066 : 0.5)) {
+        b.lastSend = 0;
+        mp.emit("world:ball:state", { ball: "basket", x: bballPos.x, y: bballPos.y, z: bballPos.z, vx: bballVel.x, vy: bballVel.y, vz: bballVel.z, held: bballHeld ? 1 : 0 });
+      }
+    }
 
     // Basket celebration banner timer
     if (basketCelebrationTimer > 0) {
@@ -8602,6 +8847,7 @@ export function startPlaceholderScene(
       let nearestCarDist = 999;
       let nearestCar: DrivableCar | null = null;
       for (const car of parkingCars) {
+        if (car.driver && car.driver !== mp?.id) continue; // taken
         const d = Math.hypot(player.position.x - car.group.position.x, player.position.z - car.group.position.z);
         if (d < nearestCarDist) {
           nearestCarDist = d;
@@ -8775,6 +9021,7 @@ export function startPlaceholderScene(
     window.removeEventListener("resize", resize);
     window.removeEventListener("eld-objective-complete", onObjectiveComplete);
     presence?.dispose();
+    if (mp) for (const [ev, fn] of mpHandlers) mp.off(ev, fn);
     if (renderer.domElement.parentElement) {
       renderer.domElement.parentElement.removeChild(renderer.domElement);
     }
