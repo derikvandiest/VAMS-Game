@@ -101,11 +101,11 @@ function buildSvg(): SVGSVGElement {
     const isDone = isStamp && room.objectiveId ? done.has(room.objectiveId) : false;
     const cls = !isStamp ? "map-chip-other" : isDone ? "map-chip-done" : "map-chip-todo";
     const text = isDone ? `${room.shortLabel} ✓` : room.shortLabel;
-    const w = Math.max(7.2, text.length * 1.45 + 2.2);
+    const w = Math.max(6.6, text.length * 1.25 + 2);
     const h = 3.6;
     // door tick: from the door to the label
     el("line", { x1: d.z, y1: -d.x, x2: cx, y2: cy, class: "map-tick" }, svg);
-    const chip = el("g", { class: cls, ...(cls === "map-chip-todo" ? { filter: "url(#map-glow)" } : {}) }, svg);
+    const chip = el("g", { class: cls }, svg);
     el("rect", { x: cx - w / 2, y: cy - h / 2, width: w, height: h, rx: 1.2 }, chip);
     label(chip, cx, cy + 0.1, text, "map-chip-text");
   }
@@ -180,7 +180,7 @@ export function openMap(): void {
       </div>
       <div class="map-body"></div>
       <div class="map-legend">
-        <span><i class="lg lg-todo"></i>Assignment to do (door glows)</span>
+        <span><i class="lg lg-todo"></i>Assignment to do (green !)</span>
         <span><i class="lg lg-done"></i>Done</span>
         <span><i class="lg lg-other"></i>Other rooms</span>
         <span><i class="lg lg-me"></i>You</span>

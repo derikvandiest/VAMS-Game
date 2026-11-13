@@ -2063,7 +2063,7 @@ body {
 }
 .map-remaining {
   font-size: 13px;
-  color: #facc15;
+  color: #4ade80;
   font-weight: 600;
 }
 .map-floors {
@@ -2120,9 +2120,9 @@ body {
 .map-small { fill: #cbd5e1; font-size: 1.9px; font-weight: 700; }
 .map-bname { fill: #fde68a; font-size: 2.1px; font-weight: 800; letter-spacing: 0.2px; opacity: 0.85; }
 .map-tick { stroke: #94a3b8; stroke-width: 0.35; }
-.map-chip-text { font-size: 2.1px; font-weight: 800; }
-.map-chip-todo rect { fill: #facc15; stroke: #fff7c2; stroke-width: 0.3; }
-.map-chip-todo .map-chip-text { fill: #1f1300; }
+.map-chip-text { font-size: 1.95px; font-weight: 800; }
+.map-chip-todo rect { fill: #16a34a; stroke: #ffffff; stroke-width: 0.3; }
+.map-chip-todo .map-chip-text { fill: #ffffff; }
 .map-chip-done rect { fill: #334155; stroke: #64748b; stroke-width: 0.25; }
 .map-chip-done .map-chip-text { fill: #94a3b8; }
 .map-chip-other rect { fill: #1e293b; stroke: #64748b; stroke-width: 0.25; stroke-dasharray: 0.8 0.5; }
@@ -2150,7 +2150,7 @@ body {
   margin-right: 5px;
   vertical-align: -2px;
 }
-.lg-todo { background: #facc15; box-shadow: 0 0 6px #facc15; }
+.lg-todo { background: #16a34a; border: 1px solid #fff; }
 .lg-done { background: #334155; border: 1px solid #64748b; }
 .lg-other { background: #1e293b; border: 1px dashed #64748b; }
 .lg-me { background: #38bdf8; border-radius: 50% !important; }

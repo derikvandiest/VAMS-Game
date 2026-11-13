@@ -7490,63 +7490,69 @@ export function startPlaceholderScene(
   const clock = new THREE.Clock();
   let walkTime = 0;
 
-  // --- Classrooms with an assignment still to do: the entrance door glows bright yellow ----------
-  // Each of the 16 homeroom classrooms has an assignment. Its door glows until the assignment is complete.
-  const glowFrameMat = new THREE.MeshStandardMaterial({ color: 0xffd400, emissive: 0xffc400, emissiveIntensity: 2.2, roughness: 0.4 });
-  const glowPanelMat = new THREE.MeshStandardMaterial({ color: 0xffe14d, emissive: 0xffd000, emissiveIntensity: 1.8, roughness: 0.4 });
-  const glowTexture = (() => {
+  // --- Classrooms with an assignment still to do: a green "!" floats above the entrance door ----------
+  // Each of the 16 homeroom classrooms has an assignment. The marks appear once the game has really started
+  // (the player has sat down in the MPR) and each one disappears when its assignment is complete.
+  const markerTexture = (() => {
     const c = document.createElement("canvas");
     c.width = c.height = 128;
     const g = c.getContext("2d")!;
-    const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-    grad.addColorStop(0, "rgba(255,230,80,1)");
-    grad.addColorStop(0.35, "rgba(255,210,0,0.55)");
-    grad.addColorStop(1, "rgba(255,200,0,0)");
-    g.fillStyle = grad;
-    g.fillRect(0, 0, 128, 128);
-    return new THREE.CanvasTexture(c);
+    g.fillStyle = "#16a34a";
+    g.beginPath();
+    g.arc(64, 64, 58, 0, Math.PI * 2);
+    g.fill();
+    g.lineWidth = 7;
+    g.strokeStyle = "#ffffff";
+    g.stroke();
+    g.fillStyle = "#ffffff";
+    g.font = "bold 96px system-ui, -apple-system, Segoe UI, sans-serif";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.fillText("!", 64, 70);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
   })();
-  const glowingDoors = new Map<string, { halo: THREE.Sprite; origFrame: THREE.Material | THREE.Material[]; origPanel: THREE.Material | THREE.Material[] }>();
+  const doorMarkers = new Map<string, THREE.Sprite>();
 
-  function setDoorGlow(roomId: string, on: boolean): void {
+  function setDoorMarker(roomId: string, on: boolean): void {
     const parts = doorParts.get(roomId);
     if (!parts) return;
-    const cur = glowingDoors.get(roomId);
+    const cur = doorMarkers.get(roomId);
     if (on && !cur) {
-      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture, color: 0xffffff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
-      halo.position.set(parts.x, parts.y, parts.z);
-      halo.scale.set(5.2, 5.6, 1);
-      scene.add(halo);
-      glowingDoors.set(roomId, { halo, origFrame: parts.frame.material, origPanel: parts.panel.material });
-      parts.frame.material = glowFrameMat;
-      parts.panel.material = glowPanelMat;
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: markerTexture, transparent: true }));
+      sprite.position.set(parts.x, parts.y + DOOR_HEIGHT / 2 + 0.85, parts.z);
+      sprite.userData.baseY = sprite.position.y;
+      sprite.scale.set(1.15, 1.15, 1);
+      scene.add(sprite);
+      doorMarkers.set(roomId, sprite);
     } else if (!on && cur) {
-      scene.remove(cur.halo);
-      parts.frame.material = cur.origFrame;
-      parts.panel.material = cur.origPanel;
-      glowingDoors.delete(roomId);
+      scene.remove(cur);
+      (cur.material as THREE.SpriteMaterial).dispose();
+      doorMarkers.delete(roomId);
     }
   }
 
-  /** Doors of rooms whose assignment is still to do glow; finished rooms stop glowing */
-  function applyDoorGlows(): void {
+  /** Marks over the doors of rooms still to do; none until the player has sat down in the MPR */
+  function applyDoorMarkers(): void {
     const done = new Set(loadSlot(getActiveSlotId())?.objectives.completedIds ?? []);
-    for (const [objId, roomId] of roomIdByObjective) setDoorGlow(roomId, !done.has(objId));
+    const started = done.has("obj_mpr_seat");
+    for (const [objId, roomId] of roomIdByObjective) setDoorMarker(roomId, started && !done.has(objId));
   }
   const onObjectiveComplete = (e: Event): void => {
     const room = roomIdByObjective.get((e as CustomEvent<{ id: string }>).detail?.id);
-    if (room) setDoorGlow(room, false);
+    if ((e as CustomEvent<{ id: string }>).detail?.id === "obj_mpr_seat") applyDoorMarkers();
+    if (room) setDoorMarker(room, false);
   };
   window.addEventListener("eld-objective-complete", onObjectiveComplete);
-  applyDoorGlows();
+  applyDoorMarkers();
 
   renderer.setAnimationLoop(() => {
     const dt = Math.min(clock.getDelta(), 0.1); // clamp to avoid huge jumps
-    if (glowingDoors.size) {
-      const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.004);
-      glowFrameMat.emissiveIntensity = 1.8 + 1.0 * pulse;
-      glowPanelMat.emissiveIntensity = 1.4 + 0.9 * pulse;
-      for (const g of glowingDoors.values()) (g.halo.material as THREE.SpriteMaterial).opacity = 0.65 + 0.3 * pulse;
+    if (doorMarkers.size) {
+      // gentle bob so the marks catch the eye
+      const t = performance.now() * 0.003;
+      for (const m of doorMarkers.values()) m.position.y = (m.userData.baseY as number) + Math.sin(t) * 0.12;
     }
     let inRight = 0;
     let inForward = 0;

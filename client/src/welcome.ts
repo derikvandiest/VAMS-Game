@@ -10,9 +10,9 @@ const STEPS: Array<{ icon: string; title: string; text: string }> = [
     text: "Every homeroom classroom has an assignment: 16 in all. Go to each one and complete its assignment, in any order. The objective box at the top shows your progress.",
   },
   {
-    icon: "✨",
-    title: "Follow the glowing doors",
-    text: "A classroom whose assignment is still waiting has an entrance door that glows bright yellow. When you complete that room's assignment, its glow turns off.",
+    icon: "❗",
+    title: "Look for the green exclamation marks",
+    text: "A green exclamation mark floats above the door of every classroom whose assignment is still waiting. When you complete that room's assignment, its mark disappears.",
   },
   {
     icon: "🗺️",
