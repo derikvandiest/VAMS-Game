@@ -104,6 +104,62 @@ function broadcastOnlineUsers(): void {
   io.emit("chat:users", list);
 }
 
+
+// --- Presence: players see each other in the same place ---------------------
+// Every player is in one "zone": the outdoor campus, the MPR, or one classroom. A player only receives the
+// movement of the players in the same zone (a Socket.io room per zone), so every room is its own shared space.
+interface Presence {
+  zone: string;
+  profile: unknown; // the player's character (appearance); the client sanitizes it before use
+  x: number;
+  y: number;
+  z: number;
+  rotY: number;
+  seatY: number | null; // height of the seat when sitting
+  hidden: boolean; // e.g. driving a car (the car itself is not synced yet)
+  lastTs: number;
+}
+const presence = new Map<string, Presence>();
+
+const zoneRoom = (zone: string): string => `zone:${zone}`;
+function cleanZone(raw: unknown): string {
+  return typeof raw === "string" && /^[a-z0-9-]{1,40}$/.test(raw) ? raw : "campus";
+}
+function num(raw: unknown, lo: number, hi: number, fallback = 0): number {
+  const n = typeof raw === "number" && Number.isFinite(raw) ? raw : fallback;
+  return Math.min(hi, Math.max(lo, n));
+}
+/** Keep the character profile small and plain (only strings/booleans, bounded length) */
+function cleanProfile(raw: unknown): Record<string, string | boolean> {
+  const out: Record<string, string | boolean> = {};
+  if (raw && typeof raw === "object") {
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>).slice(0, 40)) {
+      if (typeof v === "string") out[k.slice(0, 30)] = v.slice(0, 60);
+      else if (typeof v === "boolean") out[k.slice(0, 30)] = v;
+    }
+  }
+  return out;
+}
+function publicState(id: string, p: Presence): Record<string, unknown> {
+  return { id, x: p.x, y: p.y, z: p.z, rotY: p.rotY, seatY: p.seatY, hidden: p.hidden };
+}
+/** Put a player into a zone: tell the old zone they left, give them the zone's current players, announce them. */
+function enterZone(socket: import("socket.io").Socket, p: Presence, zone: string): void {
+  const old = p.zone;
+  if (old && old !== zone) {
+    socket.leave(zoneRoom(old));
+    socket.to(zoneRoom(old)).emit("presence:left", socket.id);
+  }
+  p.zone = zone;
+  socket.join(zoneRoom(zone));
+  const others: unknown[] = [];
+  for (const [id, other] of presence) {
+    if (id !== socket.id && other.zone === zone) others.push({ ...publicState(id, other), profile: other.profile });
+  }
+  socket.emit("presence:snapshot", others);
+  socket.to(zoneRoom(zone)).emit("presence:update", { ...publicState(socket.id, p), profile: p.profile });
+}
+
 io.on("connection", (socket) => {
   console.log(`[server] player connected (${socket.id})`);
   broadcastStats();
@@ -268,8 +324,61 @@ io.on("connection", (socket) => {
     }
   );
 
+
+  // 5) Presence (see other players in the same zone)
+  socket.on("presence:join", (data: { profile?: unknown; zone?: unknown }) => {
+    const p: Presence = {
+      zone: "",
+      profile: cleanProfile(data?.profile),
+      x: 0,
+      y: 0,
+      z: 0,
+      rotY: 0,
+      seatY: null,
+      hidden: false,
+      lastTs: 0,
+    };
+    presence.set(socket.id, p);
+    enterZone(socket, p, cleanZone(data?.zone));
+  });
+
+  socket.on("presence:profile", (data: { profile?: unknown }) => {
+    const p = presence.get(socket.id);
+    if (!p) return;
+    p.profile = cleanProfile(data?.profile);
+    socket.to(zoneRoom(p.zone)).emit("presence:update", { ...publicState(socket.id, p), profile: p.profile });
+  });
+
+  socket.on(
+    "presence:state",
+    (d: { zone?: unknown; x?: unknown; y?: unknown; z?: unknown; rotY?: unknown; seatY?: unknown; hidden?: unknown }) => {
+      const p = presence.get(socket.id);
+      if (!p) return;
+      const now = Date.now();
+      if (now - p.lastTs < 30) return; // at most ~30 updates a second per player
+      p.lastTs = now;
+      p.x = num(d?.x, -2000, 2000);
+      p.y = num(d?.y, -20, 50);
+      p.z = num(d?.z, -2000, 2000);
+      p.rotY = num(d?.rotY, -10, 10);
+      p.seatY = typeof d?.seatY === "number" && Number.isFinite(d.seatY) ? num(d.seatY, 0, 5) : null;
+      p.hidden = d?.hidden === true;
+      const zone = cleanZone(d?.zone);
+      if (zone !== p.zone) {
+        enterZone(socket, p, zone);
+      } else {
+        socket.to(zoneRoom(zone)).volatile.emit("presence:update", publicState(socket.id, p));
+      }
+    }
+  );
+
   socket.on("disconnect", () => {
     console.log(`[server] player disconnected (${socket.id})`);
+    const gone = presence.get(socket.id);
+    if (gone) {
+      socket.to(zoneRoom(gone.zone)).emit("presence:left", socket.id);
+      presence.delete(socket.id);
+    }
     players.delete(socket.id);
     broadcastOnlineUsers();
     broadcastStats();

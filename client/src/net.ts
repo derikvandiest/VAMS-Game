@@ -1,6 +1,12 @@
 import { io, Socket } from "socket.io-client";
 
 let currentSocket: Socket | null = null;
+let multiplayerActive = false;
+
+/** True while playing on the multiplayer server (other systems, like player presence, check this). */
+export function isMultiplayerActive(): boolean {
+  return multiplayerActive;
+}
 
 export function getSocket(): Socket {
   if (!currentSocket) {
@@ -18,6 +24,7 @@ export function getSocket(): Socket {
  *  - Production:  the game's public URL (the Node server serves everything)
  */
 export function connectToServer(): Socket {
+  multiplayerActive = true;
   const socket = getSocket();
 
   socket.on("connect", () => {
@@ -42,6 +49,7 @@ export function connectToServer(): Socket {
 }
 
 export function disconnectFromServer(): void {
+  multiplayerActive = false;
   if (currentSocket) {
     currentSocket.disconnect();
     currentSocket = null;

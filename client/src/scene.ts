@@ -10,6 +10,7 @@ import { showDialog } from "./dialog";
 import { confirmAction } from "./confirm";
 import { assignmentDialog } from "./assignments";
 import { roomById } from "./rooms";
+import { startPresence } from "./presence";
 import { loadSlot, getActiveSlotId } from "./saveManager";
 import {
   buildMprRoom,
@@ -6622,6 +6623,9 @@ export function startPlaceholderScene(
   rig.apply(loadCharacterProfile());
   onProfileChange((updated) => rig.apply(updated));
 
+  // Multiplayer: other players in the same place (campus, MPR or the same classroom) are drawn and move live
+  const presence = startPresence(scene);
+
   // --- Camera: orbits the player at a fixed distance ----------------------
   const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 260);
   let camAngle = DEFAULT_CAM_ANGLE; // orbit angle (radians)
@@ -7970,6 +7974,15 @@ export function startPlaceholderScene(
       void bob;
     }
     rig.syncSkeleton?.();
+    presence?.update(dt, {
+      zone: inMprRoom ? "mpr" : currentClassroom ? currentClassroom.id : "campus",
+      x: player.position.x,
+      y: player.position.y,
+      z: player.position.z,
+      rotY: player.rotation.y,
+      seatY: seatedChair ? seatedChair.seatY : null,
+      hidden: !!drivingCar, // cars are not shared yet
+    });
     // NPCs animate only where the player can see them
     for (let i = 0; i < npcList.length; i++) {
       const room = npcList[i].def.room;
@@ -8706,6 +8719,7 @@ export function startPlaceholderScene(
     renderer.setAnimationLoop(null);
     window.removeEventListener("resize", resize);
     window.removeEventListener("eld-objective-complete", onObjectiveComplete);
+    presence?.dispose();
     if (renderer.domElement.parentElement) {
       renderer.domElement.parentElement.removeChild(renderer.domElement);
     }

@@ -180,6 +180,9 @@ Each grade (5th through 8th) has **four classes**, one for each of CSUN, LMU, UC
 - Stamp state comes from the server (the real, validated progress).
 - Also shows the player’s name and homeroom.
 
+### Multiplayer presence (implemented)
+On the multiplayer server every place is its own shared space: the outdoor campus, the MPR and each classroom. Players in the same place see each other (their own look, name tag, walking and sitting); players elsewhere are not shown. Positions are sent about 15 times a second (`client/src/presence.ts`) and the server only relays them to the other players of the same zone (`presence:*` events in `server/src/index.ts`). Not shared yet: cars, the soccer ball and basketball, and the elevator cab.
+
 ### 5.8 Objectives list (HUD, top-left)
 **Objective 1 [DECIDED, implemented]:** go to the MPR and take a seat at one of the tables. The first time the player sits at an MPR table, a **welcome pop-up** appears ("Welcome to the first ELD PD at VAMS!") explaining the rest of the game: complete the assignment in all 16 classrooms in any order, turn in the work in the ELD classroom, then, after the completed message, drive away from the parking lot in a car. The pop-up text lives in `client/src/welcome.ts` and is shown once per save. Once the player has sat down in the MPR, a **green exclamation mark** floats above the entrance door of every homeroom classroom whose assignment is still to do; it disappears when that assignment is completed. **M** (or the Map button, top-right) opens a north-up top-down campus map (`client/src/map.ts`) labelling every classroom, highlighting the ones still to do, with a ground/upper floor toggle. The HUD box shows the current step (MPR seat, then n / 16 assignments, then turn-in, then leave).
 
