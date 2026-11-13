@@ -4501,19 +4501,104 @@ export function startPlaceholderScene(
   //   * West side of West bldg & North side of North bldg: 4 horizontal rectangular windows
   //     positioned closer to the top of the first floor wall (y = 3.25m).
   // All windows feature transparent blue glass and realistic interior room depth.
+  // The classroom windows look like real windows: pale reflective glass with a soft glare in front of a lit
+  // room (ceiling lights, blinds drawn to different heights). They are not see-through into the real
+  // classrooms: those are separate spaces, shared with the other players of the same room only.
+  const glareTexture = (() => {
+    const c = document.createElement("canvas");
+    c.width = 256;
+    c.height = 256;
+    const g = c.getContext("2d")!;
+    // sky reflection: brighter at the top
+    const sky = g.createLinearGradient(0, 0, 0, 256);
+    sky.addColorStop(0, "rgba(170,210,240,0.30)");
+    sky.addColorStop(0.55, "rgba(120,165,205,0.10)");
+    sky.addColorStop(1, "rgba(90,130,170,0.04)");
+    g.fillStyle = sky;
+    g.fillRect(0, 0, 256, 256);
+    // two diagonal glare streaks
+    g.fillStyle = "rgba(255,255,255,0.16)";
+    for (const [x, w] of [[40, 34], [118, 14]]) {
+      g.beginPath();
+      g.moveTo(x, 0);
+      g.lineTo(x + w, 0);
+      g.lineTo(x + w - 120, 256);
+      g.lineTo(x - 120, 256);
+      g.closePath();
+      g.fill();
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  })();
   const glassMaterial = new THREE.MeshStandardMaterial({
-    color: 0x2b82d9, // vibrant architectural window blue
-    roughness: 0.08, // glossy reflective sheen
-    metalness: 0.2,  // specular glass reflectivity
+    color: 0xffffff,
+    map: glareTexture,
+    roughness: 0.04,
+    metalness: 0.35,
     transparent: true,
-    opacity: 0.55,   // clean transparent glass effect
+    opacity: 1,
     depthWrite: false,
   });
-  const windowBackingMaterial = new THREE.MeshStandardMaterial({
-    color: 0x16202c, // dark room interior seen through the transparent glass
-    roughness: 0.95,
-  });
+  /** What you glimpse of the room through the glass: back wall, ceiling lights and blinds at some height */
+  function makeWindowInteriorMaterial(blinds: number, tint: string): THREE.MeshStandardMaterial {
+    const c = document.createElement("canvas");
+    c.width = 256;
+    c.height = 256;
+    const g = c.getContext("2d")!;
+    // back wall, lit from above
+    const wall = g.createLinearGradient(0, 0, 0, 256);
+    wall.addColorStop(0, "#8d887a");
+    wall.addColorStop(0.35, tint);
+    wall.addColorStop(1, "#1c1b19");
+    g.fillStyle = wall;
+    g.fillRect(0, 0, 256, 256);
+    // ceiling light panels glowing along the top
+    g.fillStyle = "rgba(255,248,220,1)";
+    g.fillRect(20, 4, 96, 16);
+    g.fillRect(140, 4, 96, 16);
+    // a hint of furniture / posters at the bottom
+    g.fillStyle = "rgba(60,50,45,0.55)";
+    g.fillRect(20, 200, 90, 56);
+    g.fillRect(150, 214, 86, 42);
+    g.fillStyle = "rgba(190,60,60,0.55)";
+    g.fillRect(168, 120, 40, 52);
+    // venetian blinds drawn down from the top to the given fraction
+    const bottom = Math.round(256 * blinds);
+    for (let y = 0; y < bottom; y += 9) {
+      g.fillStyle = (y / 9) % 2 === 0 ? "#d9d1ba" : "#a39b85";
+      g.fillRect(0, y, 256, 7);
+      g.fillStyle = "rgba(0,0,0,0.18)";
+      g.fillRect(0, y + 7, 256, 2);
+    }
+    if (blinds > 0) {
+      g.fillStyle = "#a59e8b"; // bottom rail
+      g.fillRect(0, bottom, 256, 6);
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return new THREE.MeshStandardMaterial({ map: t, roughness: 0.9 });
+  }
+  const windowInteriors = [
+    makeWindowInteriorMaterial(0.45, "#5a564d"),
+    makeWindowInteriorMaterial(0.8, "#524e45"),
+    makeWindowInteriorMaterial(0, "#605b51"),
+    makeWindowInteriorMaterial(0.25, "#5d594f"),
+  ];
+  let windowCounter = 0;
+  const nextWindowInterior = (): THREE.MeshStandardMaterial => windowInteriors[windowCounter++ % windowInteriors.length];
   const frameMaterial = new THREE.MeshStandardMaterial({ color: 0xf4f1e8, roughness: 0.8 });
+  const sillMaterial = new THREE.MeshStandardMaterial({ color: 0xd9d4c6, roughness: 0.85 });
+  /** A sill under the window and a horizontal muntin across it (so the glass reads as framed panes) */
+  function addWindowExtras(cx: number, cy: number, cz: number, w: number, h: number, alongZ: boolean, outward: number): void {
+    const sillLong = w + 0.22;
+    const sill = new THREE.Mesh(new THREE.BoxGeometry(alongZ ? 0.3 : sillLong, 0.07, alongZ ? sillLong : 0.3), sillMaterial);
+    sill.position.set(cx + (alongZ ? outward * 0.15 : 0), cy - h / 2 - 0.02, cz + (alongZ ? 0 : outward * 0.15));
+    sill.castShadow = true;
+    const muntin = new THREE.Mesh(new THREE.BoxGeometry(alongZ ? 0.12 : w, 0.05, alongZ ? w : 0.12), frameMaterial);
+    muntin.position.set(cx + (alongZ ? outward * 0.09 : 0), cy + h * 0.1, cz + (alongZ ? 0 : outward * 0.09));
+    scene.add(sill, muntin);
+  }
 
   // 1) Standard second-floor exterior windows
   const winY = floor2 + 2.2;
@@ -4558,83 +4643,57 @@ export function startPlaceholderScene(
   const largeMullionGeoX = new THREE.BoxGeometry(0.08, LARGE_WIN_H - 0.12, 0.14);
   const largeTransomGeoX = new THREE.BoxGeometry(LARGE_WIN_W - 0.12, 0.06, 0.14);
 
-  // Standard second-floor window helpers
-  function addWindowZ(xWall: number, z: number, outward: number) {
-    const frame = new THREE.Mesh(stdFrameGeoZ, frameMaterial);
-    frame.position.set(xWall + outward * 0.08, winY, z);
-    const backing = new THREE.Mesh(stdBackingGeoZ, windowBackingMaterial);
-    backing.position.set(xWall + outward * 0.02, winY, z);
-    const glass = new THREE.Mesh(stdGlassGeoZ, glassMaterial);
-    glass.position.set(xWall + outward * 0.10, winY, z);
-    const mullion = new THREE.Mesh(stdMullionGeoZ, frameMaterial);
-    mullion.position.set(xWall + outward * 0.09, winY, z);
-    scene.add(frame, backing, glass, mullion);
+  /**
+   * One window in a wall: the lit room (textured panel) at the wall face, the glass just in front of it,
+   * and a real frame around it (four bars, a centre mullion and a cross bar) with a sill underneath.
+   * planeCoord = the wall's position on its normal axis, along = where the window is along the wall.
+   */
+  function buildWindow(planeCoord: number, along: number, cy: number, w: number, h: number, alongZ: boolean, outward: number, barY: number): void {
+    const place = (m: THREE.Mesh, n: number, a: number, y: number): THREE.Mesh => {
+      m.position.set(alongZ ? planeCoord + outward * n : along + a, y, alongZ ? along + a : planeCoord + outward * n);
+      scene.add(m);
+      return m;
+    };
+    const box = (dn: number, dy: number, da: number, mat: THREE.Material): THREE.Mesh =>
+      new THREE.Mesh(new THREE.BoxGeometry(alongZ ? dn : da, dy, alongZ ? da : dn), mat);
+    const inner = 0.09; // frame bar width
+    place(box(0.02, h - inner * 2, w - inner * 2, nextWindowInterior()), 0.012, 0, cy); // the lit room
+    place(box(0.02, h - inner * 2, w - inner * 2, glassMaterial), 0.05, 0, cy); // the glass
+    // frame
+    place(box(0.14, inner, w, frameMaterial), 0.07, 0, cy + h / 2 - inner / 2);
+    place(box(0.14, inner, w, frameMaterial), 0.07, 0, cy - h / 2 + inner / 2);
+    place(box(0.14, h - inner * 2, inner, frameMaterial), 0.07, -(w / 2 - inner / 2), cy);
+    place(box(0.14, h - inner * 2, inner, frameMaterial), 0.07, w / 2 - inner / 2, cy);
+    // mullion and cross bar
+    place(box(0.09, h - inner * 2, 0.05, frameMaterial), 0.075, 0, cy);
+    place(box(0.09, 0.05, w - inner * 2, frameMaterial), 0.075, 0, barY);
+    // sill
+    const sill = place(box(0.3, 0.07, w + 0.22, sillMaterial), 0.15, 0, cy - h / 2 - 0.02);
+    sill.castShadow = true;
   }
 
+  // Standard second-floor window helpers
+  function addWindowZ(xWall: number, z: number, outward: number) {
+    buildWindow(xWall, z, winY, 1.6, 2.0, true, outward, winY + 0.1);
+  }
   function addWindowX(x: number, zWall: number, outward: number) {
-    const frame = new THREE.Mesh(stdFrameGeoX, frameMaterial);
-    frame.position.set(x, winY, zWall + outward * 0.08);
-    const backing = new THREE.Mesh(stdBackingGeoX, windowBackingMaterial);
-    backing.position.set(x, winY, zWall + outward * 0.02);
-    const glass = new THREE.Mesh(stdGlassGeoX, glassMaterial);
-    glass.position.set(x, winY, zWall + outward * 0.10);
-    const mullion = new THREE.Mesh(stdMullionGeoX, frameMaterial);
-    mullion.position.set(x, winY, zWall + outward * 0.09);
-    scene.add(frame, backing, glass, mullion);
+    buildWindow(zWall, x, winY, 1.6, 2.0, false, outward, winY + 0.1);
   }
 
   // First-floor high horizontal window helpers (closer to top of ground wall)
   function addFirstFloorHighWindowZ(xWall: number, z: number, outward: number) {
-    const frame = new THREE.Mesh(highFrameGeoZ, frameMaterial);
-    frame.position.set(xWall + outward * 0.08, firstFloorHighWinY, z);
-    const backing = new THREE.Mesh(highBackingGeoZ, windowBackingMaterial);
-    backing.position.set(xWall + outward * 0.02, firstFloorHighWinY, z);
-    const glass = new THREE.Mesh(highGlassGeoZ, glassMaterial);
-    glass.position.set(xWall + outward * 0.10, firstFloorHighWinY, z);
-    const mullion = new THREE.Mesh(highMullionGeoZ, frameMaterial);
-    mullion.position.set(xWall + outward * 0.09, firstFloorHighWinY, z);
-    scene.add(frame, backing, glass, mullion);
+    buildWindow(xWall, z, firstFloorHighWinY, HIGH_WIN_W + 0.1, HIGH_WIN_H + 0.1, true, outward, firstFloorHighWinY);
   }
-
   function addFirstFloorHighWindowX(x: number, zWall: number, outward: number) {
-    const frame = new THREE.Mesh(highFrameGeoX, frameMaterial);
-    frame.position.set(x, firstFloorHighWinY, zWall + outward * 0.08);
-    const backing = new THREE.Mesh(highBackingGeoX, windowBackingMaterial);
-    backing.position.set(x, firstFloorHighWinY, zWall + outward * 0.02);
-    const glass = new THREE.Mesh(highGlassGeoX, glassMaterial);
-    glass.position.set(x, firstFloorHighWinY, zWall + outward * 0.10);
-    const mullion = new THREE.Mesh(highMullionGeoX, frameMaterial);
-    mullion.position.set(x, firstFloorHighWinY, zWall + outward * 0.09);
-    scene.add(frame, backing, glass, mullion);
+    buildWindow(zWall, x, firstFloorHighWinY, HIGH_WIN_W + 0.1, HIGH_WIN_H + 0.1, false, outward, firstFloorHighWinY);
   }
 
   // Large walkway window helpers (touching the walkway at floor2)
   function addLargeWindowZ(xWall: number, z: number, outward: number) {
-    const frame = new THREE.Mesh(largeFrameGeoZ, frameMaterial);
-    frame.position.set(xWall + outward * 0.08, largeWinY, z);
-    const backing = new THREE.Mesh(largeBackingGeoZ, windowBackingMaterial);
-    backing.position.set(xWall + outward * 0.02, largeWinY, z);
-    const glass = new THREE.Mesh(largeGlassGeoZ, glassMaterial);
-    glass.position.set(xWall + outward * 0.10, largeWinY, z);
-    const mullion = new THREE.Mesh(largeMullionGeoZ, frameMaterial);
-    mullion.position.set(xWall + outward * 0.09, largeWinY, z);
-    const transom = new THREE.Mesh(largeTransomGeoZ, frameMaterial);
-    transom.position.set(xWall + outward * 0.09, floor2 + 1.8, z);
-    scene.add(frame, backing, glass, mullion, transom);
+    buildWindow(xWall, z, largeWinY, LARGE_WIN_W, LARGE_WIN_H, true, outward, floor2 + 1.8);
   }
-
   function addLargeWindowX(x: number, zWall: number, outward: number) {
-    const frame = new THREE.Mesh(largeFrameGeoX, frameMaterial);
-    frame.position.set(x, largeWinY, zWall + outward * 0.08);
-    const backing = new THREE.Mesh(largeBackingGeoX, windowBackingMaterial);
-    backing.position.set(x, largeWinY, zWall + outward * 0.02);
-    const glass = new THREE.Mesh(largeGlassGeoX, glassMaterial);
-    glass.position.set(x, largeWinY, zWall + outward * 0.10);
-    const mullion = new THREE.Mesh(largeMullionGeoX, frameMaterial);
-    mullion.position.set(x, largeWinY, zWall + outward * 0.09);
-    const transom = new THREE.Mesh(largeTransomGeoX, frameMaterial);
-    transom.position.set(x, floor2 + 1.8, zWall + outward * 0.09);
-    scene.add(frame, backing, glass, mullion, transom);
+    buildWindow(zWall, x, largeWinY, LARGE_WIN_W, LARGE_WIN_H, false, outward, floor2 + 1.8);
   }
 
   // West building:
