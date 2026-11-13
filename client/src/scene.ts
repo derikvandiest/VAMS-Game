@@ -6535,7 +6535,7 @@ export function startPlaceholderScene(
     scene.add(group);
   });
 
-  // --- Benches against the west building's wall between the 7th USC and 7th UCLA doors (orange, then blue),
+  // --- Benches against the west building's wall (orange by the 7th USC door, blue ones between UCLA and LMU),
   // and a drinking fountain on the wall past the UCLA door. The wall face is at -13.8 where the door frames stand out.
   {
     const BENCH_X = -13.5; // center
@@ -6572,10 +6572,11 @@ export function startPlaceholderScene(
       }
     };
     addBench(6.7, 0xf47a20); // orange, left of the 7th USC door
-    addBench(9.1, 0x2563eb); // blue, right next to it
+    addBench(17.5, 0x2563eb); // two blue benches in a row between the 7th UCLA and 7th LMU doors
+    addBench(19.8, 0x2563eb);
 
-    // Wall-mounted drinking fountain, south of the 7th UCLA door
-    const FOUNTAIN_Z = 15.6;
+    // Wall-mounted drinking fountain, between the blue benches and the 7th LMU door (closest to LMU)
+    const FOUNTAIN_Z = 23.4;
     const steel = new THREE.MeshStandardMaterial({ color: 0xc4c9d0, roughness: 0.3, metalness: 0.8 });
     const fountain = new THREE.Group();
     fountain.position.set(-13.8, 0, FOUNTAIN_Z);
