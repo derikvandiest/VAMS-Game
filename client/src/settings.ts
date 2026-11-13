@@ -311,17 +311,10 @@ export function initSettingsModal(onSave?: SaveCb): void {
     } else {
       const hats = hatsFor(g);
       body += section("Hat", itemGrid("hat", "hat", hats, draft.hat));
-      if (hats.find((h) => h.id === draft.hat)?.proc) {
-        const auto = radioBtn(`data-color="hatColor:"`, draft.hatColor === "", "cc-sw cc-sw-auto", "H", "Homeroom color");
-        body += section("Hat color", swatches("hatColor", ACCENT_COLORS, draft.hatColor, auto));
-      }
       body += section("Glasses", itemGrid("glasses", "glasses", GLASSES, draft.glasses));
       if (draft.glasses !== "none") body += section("Frame color", swatches("glassesColor", ACCENT_COLORS, draft.glassesColor));
       body += section("Shoes", itemGrid("shoes", "shoes", shoesFor(g), draft.shoes));
-      if (draft.shoes !== "default") {
-        const auto = radioBtn(`data-color="shoeColor:"`, draft.shoeColor === "", "cc-sw cc-sw-auto", "O", "Original color");
-        body += section("Shoe color", swatches("shoeColor", ACCENT_COLORS, draft.shoeColor, auto));
-      }
+      if (draft.shoes !== "default") body += section("Shoe color", swatches("shoeColor", ACCENT_COLORS, draft.shoeColor));
     }
     const bodyEl = $("cc-body");
     const scrollTop = bodyEl.scrollTop;

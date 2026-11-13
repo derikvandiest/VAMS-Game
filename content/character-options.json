@@ -211,8 +211,8 @@
   "hairStyles": [
     {
       "id": "original",
-      "name": "Original",
-      "gender": "both"
+      "name": "Ponytail",
+      "gender": "masculine"
     },
     {
       "id": "f-long",
@@ -226,7 +226,7 @@
     },
     {
       "id": "f-wavy",
-      "name": "Wavy",
+      "name": "Ponytail",
       "gender": "feminine",
       "donor": "Female/Formal",
       "parts": [
@@ -259,7 +259,8 @@
       "parts": [
         "Head:Pink",
         "Head:Hair_Brown"
-      ]
+      ],
+      "cut": "rest-sideburns"
     },
     {
       "id": "f-scifi",
@@ -359,26 +360,12 @@
         "Head:Hair"
       ],
       "cut": "beard"
-    },
-    {
-      "id": "full-beard",
-      "name": "Full Beard",
-      "donor": "Male/King",
-      "parts": [
-        "Head:Hair_White"
-      ],
-      "cut": "beard"
     }
   ],
   "hats": [
     {
       "id": "none",
       "name": "None"
-    },
-    {
-      "id": "beanie",
-      "name": "Beanie",
-      "proc": "beanie"
     },
     {
       "id": "hardhat",
@@ -423,22 +410,15 @@
       "id": "round",
       "name": "Round",
       "proc": "round"
-    },
-    {
-      "id": "square",
-      "name": "Square",
-      "proc": "square"
-    },
-    {
-      "id": "shades",
-      "name": "Sunglasses",
-      "proc": "shades"
     }
   ],
   "shoes": [
     {
       "id": "default",
-      "name": "Original"
+      "name": "Original",
+      "genders": [
+        "masculine"
+      ]
     },
     {
       "id": "sneakers",
@@ -477,7 +457,7 @@
       "name": "Work Boots",
       "donors": {
         "masculine": "Male/Worker",
-        "feminine": "Female/Worker"
+        "feminine": "Female/Punk"
       },
       "tint": {
         "masculine": [
@@ -486,7 +466,10 @@
         "feminine": [
           "Black"
         ]
-      }
+      },
+      "tall": [
+        "feminine"
+      ]
     },
     {
       "id": "boots",

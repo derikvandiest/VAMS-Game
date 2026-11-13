@@ -26,11 +26,11 @@ export interface LookDef {
   fillLegs?: boolean;
 }
 
-export interface HairStyleDef { id: string; name: string; gender: Gender | "both"; donor?: string; parts?: string[]; cut?: "beard" | "rest" | "rest-nape" }
-export interface FacialHairDef { id: string; name: string; donor?: string; parts?: string[]; cut?: "beard" | "rest" | "rest-nape" }
-export interface HatDef { id: string; name: string; proc?: "beanie"; donors?: Partial<Record<Gender, string>>; parts?: string[] }
-export interface GlassesDef { id: string; name: string; proc?: "round" | "square" | "shades" }
-export interface ShoeDef { id: string; name: string; /** reaches the knee: no skin legs needed underneath */ tall?: boolean; donors?: Partial<Record<Gender, string>>; tint?: Partial<Record<Gender, string[]>> }
+export interface HairStyleDef { id: string; name: string; gender: Gender | "both"; donor?: string; parts?: string[]; cut?: "beard" | "rest" | "rest-nape" | "rest-sideburns" }
+export interface FacialHairDef { id: string; name: string; donor?: string; parts?: string[]; cut?: "beard" | "rest" | "rest-nape" | "rest-sideburns" }
+export interface HatDef { id: string; name: string; donors?: Partial<Record<Gender, string>>; parts?: string[] }
+export interface GlassesDef { id: string; name: string; proc?: "round" }
+export interface ShoeDef { id: string; name: string; /** shoes without donors (the model's own) are limited to these genders */ genders?: Gender[]; /** reaches the knee: no skin legs needed underneath */ tall?: boolean | Gender[]; donors?: Partial<Record<Gender, string>>; tint?: Partial<Record<Gender, string[]>> }
 
 export interface CharacterProfile {
   name: string;
@@ -85,12 +85,14 @@ export const hairStylesFor = (g: Gender): HairStyleDef[] => HAIR_STYLES.filter((
 /** Facial hair is offered to the masculine models only. */
 export const facialHairFor = (g: Gender): FacialHairDef[] => (g === "masculine" ? FACIAL_HAIR : [FACIAL_HAIR[0]]);
 export const hatsFor = (g: Gender): HatDef[] => HATS.filter((h) => !h.donors || h.donors[g]);
-export const shoesFor = (g: Gender): ShoeDef[] => SHOES.filter((s) => !s.donors || s.donors[g]);
+export const shoesFor = (g: Gender): ShoeDef[] => SHOES.filter((s) => (s.donors ? !!s.donors[g] : !s.genders || s.genders.includes(g)));
 const byId = <T extends { id: string }>(list: T[], id: unknown, fallback: T): T => list.find((x) => x.id === id) ?? fallback;
 export const getHairStyle = (id: string): HairStyleDef => byId(HAIR_STYLES, id, HAIR_STYLES[0]);
 export const getFacialHair = (id: string): FacialHairDef => byId(FACIAL_HAIR, id, FACIAL_HAIR[0]);
 export const getHat = (id: string): HatDef => byId(HATS, id, HATS[0]);
 export const getGlasses = (id: string): GlassesDef => byId(GLASSES, id, GLASSES[0]);
+/** Boots that reach the calf: no skin legs needed underneath, and the trousers are tucked in. */
+export const isTall = (s: ShoeDef, g: Gender): boolean => (Array.isArray(s.tall) ? s.tall.includes(g) : !!s.tall);
 export const getShoes = (id: string): ShoeDef => byId(SHOES, id, SHOES[0]);
 
 export function shirtColorFor(homeroom: Homeroom): string {
@@ -105,14 +107,14 @@ export function getDefaultProfile(): CharacterProfile {
     homeroom: "UCLA",
     gender: "feminine",
     look: "fem-casual",
-    hairStyle: "original",
+    hairStyle: "f-long",
     facialHair: "none",
     hat: "none",
     hatColor: "",
     glasses: "none",
     glassesColor: ACCENT_COLORS[0].hex,
-    shoes: "default",
-    shoeColor: "",
+    shoes: "sneakers",
+    shoeColor: ACCENT_COLORS[0].hex,
     skinTone: SKIN_TONES[1].hex,
     hairColor: HAIR_COLORS[1].hex,
   };
@@ -136,14 +138,14 @@ export function sanitizeProfile(raw: unknown): CharacterProfile {
     homeroom: HOMEROOMS.includes(p.homeroom as Homeroom) ? (p.homeroom as Homeroom) : fb.homeroom,
     gender,
     look: look.id,
-    hairStyle: byId(hairStylesFor(gender), p.hairStyle, HAIR_STYLES[0]).id,
+    hairStyle: byId(hairStylesFor(gender), p.hairStyle, hairStylesFor(gender)[0]).id,
     facialHair: byId(facialHairFor(gender), p.facialHair, FACIAL_HAIR[0]).id,
     hat: byId(hatsFor(gender), p.hat, HATS[0]).id,
     hatColor: isHex(p.hatColor) ? p.hatColor : "",
     glasses: getGlasses(p.glasses as string).id,
     glassesColor: isHex(p.glassesColor) ? p.glassesColor : fb.glassesColor,
-    shoes: byId(shoesFor(gender), p.shoes, SHOES[0]).id,
-    shoeColor: isHex(p.shoeColor) ? p.shoeColor : "",
+    shoes: byId(shoesFor(gender), p.shoes, shoesFor(gender)[0]).id,
+    shoeColor: isHex(p.shoeColor) ? p.shoeColor : fb.shoeColor,
     skinTone: isHex(p.skinTone) ? p.skinTone : fb.skinTone,
     hairColor: isHex(p.hairColor) ? p.hairColor : fb.hairColor,
   };

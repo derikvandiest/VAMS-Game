@@ -22,6 +22,7 @@ import {
   getHat,
   getGlasses,
   getShoes,
+  isTall,
   HAIR_STYLES,
   FACIAL_HAIR,
   HATS,
@@ -432,7 +433,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
    * Some donor hairstyles have a beard modelled into the same mesh. Keep only the beard triangles
    * (lower face, in front of the ears) or only everything else, so beards can be a separate option.
    */
-  function cutRegion(objs: THREE.Object3D[] | null, cut?: "beard" | "rest" | "rest-nape"): THREE.Object3D[] | null {
+  function cutRegion(objs: THREE.Object3D[] | null, cut?: "beard" | "rest" | "rest-nape" | "rest-sideburns"): THREE.Object3D[] | null {
     if (!objs || !cut) return objs;
     for (const o of objs) {
       const mesh = o as THREE.Mesh;
@@ -445,10 +446,14 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
       for (let t = 0; t < idx.count; t += 3) {
         let y = 0;
         let z = 0;
+        let x = 0;
         for (let k = 0; k < 3; k++) {
           y += pos.getY(idx.getX(t + k)) / 3;
           z += pos.getZ(idx.getX(t + k)) / 3;
+          x += Math.abs(pos.getX(idx.getX(t + k))) / 3;
         }
+        // strips of hair running down in front of the ears (sideburns)
+        if (cut === "rest-sideburns" && y < 1.66 && x > 0.05 && z > 0.04) continue;
         const isBeard = y < 1.655 && z > 0.05;
         // the Punk's dark undercut band leaves a patch at the nape: drop it
         if (cut === "rest-nape" && /dark/i.test(matName) && y < 1.68 && z < 0.0) continue;
@@ -545,6 +550,45 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     return objs;
   }
 
+  /**
+   * Tall boots: the model's own legs run down inside the boot and poke out through the shaft (or hang over
+   * it). Drop the leg triangles below the boot top so the trousers end inside the boots; restore otherwise.
+   */
+  function tuckTrousers(boots: THREE.Object3D[] | null): void {
+    const root = armatureScene;
+    if (!root) return;
+    let top = -Infinity;
+    for (const o of boots ?? []) {
+      const geo = (o as THREE.Mesh).geometry;
+      geo.computeBoundingBox();
+      top = Math.max(top, geo.boundingBox!.max.y);
+    }
+    root.traverse((o) => {
+      const m = o as THREE.SkinnedMesh;
+      if (!m.isSkinnedMesh || m.userData.role || !/_Legs/.test(partName(m))) return;
+      if (!m.userData.origGeo) m.userData.origGeo = m.geometry;
+      const orig = m.userData.origGeo as THREE.BufferGeometry;
+      if (!boots) {
+        m.geometry = orig;
+        return;
+      }
+      const geo = orig.clone();
+      const pos = geo.getAttribute("position");
+      const idx = geo.getIndex();
+      if (!idx) return;
+      const cut = top - 0.06;
+      const keep: number[] = [];
+      for (let t = 0; t < idx.count; t += 3) {
+        const y = (pos.getY(idx.getX(t)) + pos.getY(idx.getX(t + 1)) + pos.getY(idx.getX(t + 2))) / 3;
+        if (y >= cut) keep.push(idx.getX(t), idx.getX(t + 1), idx.getX(t + 2));
+      }
+      geo.setIndex(keep);
+      geo.clearGroups();
+      if (Array.isArray(m.material)) geo.addGroup(0, keep.length, 0); // keep the one-element material array rendering
+      m.geometry = geo;
+    });
+  }
+
   /** Donor hats are sized for a bare head: enlarge them slightly so they sit over the hair. */
   function growOverHair(objs: THREE.Object3D[] | null): THREE.Object3D[] | null {
     const box = measureHead();
@@ -574,7 +618,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
 
     const hat = getHat(p.hat);
     setSlot("hat", hat.id === "none" ? "" : L(hat.id), () =>
-      hat.proc ? buildOnHead(hat.proc) : growOverHair(borrow(hat.donors![g]!, hat.parts ?? [], () => "fixed"))
+      growOverHair(borrow(hat.donors![g]!, hat.parts ?? [], () => "fixed"))
     );
 
     const gl = getGlasses(p.glasses);
@@ -586,13 +630,14 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
       const objs = borrow(shoe.donors![g]!, ["Feet:Skin", "Feet:Skin_Darker", ...tint.map((t) => `Feet:${t}`), ...donorFeetRest(shoe.donors![g]!, tint)], (i, mat) =>
         /^skin_darker$/i.test(mat) ? "skinDark" : /^skin$/i.test(mat) ? "skin" : tint.includes(mat) ? "shoe" : "fixed"
       );
-      return shoe.tall ? swellBoots(objs) : objs;
+      return isTall(shoe, g) ? swellBoots(objs) : objs;
     });
     hideBakedFeet = shoeObjs.length > 0;
+    tuckTrousers(isTall(shoe, g) && shoeObjs.length > 0 ? shoeObjs : null);
 
     // Looks whose legs end above the ankle (tall boots) would show a gap under swapped shoes:
     // add bare skin legs borrowed from another feminine model to fill the shins and ankles.
-    const fill = hideBakedFeet && !shoe.tall && getLook(p.look).fillLegs;
+    const fill = hideBakedFeet && !isTall(shoe, g) && getLook(p.look).fillLegs;
     setSlot("legfill", fill ? L("legfill") : "", () => borrow("Female/Formal", ["Legs:Skin"], () => "skin"));
   }
 

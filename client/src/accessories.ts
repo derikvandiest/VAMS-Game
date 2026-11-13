@@ -82,7 +82,7 @@ export function recolor(objs: THREE.Object3D[], colors: RoleColors): void {
 // Procedural accessories
 // ---------------------------------------------------------------------------
 
-export type ProceduralKind = "round" | "square" | "shades" | "beanie";
+export type ProceduralKind = "round";
 
 /** Where the eyes are (model space): vertical center, front surface and outer-corner span. */
 export interface EyeInfo {
@@ -109,7 +109,7 @@ function withGeo(m: THREE.Mesh, g: THREE.BufferGeometry, x = 0, y = 0, z = 0): T
 
 /**
  * Build a procedural accessory in the model's space. `head` is the head's skin bounding box,
- * `eye` the measured eye position (glasses are fitted to it), `bulk` enlarges hats for fuller hair.
+ * `eye` the measured eye position (glasses are fitted to it), `bulk` is unused for glasses.
  */
 export function buildProcedural(kind: ProceduralKind, head: THREE.Box3, bulk = 1, eye?: EyeInfo): THREE.Group {
   const size = head.getSize(new THREE.Vector3());
@@ -119,67 +119,25 @@ export function buildProcedural(kind: ProceduralKind, head: THREE.Box3, bulk = 1
   const top = head.max.y;
   const g = new THREE.Group();
 
-  if (kind !== "beanie") {
-    const e = eye ?? { y: top - 0.58 * w, z: head.max.z - 0.06 * d, span: 0.55 * w };
-    const gap = e.span * 0.36; // eye centre to face centre
-    const lensR = e.span * 0.29;
-    const t = e.span * 0.035;
-    const zf = e.z + t * 2; // just in front of the eyes
-    const hw = lensR * 1.05;
-    const hh = lensR * (kind === "shades" ? 0.95 : 0.8);
-    for (const sx of [-1, 1]) {
-      const cx = c.x + sx * gap;
-      if (kind === "round") {
-        g.add(withGeo(std("accent"), new THREE.TorusGeometry(lensR, t, 8, 24), cx, e.y, zf));
-      } else {
-        if (kind === "shades") {
-          g.add(withGeo(std("fixed", 0x0b0b10, { roughness: 0.2, metalness: 0.2 }), new THREE.BoxGeometry(hw * 2, hh * 2, t * 1.2), cx, e.y, zf));
-        }
-        const bars: Array<[number, number, number, number]> = [
-          [0, hh, hw * 2 + t * 2, t * 2],
-          [0, -hh, hw * 2 + t * 2, t * 2],
-          [-hw, 0, t * 2, hh * 2],
-          [hw, 0, t * 2, hh * 2],
-        ];
-        for (const [bx, by, bw, bh] of bars) {
-          g.add(withGeo(std("accent"), new THREE.BoxGeometry(bw, bh, t * 1.6), cx + bx, e.y + by, zf));
-        }
-      }
-      // temple arm: leaves the lens corner and runs straight back, hugging the side of the face
-      const outer = gap + (kind === "round" ? lensR : hw) + t;
-      const side = outer + Math.max(0, w / 2 - outer) * 0.3;
-      if (side > outer + t) {
-        g.add(withGeo(std("accent"), new THREE.BoxGeometry(side - outer, t * 1.6, t * 1.6), c.x + (sx * (outer + side)) / 2, e.y, zf));
-      }
-      const armLen = Math.max(zf - c.z, 0) * 0.8;
-      g.add(withGeo(std("accent"), new THREE.BoxGeometry(t * 1.6, t * 1.6, armLen), c.x + sx * side, e.y, zf - armLen / 2));
+  // Round glasses: fitted to the measured eye position, the frame sits right against the face.
+  const e = eye ?? { y: top - 0.58 * w, z: head.max.z - 0.06 * d, span: 0.55 * w };
+  const gap = e.span * 0.36; // eye centre to face centre
+  const lensR = e.span * 0.29;
+  const t = e.span * 0.035;
+  const zf = e.z + t * 1.1; // lens ring touching the face
+  for (const sx of [-1, 1]) {
+    const cx = c.x + sx * gap;
+    g.add(withGeo(std("accent"), new THREE.TorusGeometry(lensR, t, 8, 24), cx, e.y, zf));
+    // temple arm: leaves the lens corner and runs straight back, hugging the side of the face
+    const outer = gap + lensR + t;
+    const side = outer + Math.max(0, w / 2 - outer) * 0.3;
+    if (side > outer + t) {
+      g.add(withGeo(std("accent"), new THREE.BoxGeometry(side - outer, t * 1.6, t * 1.6), c.x + (sx * (outer + side)) / 2, e.y, zf));
     }
-    // bridge
-    g.add(withGeo(std("accent"), new THREE.BoxGeometry(Math.max(gap * 2 - lensR * 2 - t, t), t * 1.6, t * 1.6), c.x, e.y + lensR * 0.25, zf));
-    return g;
+    const armLen = Math.max(zf - c.z, 0) * 0.8;
+    g.add(withGeo(std("accent"), new THREE.BoxGeometry(t * 1.6, t * 1.6, armLen), c.x + sx * side, e.y, zf - armLen / 2));
   }
-
-  // Beanie: a cap that hugs the skull. It reaches below the widest point so it grips the head,
-  // with the rim just above the eyebrows, and a folded band along the rim.
-  const alpha = 0.35; // how far the dome continues below its equator
-  const rimY = top - 0.4 * w;
-  const apexY = top + (0.14 + (bulk - 1)) * w; // clears the hair on top
-  const ry = (apexY - rimY) / (1 + Math.sin(alpha));
-  const cy = rimY + ry * Math.sin(alpha);
-  const rx = 0.62 * w * bulk;
-  const rz = 0.66 * d * bulk;
-  const cz = c.z - 0.02 * d;
-  const dome = std("accent", 0xcc3333);
-  dome.geometry = new THREE.SphereGeometry(1, 28, 16, 0, Math.PI * 2, 0, Math.PI / 2 + alpha);
-  dome.scale.set(rx, ry, rz);
-  dome.position.set(c.x, cy, cz);
-  g.add(dome);
-  const band = std("accent", 0xcc3333);
-  band.geometry = new THREE.CylinderGeometry(1, 1, 0.13 * w, 28, 1, true);
-  (band.material as THREE.Material).side = THREE.DoubleSide;
-  const rimScale = Math.cos(alpha) * 1.03;
-  band.scale.set(rx * rimScale, 1, rz * rimScale);
-  band.position.set(c.x, rimY + 0.03 * w, cz);
-  g.add(band);
+  // bridge
+  g.add(withGeo(std("accent"), new THREE.BoxGeometry(Math.max(gap * 2 - lensR * 2 - t, t), t * 1.6, t * 1.6), c.x, e.y + lensR * 0.25, zf));
   return g;
 }
