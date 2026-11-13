@@ -6824,7 +6824,6 @@ export function startPlaceholderScene(
     const { speaker, tree } = eldDoorDialog(done, turnedIn);
     showDialog(speaker, tree, undefined, (event) => {
       if (event === "turn-in") (window as any).__completeObjective?.("obj_turn_in");
-      else if (event === "enter-eld") enterClassroom("eld");
     });
   }
 
@@ -6947,6 +6946,7 @@ export function startPlaceholderScene(
   }
 
   function enterClassroom(roomId: string): void {
+    if (roomById(roomId)?.type !== "stamp") return; // only the 16 homeroom classrooms can be entered
     const inst = getClassroom(roomId);
     if (!inst) return;
     if (drivingCar) exitCar();
@@ -7454,7 +7454,7 @@ export function startPlaceholderScene(
             const d = Math.hypot(player.position.x - inst.campusDoor.x, player.position.z - inst.campusDoor.z);
             if (d <= 2.4) {
               if (cId === "eld") openEldDoor();
-              else enterClassroom(cId);
+              else if (roomById(cId)?.type === "stamp") enterClassroom(cId); // the Learning Center, Music room and Theater stay closed (the hint says so)
               return;
             }
           }
@@ -8292,7 +8292,12 @@ export function startPlaceholderScene(
             if (inst.campusDoor.floor === pFloor) {
               const d = Math.hypot(player.position.x - inst.campusDoor.x, player.position.z - inst.campusDoor.z);
               if (d <= 2.4) {
-                wanted = cId === "eld" ? "Press E to speak with Mr. Van Diest at the ELD door 🚪" : `Press E to enter ${inst.data.label}`;
+                wanted =
+                  cId === "eld"
+                    ? "Press E to speak with Mr. Van Diest at the ELD door 🚪"
+                    : roomById(cId)?.type !== "stamp"
+                      ? `${inst.data.label}: closed 🔒`
+                      : `Press E to enter ${inst.data.label}`;
                 break;
               }
             }

@@ -12,7 +12,6 @@ const SPEAKER: DialogSpeaker = { name: "Mr. Van Diest", title: "ELD Coordinator/
 
 /** The pop-up for the ELD classroom door, depending on how far the player is */
 export function eldDoorDialog(assignmentsDone: number, turnedIn: boolean): { speaker: DialogSpeaker; tree: DialogTree } {
-  const enter = { label: "Go into the ELD classroom", action: "enter-eld" };
   const close = { label: "Close" };
 
   let tree: DialogTree;
@@ -22,7 +21,7 @@ export function eldDoorDialog(assignmentsDone: number, turnedIn: boolean): { spe
       nodes: {
         root: {
           paragraphs: ["(Sample text) Thank you again for turning in your work! You're all set.", "Head out to the parking lot and drive away in one of the cars to finish the game."],
-          options: [enter, close],
+          options: [close],
         },
       },
     };
@@ -32,7 +31,7 @@ export function eldDoorDialog(assignmentsDone: number, turnedIn: boolean): { spe
       nodes: {
         root: {
           paragraphs: ["(Sample text) Welcome back! You've completed all 16 assignments. Fantastic work.", "Are you ready to turn in your work?"],
-          options: [{ label: "Turn in my assignments", next: "done" }, enter, close],
+          options: [{ label: "Turn in my assignments", next: "done" }, close],
         },
         done: {
           paragraphs: [
@@ -54,7 +53,7 @@ export function eldDoorDialog(assignmentsDone: number, turnedIn: boolean): { spe
             `(Sample text) Welcome to the ELD classroom! You've completed ${assignmentsDone} of ${TOTAL_ASSIGNMENTS} assignments.`,
             `Come back when you've finished the other ${left} and I'll collect your work.`,
           ],
-          options: [enter, close],
+          options: [close],
         },
       },
     };
