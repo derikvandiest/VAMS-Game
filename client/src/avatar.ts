@@ -1218,7 +1218,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
         mat.map = makeNameTagTexture(profile.name, profile.homeroom, profile.noHomeroom, profile.title);
         mat.needsUpdate = true;
       }
-      nameTagSprite.position.y = (1.73 * modelScale + 0.32 + (profile.hat === "crown" ? 0.2 : 0) + (profile.title ? 0.05 : 0)) * s;
+      nameTagSprite.position.y = (1.73 * modelScale + 0.32 + (profile.title ? 0.05 : 0)) * s;
     }
 
     rebuildAvatarMeshes();

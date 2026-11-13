@@ -6646,6 +6646,65 @@ export function startPlaceholderScene(
   }
 
 
+
+  // --- Glowing "!" above an NPC the player should talk to (until its objective is complete) ----------
+  const npcMarkers = new Map<string, { group: THREE.Group; glow: THREE.Sprite; mark: THREE.Sprite; baseY: number }>();
+  const npcMarkTexture = (() => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 128;
+    const g = c.getContext("2d")!;
+    const stem = new Path2D();
+    stem.roundRect(47, 10, 34, 72, 14);
+    const dot = new Path2D();
+    dot.arc(64, 106, 17, 0, Math.PI * 2);
+    g.lineJoin = "round";
+    g.lineWidth = 12;
+    g.strokeStyle = "#ffffff";
+    g.stroke(stem);
+    g.stroke(dot);
+    g.fillStyle = "#facc15";
+    g.fill(stem);
+    g.fill(dot);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  })();
+  const npcGlowTexture = (() => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 128;
+    const g = c.getContext("2d")!;
+    const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    grad.addColorStop(0, "rgba(255,226,90,0.95)");
+    grad.addColorStop(0.4, "rgba(255,200,0,0.45)");
+    grad.addColorStop(1, "rgba(255,190,0,0)");
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(c);
+  })();
+  for (const n of npcList) {
+    if (!n.def.talkObjective) continue;
+    const group = new THREE.Group();
+    // above the name tag (tag centre is about 2.45 high for a masculine character)
+    const baseY = 3.3;
+    group.position.set(n.def.x, baseY, n.def.z);
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: npcGlowTexture, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+    glow.scale.set(2.6, 2.6, 1);
+    const mark = new THREE.Sprite(new THREE.SpriteMaterial({ map: npcMarkTexture, transparent: true, depthWrite: false }));
+    mark.scale.set(0.95, 0.95, 1);
+    group.add(glow, mark);
+    mprRoomGroup.add(group);
+    npcMarkers.set(n.def.id, { group, glow, mark, baseY });
+  }
+  /** Show each NPC's "!" until its objective is done */
+  function updateNpcMarkers(): void {
+    const done = new Set(loadSlot(getActiveSlotId())?.objectives.completedIds ?? []);
+    for (const n of npcList) {
+      const m = npcMarkers.get(n.def.id);
+      if (m) m.group.visible = !done.has(n.def.talkObjective!);
+    }
+  }
+  updateNpcMarkers();
+
   /** The NPC the player is close enough to talk to (inside the MPR only) */
   const NPC_TALK_RANGE = 3.8;
   function nearbyNpc(): { def: NpcDef; rig: AvatarRig } | null {
@@ -6668,9 +6727,17 @@ export function startPlaceholderScene(
     const toNpc = Math.atan2(n.def.x - player.position.x, n.def.z - player.position.z);
     player.rotation.y = toNpc;
     n.rig.player.rotation.y = toNpc + Math.PI;
-    showDialog({ name: n.def.profile.name, title: n.def.profile.title }, n.def.dialog, () => {
-      n.rig.player.rotation.y = n.def.rotY;
-    });
+    showDialog(
+      { name: n.def.profile.name, title: n.def.profile.title },
+      n.def.dialog,
+      () => {
+        n.rig.player.rotation.y = n.def.rotY;
+      },
+      (event) => {
+        // Reaching the feedback survey step completes the survey objective (removes the NPC's "!")
+        if (event === "survey" && n.def.talkObjective) (window as any).__completeObjective?.(n.def.talkObjective);
+      }
+    );
   }
 
   // Register all 40 MPR teacher chairs
@@ -7553,6 +7620,7 @@ export function startPlaceholderScene(
   const onObjectiveComplete = (e: Event): void => {
     const room = roomIdByObjective.get((e as CustomEvent<{ id: string }>).detail?.id);
     if ((e as CustomEvent<{ id: string }>).detail?.id === "obj_mpr_seat") applyDoorMarkers();
+    updateNpcMarkers();
     if (room) setDoorMarker(room, false);
   };
   window.addEventListener("eld-objective-complete", onObjectiveComplete);
@@ -7560,6 +7628,16 @@ export function startPlaceholderScene(
 
   renderer.setAnimationLoop(() => {
     const dt = Math.min(clock.getDelta(), 0.1); // clamp to avoid huge jumps
+    if (npcMarkers.size) {
+      const t = performance.now() * 0.003;
+      const pulse = 0.5 + 0.5 * Math.sin(t * 1.6);
+      for (const m of npcMarkers.values()) {
+        if (!m.group.visible) continue;
+        m.group.position.y = m.baseY + Math.sin(t) * 0.1;
+        (m.glow.material as THREE.SpriteMaterial).opacity = 0.65 + 0.35 * pulse;
+        m.glow.scale.setScalar(2.4 + 0.5 * pulse);
+      }
+    }
     if (doorMarkers.size) {
       // gentle bob so the marks catch the eye
       const t = performance.now() * 0.003;

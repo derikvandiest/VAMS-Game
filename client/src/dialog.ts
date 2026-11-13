@@ -17,6 +17,8 @@ export interface DialogNode {
   /** Show a QR code. `qrImage` is a URL; without it a clearly marked placeholder is shown. */
   qr?: { caption: string; qrImage?: string };
   options: DialogOption[];
+  /** Reported to the caller (onEvent) when this node is shown, e.g. "survey" */
+  event?: string;
 }
 
 export interface DialogTree {
@@ -59,7 +61,7 @@ function qrPlaceholderSvg(): string {
   return `<svg viewBox="-1 -1 ${N + 2} ${N + 2}" class="dialog-qr-svg" aria-hidden="true"><rect x="-1" y="-1" width="${N + 2}" height="${N + 2}" fill="#fff"/><g fill="#111">${cells}${finder(0.5, 0.5)}${finder(N - 6.5, 0.5)}${finder(0.5, N - 6.5)}</g></svg>`;
 }
 
-export function showDialog(speaker: DialogSpeaker, tree: DialogTree, onClose?: () => void): void {
+export function showDialog(speaker: DialogSpeaker, tree: DialogTree, onClose?: () => void, onEvent?: (event: string) => void): void {
   if (open) return;
   open = true;
 
@@ -104,6 +106,7 @@ export function showDialog(speaker: DialogSpeaker, tree: DialogTree, onClose?: (
 
   function show(node: DialogNode): void {
     current = node;
+    if (node.event) onEvent?.(node.event);
     let html = node.paragraphs.map((p) => `<p>${esc(p)}</p>`).join("");
     if (node.qr) {
       const img = node.qr.qrImage

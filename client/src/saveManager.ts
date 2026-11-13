@@ -45,6 +45,9 @@ export const GAME_OBJECTIVES: ObjectiveDef[] = [
   // Culminating Objectives
   { id: "obj_turn_in", title: "Turn in Report Card", roomName: "ELD Classroom", description: "Deliver your completed report card to Mr. Van Diest", isStamp: false },
   { id: "obj_exit_campus", title: "Leave Campus", roomName: "Parking Lot", description: "Exit campus through the parking lot to receive completion certificate", isStamp: false },
+
+  // Optional: Mr. Van Diest's feedback survey (removes the "!" over his head)
+  { id: "obj_survey", title: "Feedback Survey", roomName: "MPR", description: "Complete the feedback survey with Mr. Van Diest", isStamp: false },
 ];
 
 export interface SaveSlotData {

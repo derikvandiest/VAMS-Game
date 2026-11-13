@@ -19,11 +19,13 @@ export interface NpcDef {
   profile: CharacterProfile;
   /** What the NPC says when a player talks to him/her (shown in a pop-up) */
   dialog?: DialogTree;
+  /** A glowing "!" floats above the NPC until this objective is complete (see saveManager.ts) */
+  talkObjective?: string;
 }
 
 const BLACK = "#1f1f24";
 
-/** Mr. Van Diest (the ELD teacher who runs the PD): suit, neat hair, full beard and a gold crown. */
+/** Mr. Van Diest (the ELD teacher who runs the PD): suit, neat hair and a full beard. */
 export const NPC_VAN_DIEST: NpcDef = {
   id: "npc-van-diest",
   room: "mpr",
@@ -41,10 +43,10 @@ export const NPC_VAN_DIEST: NpcDef = {
     outfitColor: BLACK,
     hairStyle: "m-suit",
     facialHair: "full-beard",
-    hat: "crown",
     shoes: "dress",
     shoeColor: BLACK,
   },
+  talkObjective: "obj_survey",
   dialog: {
     start: "root",
     nodes: {
@@ -84,6 +86,7 @@ export const NPC_VAN_DIEST: NpcDef = {
           "Please take a moment to complete our feedback survey by scanning the QR code below.",
         ],
         qr: { caption: "Scan to complete the feedback survey", qrImage: SURVEY_QR_IMAGE || undefined },
+        event: "survey",
         options: [
           { label: "Thanks! I have another question", next: "root" },
           { label: "Goodbye" },
