@@ -8,6 +8,8 @@ import { roomIdByObjective } from "./rooms";
 import { Elevator } from "./elevator";
 import { showDialog } from "./dialog";
 import { confirmAction } from "./confirm";
+import { assignmentDialog } from "./assignments";
+import { roomById } from "./rooms";
 import { loadSlot, getActiveSlotId } from "./saveManager";
 import {
   buildMprRoom,
@@ -6799,6 +6801,27 @@ export function startPlaceholderScene(
     }, 200);
   }
 
+  // --- Classroom assignment: walk up to the whiteboard and press E ---------------------------------
+  function nearWhiteboard(): boolean {
+    if (!currentClassroom || seatedChair || drivingCar) return false;
+    const room = roomById(currentClassroom.id);
+    if (!room || room.type !== "stamp") return false; // only the 16 homeroom classrooms have an assignment
+    const wb = currentClassroom.whiteboard;
+    const dx = Math.max(0, Math.abs(player.position.x - wb.x) - wb.w / 2);
+    const dz = Math.abs(player.position.z - wb.z);
+    return Math.hypot(dx, dz) <= 2.4;
+  }
+  function openAssignment(): void {
+    if (!currentClassroom) return;
+    const room = roomById(currentClassroom.id);
+    const objectiveId = room?.objectiveId;
+    const done = !!objectiveId && !!loadSlot(getActiveSlotId())?.objectives.completedIds.includes(objectiveId);
+    const { speaker, tree } = assignmentDialog(currentClassroom.id, done);
+    showDialog(speaker, tree, undefined, (event) => {
+      if (event === "assignment-complete" && objectiveId) (window as any).__completeObjective?.(objectiveId);
+    });
+  }
+
   /** On entering the MPR the character and the camera start out facing Mr. Van Diest (the camera sits behind the player). */
   function faceMrVanDiest(): void {
     const target = NPCS.find((n) => n.room === "mpr");
@@ -7315,6 +7338,10 @@ export function startPlaceholderScene(
         const distToExit = Math.hypot(player.position.x - currentClassroom.exitDoorX, player.position.z - currentClassroom.exitDoorZ);
         if (distToExit <= 2.6) {
           exitClassroom();
+          return;
+        }
+        if (nearWhiteboard()) {
+          openAssignment();
           return;
         }
       } else {
@@ -7986,6 +8013,8 @@ export function startPlaceholderScene(
         const distToExit = Math.hypot(player.position.x - currentClassroom.exitDoorX, player.position.z - currentClassroom.exitDoorZ);
         if (distToExit <= 2.6) {
           wanted = "Press E to exit to campus";
+        } else if (nearWhiteboard()) {
+          wanted = "Press E to read the assignment 📋";
         }
       } else {
         const distToEnterEast = Math.hypot(player.position.x - MPR_CAMPUS_DOOR_X, player.position.z - MPR_CAMPUS_DOOR_Z);

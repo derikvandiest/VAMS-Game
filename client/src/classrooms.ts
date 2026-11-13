@@ -30,6 +30,8 @@ export interface ClassroomInstance {
   spawnZ: number;
   exitDoorX: number;
   exitDoorZ: number;
+  /** The front whiteboard (where the assignment is read): centre x, wall z and width */
+  whiteboard: { x: number; z: number; w: number };
   campusDoor: {
     id: string;
     x: number;
@@ -1660,6 +1662,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     spawnZ: maxZ - 1.2,
     exitDoorX,
     exitDoorZ,
+    whiteboard: { x: worldX - 0.3, z: minZ + 0.11, w: wbWidth },
     campusDoor,
   };
 
