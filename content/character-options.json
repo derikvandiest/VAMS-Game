@@ -3,7 +3,7 @@
   "looks": [
     {
       "id": "masc-tee",
-      "name": "T-Shirt",
+      "name": "Casual",
       "gender": "masculine",
       "model": "Male/Casual_2",
       "shirt": [
@@ -62,80 +62,8 @@
       ]
     },
     {
-      "id": "masc-adventurer",
-      "name": "Explorer",
-      "gender": "masculine",
-      "model": "Male/Adventurer",
-      "shirt": [
-        "Body:Green",
-        "Body:LightGreen"
-      ],
-      "hair": [
-        "Head:Hair"
-      ],
-      "brows": [
-        "Head:Eyebrows"
-      ]
-    },
-    {
-      "id": "masc-farmer",
-      "name": "Farmer",
-      "gender": "masculine",
-      "model": "Male/Farmer",
-      "shirt": [
-        "Body:Brown"
-      ],
-      "hair": [],
-      "brows": [
-        "Head:Eyebrows"
-      ]
-    },
-    {
-      "id": "masc-worker",
-      "name": "Maintenance",
-      "gender": "masculine",
-      "model": "Male/Worker",
-      "shirt": [
-        "Body:Worker_Vest"
-      ],
-      "hair": [],
-      "brows": [
-        "Head:Eyebrows",
-        "Head:Moustache"
-      ]
-    },
-    {
-      "id": "masc-punk",
-      "name": "Punk",
-      "gender": "masculine",
-      "model": "Male/Punk",
-      "shirt": [
-        "Body:White"
-      ],
-      "hair": [
-        "Head:Red",
-        "Head:Red_Dark"
-      ],
-      "brows": [
-        "Head:Eyebrows"
-      ]
-    },
-    {
-      "id": "masc-king",
-      "name": "King",
-      "gender": "masculine",
-      "model": "Male/King",
-      "shirt": [
-        "Body:Blue"
-      ],
-      "hair": [
-        "Head:Hair_White"
-      ],
-      "brows": []
-    },
-    {
       "id": "fem-casual",
-      "name": "Casual Top",
+      "name": "Casual",
       "gender": "feminine",
       "model": "Female/Casual",
       "shirt": [
@@ -176,62 +104,6 @@
       "brows": []
     },
     {
-      "id": "fem-adventurer",
-      "name": "Explorer",
-      "gender": "feminine",
-      "model": "Female/Adventurer",
-      "shirt": [
-        "Body:Green",
-        "Body:LightGreen"
-      ],
-      "hair": [
-        "Head:Hair_Brown"
-      ],
-      "brows": [],
-      "fillLegs": true
-    },
-    {
-      "id": "fem-worker",
-      "name": "Maintenance",
-      "gender": "feminine",
-      "model": "Female/Worker",
-      "shirt": [
-        "Body:Worker_Vest"
-      ],
-      "hair": [
-        "Head:DarkBrown"
-      ],
-      "brows": []
-    },
-    {
-      "id": "fem-soldier",
-      "name": "Cadet",
-      "gender": "feminine",
-      "model": "Female/Soldier",
-      "shirt": [
-        "Body:Swat"
-      ],
-      "hair": [
-        "Head:Hair_Brown"
-      ],
-      "brows": [],
-      "fillLegs": true
-    },
-    {
-      "id": "fem-scifi",
-      "name": "Sci-Fi",
-      "gender": "feminine",
-      "model": "Female/SciFi",
-      "shirt": [
-        "Body:Blue"
-      ],
-      "hair": [
-        "Head:Hair_Black"
-      ],
-      "brows": [],
-      "fillLegs": true
-    },
-    {
       "id": "fem-punk",
       "name": "Punk",
       "gender": "feminine",
@@ -242,36 +114,6 @@
       "hair": [
         "Head:Pink",
         "Head:Hair_Brown"
-      ],
-      "brows": [],
-      "fillLegs": true
-    },
-    {
-      "id": "fem-medieval",
-      "name": "Medieval",
-      "gender": "feminine",
-      "model": "Female/Medieval",
-      "shirt": [
-        "Body:DarkBrown"
-      ],
-      "hair": [
-        "Head:White"
-      ],
-      "brows": [],
-      "fillLegs": true
-    },
-    {
-      "id": "fem-witch",
-      "name": "Witch",
-      "gender": "feminine",
-      "model": "Female/Witch",
-      "shirt": [
-        "Body:Purple",
-        "Legs:Purple",
-        "Head:Purple"
-      ],
-      "hair": [
-        "Head:Hair_Black"
       ],
       "brows": [],
       "fillLegs": true
