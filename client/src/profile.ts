@@ -26,7 +26,7 @@ export interface LookDef {
   fillLegs?: boolean;
 }
 
-export interface HairStyleDef { id: string; name: string; gender: Gender | "both"; donor?: string; parts?: string[]; cut?: "beard" | "rest" | "rest-nape" | "rest-sideburns" }
+export interface HairStyleDef { id: string; name: string; gender: Gender | "both"; donor?: string; parts?: string[]; cut?: "beard" | "rest" | "rest-nape" | "rest-sideburns"; /** materials of a mohawk crest, removed under hats */ crest?: string[] }
 export interface FacialHairDef { id: string; name: string; donor?: string; parts?: string[]; cut?: "beard" | "rest" | "rest-nape" | "rest-sideburns" }
 export interface HatDef { id: string; name: string; donors?: Partial<Record<Gender, string>>; parts?: string[] }
 export interface GlassesDef { id: string; name: string; proc?: "round" }

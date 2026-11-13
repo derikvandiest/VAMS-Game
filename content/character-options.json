@@ -255,7 +255,10 @@
         "Head:Pink",
         "Head:Hair_Brown"
       ],
-      "cut": "rest-sideburns"
+      "cut": "rest-sideburns",
+      "crest": [
+        "Pink"
+      ]
     },
     {
       "id": "f-scifi",
@@ -321,7 +324,10 @@
         "Head:Red",
         "Head:Red_Dark"
       ],
-      "cut": "rest-nape"
+      "cut": "rest-nape",
+      "crest": [
+        "Red"
+      ]
     },
     {
       "id": "m-king",

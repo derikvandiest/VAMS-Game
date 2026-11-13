@@ -610,7 +610,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
    * Tall hairstyles (spikes, a mohawk) would poke through a hat. While a hat is worn, squash the hair that
    * rises above the crown so it stays underneath; restore the original shape when the hat comes off.
    */
-  function fitHairUnderHat(hair: THREE.Object3D[], hat: THREE.Object3D[] | null): void {
+  function fitHairUnderHat(hair: THREE.Object3D[], hat: THREE.Object3D[] | null, crest?: string[]): void {
     let limit = Infinity;
     for (const o of hat ?? []) {
       const geo = (o as THREE.Mesh).geometry;
@@ -640,6 +640,26 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
         pos.setZ(v, (pos.getZ(v) - 0.04) * shrink + 0.04);
       }
       pos.needsUpdate = true;
+      // Whatever still reaches above the crown (a mohawk crest, tall spikes) is cut away: under a hat it
+      // could only show through it.
+      const idx = geo.getIndex();
+      const matName = (Array.isArray(m.material) ? m.material[0] : m.material)?.name ?? "";
+      const isCrest = !!crest?.includes(matName);
+      if (idx) {
+        const keep: number[] = [];
+        const orig0 = orig.getAttribute("position");
+        for (let t = 0; t < idx.count; t += 3) {
+          const a2 = idx.getX(t);
+          const b2 = idx.getX(t + 1);
+          const c2 = idx.getX(t + 2);
+          // a mohawk crest under a hat has nowhere to go: drop it entirely (measured on the unsquashed hair)
+          if (isCrest && (Math.abs(orig0.getX(a2)) + Math.abs(orig0.getX(b2)) + Math.abs(orig0.getX(c2))) / 3 < 0.045) continue;
+          if (Math.max(pos.getY(a2), pos.getY(b2), pos.getY(c2)) <= limit - 0.005) keep.push(a2, b2, c2);
+        }
+        geo.setIndex(keep);
+        geo.clearGroups();
+        if (Array.isArray(m.material)) geo.addGroup(0, keep.length, 0);
+      }
       m.geometry = geo;
     }
   }
@@ -675,7 +695,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     const hatObjs = setSlot("hat", hat.id === "none" ? "" : L(hat.id), () =>
       growOverHair(borrow(hat.donors![g]!, hat.parts ?? [], () => "fixed"))
     );
-    fitHairUnderHat(hairObjs, hatObjs.length > 0 ? hatObjs : null);
+    fitHairUnderHat(hairObjs, hatObjs.length > 0 ? hatObjs : null, hair.crest);
 
     const gl = getGlasses(p.glasses);
     setSlot("glasses", gl.proc ? L(gl.id) : "", () => buildOnHead(gl.proc!));
