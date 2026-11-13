@@ -5606,9 +5606,9 @@ export function startPlaceholderScene(
     tlRight.position.set(-2.16, 0.58, -0.65);
 
     const driverSeat = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.38, 0.44), interiorMat);
-    driverSeat.position.set(-0.15, 0.40, 0.38);
+    driverSeat.position.set(-0.15, 0.40, -0.38);
     const steerWheel = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.03, 8, 16), trimMat);
-    steerWheel.position.set(0.24, 0.82, 0.38);
+    steerWheel.position.set(0.24, 0.82, -0.38);
     steerWheel.rotation.y = Math.PI / 2;
     steerWheel.rotation.x = -Math.PI / 6;
 
@@ -5638,7 +5638,7 @@ export function startPlaceholderScene(
       maxSpeed: 11.5,
       accel: 9.0,
       tireRadius: 0.34,
-      driverSeatPos: new THREE.Vector3(-0.15, 0.22, 0.38),
+      driverSeatPos: new THREE.Vector3(-0.15, 0.22, -0.38),
       bumperFront: 2.18,
       bumperRear: 2.18,
       collisionRadius: 2.3,
@@ -5710,9 +5710,9 @@ export function startPlaceholderScene(
     tlRight.position.set(-2.28, 0.80, -0.72);
 
     const driverSeat = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.40, 0.46), interiorMat);
-    driverSeat.position.set(-0.10, 0.48, 0.42);
+    driverSeat.position.set(-0.10, 0.48, -0.42);
     const steerWheel = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.035, 8, 16), trimMat);
-    steerWheel.position.set(0.30, 0.96, 0.42);
+    steerWheel.position.set(0.30, 0.96, -0.42);
     steerWheel.rotation.y = Math.PI / 2;
     steerWheel.rotation.x = -Math.PI / 6;
 
@@ -5742,7 +5742,7 @@ export function startPlaceholderScene(
       maxSpeed: 11.0,
       accel: 8.5,
       tireRadius: 0.40,
-      driverSeatPos: new THREE.Vector3(-0.10, 0.32, 0.42),
+      driverSeatPos: new THREE.Vector3(-0.10, 0.32, -0.42),
       bumperFront: 2.32,
       bumperRear: 2.30,
       collisionRadius: 2.45,
@@ -5783,9 +5783,9 @@ export function startPlaceholderScene(
     rearLightBar.position.set(-2.20, 0.58, 0);
 
     const driverSeat = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.38, 0.44), interiorMat);
-    driverSeat.position.set(-0.12, 0.38, 0.38);
+    driverSeat.position.set(-0.12, 0.38, -0.38);
     const steerYoke = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.26), trimMat);
-    steerYoke.position.set(0.24, 0.78, 0.38);
+    steerYoke.position.set(0.24, 0.78, -0.38);
     steerYoke.rotation.x = -Math.PI / 6;
 
     car.add(body, undercarriage, frontLightBar, canopy, spoiler, rearLightBar, driverSeat, steerYoke);
@@ -5814,7 +5814,7 @@ export function startPlaceholderScene(
       maxSpeed: 13.5,
       accel: 13.0,
       tireRadius: 0.34,
-      driverSeatPos: new THREE.Vector3(-0.12, 0.20, 0.38),
+      driverSeatPos: new THREE.Vector3(-0.12, 0.20, -0.38),
       bumperFront: 2.22,
       bumperRear: 2.20,
       collisionRadius: 2.35,
@@ -5869,9 +5869,9 @@ export function startPlaceholderScene(
     tlRight.position.set(-1.73, 0.62, -0.60);
 
     const driverSeat = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.36, 0.40), interiorMat);
-    driverSeat.position.set(-0.10, 0.36, 0.32);
+    driverSeat.position.set(-0.10, 0.36, -0.32);
     const steerWheel = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.025, 8, 16), trimMat);
-    steerWheel.position.set(0.20, 0.76, 0.32);
+    steerWheel.position.set(0.20, 0.76, -0.32);
     steerWheel.rotation.y = Math.PI / 2;
     steerWheel.rotation.x = -Math.PI / 6;
 
@@ -5901,7 +5901,7 @@ export function startPlaceholderScene(
       maxSpeed: 11.2,
       accel: 9.5,
       tireRadius: 0.30,
-      driverSeatPos: new THREE.Vector3(-0.10, 0.20, 0.32),
+      driverSeatPos: new THREE.Vector3(-0.10, 0.20, -0.32),
       bumperFront: 1.75,
       bumperRear: 1.72,
       collisionRadius: 1.9,
@@ -6021,9 +6021,9 @@ export function startPlaceholderScene(
     rearStepBumper.position.set(-2.72, 0.35, 0);
 
     const driverSeat = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.44, 0.48), interiorMat);
-    driverSeat.position.set(0.45, 0.65, 0.45);
+    driverSeat.position.set(0.45, 0.65, -0.45);
     const steerWheel = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.035, 8, 16), trimMat);
-    steerWheel.position.set(0.85, 1.15, 0.45);
+    steerWheel.position.set(0.85, 1.15, -0.45);
     steerWheel.rotation.y = Math.PI / 2;
     steerWheel.rotation.x = -Math.PI / 4;
 
@@ -6059,7 +6059,7 @@ export function startPlaceholderScene(
       maxSpeed: 10.5,
       accel: 7.2,
       tireRadius: 0.38,
-      driverSeatPos: new THREE.Vector3(0.45, 0.44, 0.45),
+      driverSeatPos: new THREE.Vector3(0.45, 0.44, -0.45),
       bumperFront: 2.72,
       bumperRear: 2.70,
       collisionRadius: 2.75,
@@ -6781,6 +6781,17 @@ export function startPlaceholderScene(
     }, 200);
   }
 
+  /** On entering the MPR the character and the camera start out facing Mr. Van Diest (the camera sits behind the player). */
+  function faceMrVanDiest(): void {
+    const target = NPCS.find((n) => n.room === "mpr");
+    if (!target) return;
+    const dx = target.x - player.position.x;
+    const dz = target.z - player.position.z;
+    player.rotation.y = Math.atan2(dx, dz); // the character looks at him
+    // the camera is placed on the opposite side of the player from him: camera = player + (sin a, cos a) * distance
+    camAngle = Math.atan2(-dx, -dz);
+  }
+
   function enterMpr(source: "parking" | "courtyard" = "courtyard"): void {
     if (drivingCar) exitCar();
     if (seatedChair) standUp();
@@ -6797,7 +6808,7 @@ export function startPlaceholderScene(
         player.position.set(MPR_SPAWN_X, 0, MPR_SPAWN_Z);
         player.rotation.y = 0.55; // Face South-East toward tables & presentation area
       }
-      camAngle = 0.25; // Look South-East overlooking tables
+      faceMrVanDiest();
       camElevation = 7.5;
       camDistance = 12.0;
       renderer.setClearColor(0x0f172a, 1);
@@ -6894,8 +6905,7 @@ export function startPlaceholderScene(
       obj.visible = false;
     }
     player.position.set(MPR_SPAWN_X, 0, MPR_SPAWN_Z);
-    player.rotation.y = 0.55;
-    camAngle = 0.25;
+    faceMrVanDiest();
     camElevation = 7.5;
     camDistance = 12.0;
     renderer.setClearColor(0x0f172a, 1);
@@ -7052,11 +7062,11 @@ export function startPlaceholderScene(
     scene.add(player);
     player.scale.setScalar(1.0);
     const exitDist = (drivingCar.collisionRadius || 2.2) * 0.85;
-    const sideOffset = new THREE.Vector3(0, 0, exitDist).applyAxisAngle(new THREE.Vector3(0, 1, 0), drivingCar.group.rotation.y);
+    const sideOffset = new THREE.Vector3(0, 0, -exitDist).applyAxisAngle(new THREE.Vector3(0, 1, 0), drivingCar.group.rotation.y);
     let exitX = drivingCar.group.position.x + sideOffset.x;
     let exitZ = drivingCar.group.position.z + sideOffset.z;
     if (collides(exitX, exitZ, 0)) {
-      const oppOffset = new THREE.Vector3(0, 0, -exitDist).applyAxisAngle(new THREE.Vector3(0, 1, 0), drivingCar.group.rotation.y);
+      const oppOffset = new THREE.Vector3(0, 0, exitDist).applyAxisAngle(new THREE.Vector3(0, 1, 0), drivingCar.group.rotation.y);
       exitX = drivingCar.group.position.x + oppOffset.x;
       exitZ = drivingCar.group.position.z + oppOffset.z;
       if (collides(exitX, exitZ, 0)) {
