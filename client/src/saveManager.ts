@@ -244,6 +244,7 @@ export function completeObjective(
     playerTransform: currentTransform,
   });
 
+  window.dispatchEvent(new CustomEvent("eld-objective-complete", { detail: { id: objectiveId } }));
   const objTitle = def ? def.title : "Objective";
   showSaveToast(`Objective Completed: ${objTitle}! Progress Saved.`);
   return { completed: true, stampsCount: newStampsCount, alreadyDone: false };

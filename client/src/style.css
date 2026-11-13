@@ -1868,6 +1868,8 @@ body {
 }
 .welcome-card {
   max-width: 560px;
+  max-height: 92vh;
+  overflow-y: auto;
   text-align: left;
   padding: 28px 32px 22px;
 }

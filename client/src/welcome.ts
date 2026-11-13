@@ -7,7 +7,12 @@ const STEPS: Array<{ icon: string; title: string; text: string }> = [
   {
     icon: "🏫",
     title: "Visit every classroom",
-    text: "There are 16 classrooms. Go to each one and complete its assignment. You can do them in any order, and the objective box at the top shows your progress.",
+    text: "Every homeroom classroom has an assignment: 16 in all. Go to each one and complete its assignment, in any order. The objective box at the top shows your progress.",
+  },
+  {
+    icon: "✨",
+    title: "Look for the glowing doors",
+    text: "When you finish a classroom's assignment, the entrance door to that room glows bright yellow, so you can see which rooms are done.",
   },
   {
     icon: "📝",

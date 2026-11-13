@@ -3,6 +3,7 @@ import layout from "../../content/layout.json";
 import classroomsData from "../../content/classrooms.json";
 import officeSignUrl from "./assets/office_sign.png";
 import { showWelcomePopup } from "./welcome";
+import { loadSlot, getActiveSlotId } from "./saveManager";
 import {
   buildMprRoom,
   MPR_ROOM_X,
@@ -5236,6 +5237,7 @@ export function startPlaceholderScene(
   });
   const glassDoorHandleMaterial = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.2, metalness: 0.9 });
   const DOOR_HEIGHT = 2.6;
+  const doorParts = new Map<string, { frame: THREE.Mesh; panel: THREE.Mesh; x: number; y: number; z: number }>();
   for (const door of doors) {
     const isDouble = door.id.includes("double");
     const isMpr = door.id.startsWith("mpr");
@@ -5279,6 +5281,7 @@ export function startPlaceholderScene(
       const panel = new THREE.Mesh(new THREE.BoxGeometry(pw, DOOR_HEIGHT - 0.2, pd), panelMat);
       panel.position.set(door.x, dy, door.z);
       scene.add(panel);
+      doorParts.set(door.id, { frame, panel, x: door.x, y: dy, z: door.z });
 
       const gw = door.axis === "z" ? 0.38 : 0.8;
       const gd = door.axis === "z" ? 0.8 : 0.38;
@@ -7437,8 +7440,72 @@ export function startPlaceholderScene(
   const clock = new THREE.Clock();
   let walkTime = 0;
 
+  // --- Completed classrooms: the entrance door glows bright yellow ----------
+  // Each of the 16 homeroom classrooms has an assignment. When it is done, its door lights up so the player
+  // (and everyone who passes) can see at a glance which rooms are finished.
+  const glowFrameMat = new THREE.MeshStandardMaterial({ color: 0xffd400, emissive: 0xffc400, emissiveIntensity: 2.2, roughness: 0.4 });
+  const glowPanelMat = new THREE.MeshStandardMaterial({ color: 0xffe14d, emissive: 0xffd000, emissiveIntensity: 1.8, roughness: 0.4 });
+  const glowTexture = (() => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 128;
+    const g = c.getContext("2d")!;
+    const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    grad.addColorStop(0, "rgba(255,230,80,1)");
+    grad.addColorStop(0.35, "rgba(255,210,0,0.55)");
+    grad.addColorStop(1, "rgba(255,200,0,0)");
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(c);
+  })();
+  const glowingDoors = new Map<string, { halo: THREE.Sprite; origFrame: THREE.Material | THREE.Material[]; origPanel: THREE.Material | THREE.Material[] }>();
+
+  function setDoorGlow(roomId: string, on: boolean): void {
+    const parts = doorParts.get(roomId);
+    if (!parts) return;
+    const cur = glowingDoors.get(roomId);
+    if (on && !cur) {
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture, color: 0xffffff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
+      halo.position.set(parts.x, parts.y, parts.z);
+      halo.scale.set(5.2, 5.6, 1);
+      scene.add(halo);
+      glowingDoors.set(roomId, { halo, origFrame: parts.frame.material, origPanel: parts.panel.material });
+      parts.frame.material = glowFrameMat;
+      parts.panel.material = glowPanelMat;
+    } else if (!on && cur) {
+      scene.remove(cur.halo);
+      parts.frame.material = cur.origFrame;
+      parts.panel.material = cur.origPanel;
+      glowingDoors.delete(roomId);
+    }
+  }
+
+  /** Objective id of a stamp classroom, e.g. "5th-csun-humanities" -> "obj_5th_csun" */
+  const roomIdByObjective = new Map<string, string>();
+  for (const c of classroomsData.classrooms as Array<{ id: string; type: string; grade?: number; homeroom?: string }>) {
+    if (c.type === "stamp" && c.grade && c.homeroom) roomIdByObjective.set(`obj_${c.grade}th_${c.homeroom.toLowerCase()}`, c.id);
+  }
+  function applyCompletedDoors(): void {
+    const slot = loadSlot(getActiveSlotId());
+    for (const id of slot?.objectives.completedIds ?? []) {
+      const room = roomIdByObjective.get(id);
+      if (room) setDoorGlow(room, true);
+    }
+  }
+  const onObjectiveComplete = (e: Event): void => {
+    const room = roomIdByObjective.get((e as CustomEvent<{ id: string }>).detail?.id);
+    if (room) setDoorGlow(room, true);
+  };
+  window.addEventListener("eld-objective-complete", onObjectiveComplete);
+  applyCompletedDoors();
+
   renderer.setAnimationLoop(() => {
     const dt = Math.min(clock.getDelta(), 0.1); // clamp to avoid huge jumps
+    if (glowingDoors.size) {
+      const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.004);
+      glowFrameMat.emissiveIntensity = 1.8 + 1.0 * pulse;
+      glowPanelMat.emissiveIntensity = 1.4 + 0.9 * pulse;
+      for (const g of glowingDoors.values()) (g.halo.material as THREE.SpriteMaterial).opacity = 0.65 + 0.3 * pulse;
+    }
     let inRight = 0;
     let inForward = 0;
     if (keys.has("w") || keys.has("arrowup")) inForward += 1;
@@ -8355,6 +8422,7 @@ export function startPlaceholderScene(
   function stop(): void {
     renderer.setAnimationLoop(null);
     window.removeEventListener("resize", resize);
+    window.removeEventListener("eld-objective-complete", onObjectiveComplete);
     if (renderer.domElement.parentElement) {
       renderer.domElement.parentElement.removeChild(renderer.domElement);
     }
