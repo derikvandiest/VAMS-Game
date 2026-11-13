@@ -12,6 +12,8 @@ export interface DialogOption {
   next?: string;
   /** Shows a gold "!" next to the option until this objective is complete */
   markerObjective?: string;
+  /** Reported to the caller (onEvent) when chosen, then the conversation ends */
+  action?: string;
 }
 
 export interface DialogNode {
@@ -108,6 +110,11 @@ export function showDialog(speaker: DialogSpeaker, tree: DialogTree, onClose?: (
   const choose = (i: number): void => {
     const opt = current.options[i];
     if (!opt) return;
+    if (opt.action) {
+      onEvent?.(opt.action);
+      close();
+      return;
+    }
     if (!opt.next || !tree.nodes[opt.next]) {
       close();
       return;

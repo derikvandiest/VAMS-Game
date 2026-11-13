@@ -9,6 +9,7 @@ import { Elevator } from "./elevator";
 import { showDialog } from "./dialog";
 import { confirmAction } from "./confirm";
 import { assignmentDialog } from "./assignments";
+import { eldDoorDialog } from "./eldTurnIn";
 import { roomById } from "./rooms";
 import { startPresence } from "./presence";
 import { getSocket, isMultiplayerActive } from "./net";
@@ -6815,6 +6816,18 @@ export function startPlaceholderScene(
     }, 200);
   }
 
+  /** The ELD classroom door: Mr. Van Diest collects the assignments (instead of just walking in) */
+  function openEldDoor(): void {
+    const slot = loadSlot(getActiveSlotId());
+    const done = slot?.objectives.stampsCount ?? 0;
+    const turnedIn = !!slot?.objectives.completedIds.includes("obj_turn_in");
+    const { speaker, tree } = eldDoorDialog(done, turnedIn);
+    showDialog(speaker, tree, undefined, (event) => {
+      if (event === "turn-in") (window as any).__completeObjective?.("obj_turn_in");
+      else if (event === "enter-eld") enterClassroom("eld");
+    });
+  }
+
   // --- Classroom assignment: walk up to the whiteboard and press E ---------------------------------
   function nearWhiteboard(): boolean {
     if (!currentClassroom || seatedChair || drivingCar) return false;
@@ -7440,7 +7453,8 @@ export function startPlaceholderScene(
           if (inst.campusDoor.floor === pFloor) {
             const d = Math.hypot(player.position.x - inst.campusDoor.x, player.position.z - inst.campusDoor.z);
             if (d <= 2.4) {
-              enterClassroom(cId);
+              if (cId === "eld") openEldDoor();
+              else enterClassroom(cId);
               return;
             }
           }
@@ -8278,7 +8292,7 @@ export function startPlaceholderScene(
             if (inst.campusDoor.floor === pFloor) {
               const d = Math.hypot(player.position.x - inst.campusDoor.x, player.position.z - inst.campusDoor.z);
               if (d <= 2.4) {
-                wanted = `Press E to enter ${inst.data.label}`;
+                wanted = cId === "eld" ? "Press E to speak with Mr. Van Diest at the ELD door 🚪" : `Press E to enter ${inst.data.label}`;
                 break;
               }
             }
