@@ -4563,7 +4563,7 @@ export function startPlaceholderScene(
     g.fillRect(150, 214, 86, 42);
     g.fillStyle = "rgba(190,60,60,0.55)";
     g.fillRect(168, 120, 40, 52);
-    // someone is in the room: a silhouette moving about behind the glass (the blinds cover its upper part)
+    // someone is in the room: a silhouette moving about behind the glass (the blinds may cover part of it)
     if (person > 0) {
       const px = person === 1 ? 82 : 176;
       g.fillStyle = "rgba(38,30,26,0.9)";
@@ -4577,17 +4577,17 @@ export function startPlaceholderScene(
       g.closePath();
       g.fill();
     }
-    // venetian blinds drawn down from the top to the given fraction
-    const bottom = Math.round(256 * blinds);
-    for (let y = 0; y < bottom; y += 9) {
-      g.fillStyle = (y / 9) % 2 === 0 ? (lit ? "#f3ead0" : "#d9d1ba") : (lit ? "#cdbf97" : "#a39b85");
-      g.fillRect(0, y, 256, 7);
+    // vertical blinds drawn across from the left side to the given fraction (they open and close horizontally)
+    const edge = Math.round(256 * blinds);
+    for (let x = 0; x < edge; x += 9) {
+      g.fillStyle = (x / 9) % 2 === 0 ? (lit ? "#f3ead0" : "#d9d1ba") : (lit ? "#cdbf97" : "#a39b85");
+      g.fillRect(x, 0, 7, 256);
       g.fillStyle = "rgba(0,0,0,0.18)";
-      g.fillRect(0, y + 7, 256, 2);
+      g.fillRect(x + 7, 0, 2, 256);
     }
     if (blinds > 0) {
-      g.fillStyle = "#a59e8b"; // bottom rail
-      g.fillRect(0, bottom, 256, 6);
+      g.fillStyle = "#a59e8b"; // leading edge of the stack
+      g.fillRect(edge, 0, 6, 256);
     }
     const t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace;
