@@ -1861,3 +1861,83 @@ body {
 .cc-sw-auto { display: inline-flex; align-items: center; justify-content: center; background: #1b2540; color: #c9d3ee; font-size: 12px; font-weight: 800; }
 .cc-item-glasses img, .cc-item-hat img, .cc-item-hair img, .cc-item-facial img { object-fit: cover; object-position: center 14%; height: 64px; width: 64px; border-radius: 8px; }
 .cc-item-shoes img { object-fit: cover; object-position: center 70%; height: 64px; width: 64px; border-radius: 8px; }
+
+/* Welcome pop-up (objective 1: sit at a table in the MPR) */
+.welcome-overlay {
+  z-index: 130;
+}
+.welcome-card {
+  max-width: 560px;
+  text-align: left;
+  padding: 28px 32px 22px;
+}
+.welcome-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  margin-bottom: 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #800020, #991b1b);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+.welcome-title {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+.welcome-intro {
+  margin: 0 0 14px;
+  color: #cbd5e1;
+  font-size: 15px;
+}
+.welcome-steps {
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.welcome-steps li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.welcome-step-icon {
+  font-size: 24px;
+  line-height: 1.2;
+}
+.welcome-steps b {
+  display: block;
+  color: #fff;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+.welcome-steps p {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.welcome-card .modal-actions {
+  justify-content: center;
+}
+.welcome-hint {
+  margin: 10px 0 0;
+  text-align: center;
+  color: #6b7280;
+  font-size: 12px;
+}
+@media (max-width: 520px) {
+  .welcome-card {
+    padding: 20px 18px 16px;
+  }
+  .welcome-title {
+    font-size: 20px;
+  }
+}

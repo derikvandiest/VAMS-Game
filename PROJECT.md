@@ -181,6 +181,8 @@ Each grade (5th through 8th) has **four classes**, one for each of CSUN, LMU, UC
 - Also shows the player’s name and homeroom.
 
 ### 5.8 Objectives list (HUD, top-left)
+**Objective 1 [DECIDED, implemented]:** go to the MPR and take a seat at one of the tables. The first time the player sits at an MPR table, a **welcome pop-up** appears ("Welcome to the first ELD PD at VAMS!") explaining the rest of the game: complete the assignment in all 16 classrooms in any order, turn in the work in the ELD classroom, then, after the completed message, drive away from the parking lot in a car. The pop-up text lives in `client/src/welcome.ts` and is shown once per save. The HUD box shows the current step (MPR seat, then n / 16 assignments, then turn-in, then leave).
+
 Always visible in the **top-left corner**. Shows:
 1. “Complete all 16 classrooms and earn a stamp” — with progress (e.g., 7 / 16).
 2. After 16 stamps: “Bring your report card to the ELD classroom and turn it in to Mr. Van Diest.”

@@ -15,6 +15,9 @@ export interface ObjectiveDef {
 }
 
 export const GAME_OBJECTIVES: ObjectiveDef[] = [
+  // Welcome
+  { id: "obj_mpr_seat", title: "Welcome to the PD", roomName: "Multi-Purpose Room (MPR)", description: "Go to the MPR and take a seat at one of the tables", isStamp: false },
+
   // 5th Grade
   { id: "obj_5th_csun", title: "5th Grade CSUN", roomName: "5th Grade CSUN (History)", description: "Visit 5th Grade CSUN and earn stamp", isStamp: true },
   { id: "obj_5th_lmu", title: "5th Grade LMU", roomName: "5th Grade LMU (Math)", description: "Visit 5th Grade LMU and earn stamp", isStamp: true },

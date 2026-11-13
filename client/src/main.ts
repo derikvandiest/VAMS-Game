@@ -8,7 +8,6 @@ import {
   getActiveSlotId,
   loadSlot,
   completeObjective,
-  GAME_OBJECTIVES,
 } from "./saveManager";
 import { saveCharacterProfile } from "./profile";
 import { StartMenu } from "./startMenu";
@@ -64,15 +63,21 @@ setHudVisibility(false);
 function updateObjectiveHud(slot: SaveSlotData): void {
   const stampsEl = document.getElementById("obj-hud-stamps");
   const descEl = document.getElementById("obj-hud-desc");
+  const done = slot.objectives.completedIds;
+  const n = slot.objectives.stampsCount;
   if (stampsEl) {
-    stampsEl.textContent = `${slot.objectives.stampsCount} / 16 Stamps`;
+    stampsEl.textContent = `${n} / 16 Assignments`;
   }
   if (descEl) {
-    const currentDef = GAME_OBJECTIVES.find((o) => o.id === slot.objectives.currentObjectiveId);
-    if (currentDef) {
-      descEl.textContent = `${currentDef.roomName} — ${currentDef.description}`;
+    // The player's current step, in the order of the game
+    if (!done.includes("obj_mpr_seat")) {
+      descEl.textContent = "Go to the MPR and take a seat at one of the tables";
+    } else if (n < 16) {
+      descEl.textContent = `Complete the assignment in every classroom (${n} / 16 done)`;
+    } else if (!done.includes("obj_turn_in")) {
+      descEl.textContent = "Turn in your assignments in the ELD classroom";
     } else {
-      descEl.textContent = "Explore campus & complete teacher stamp stations";
+      descEl.textContent = "Go to the parking lot and drive away in one of the cars";
     }
   }
 }

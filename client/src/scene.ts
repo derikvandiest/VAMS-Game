@@ -2,6 +2,7 @@ import * as THREE from "three";
 import layout from "../../content/layout.json";
 import classroomsData from "../../content/classrooms.json";
 import officeSignUrl from "./assets/office_sign.png";
+import { showWelcomePopup } from "./welcome";
 import {
   buildMprRoom,
   MPR_ROOM_X,
@@ -6894,6 +6895,12 @@ export function startPlaceholderScene(
     leftElbowPivot.rotation.set(-0.62, 0.12, 0);
     rightElbowPivot.rotation.set(-0.62, -0.12, 0);
     rig.syncSkeleton?.();
+
+    // Objective 1: sitting at a table in the MPR completes it and shows the welcome pop-up (first time only)
+    if (inMprRoom && mprChairs.includes(chair)) {
+      const result = (window as any).__completeObjective?.("obj_mpr_seat") as { alreadyDone: boolean } | undefined;
+      if (result && !result.alreadyDone) showWelcomePopup();
+    }
   }
 
   function enterCar(car: DrivableCar): void {
