@@ -381,6 +381,12 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
 
       // Part name: the mesh's own name or, for multi-material meshes, its parent's
       const meshName = partName(obj);
+      // Earrings are not offered: hide them wherever a model has them
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      if (/earring/i.test(meshName) || mats.some((mm) => /earring/i.test(mm?.name ?? ""))) {
+        mesh.visible = false;
+        return;
+      }
       if (meshName.includes("_Feet")) mesh.visible = !hideBakedFeet;
       // NOTE: keep the material shape. A single-element array on a mesh without
       // geometry groups renders nothing in three.js (the original "invisible character" bug).
