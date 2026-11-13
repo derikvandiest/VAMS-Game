@@ -751,28 +751,28 @@
     {
       "id": "6th-usc-english",
       "x": -14,
-      "z": 6,
+      "z": 8,
       "axis": "z",
       "floor": 1
     },
     {
       "id": "6th-ucla-humanities",
       "x": -14,
-      "z": 11,
+      "z": 13,
       "axis": "z",
       "floor": 1
     },
     {
       "id": "6th-lmu-science",
       "x": -14,
-      "z": 26,
+      "z": 28,
       "axis": "z",
       "floor": 1
     },
     {
       "id": "6th-csun-math",
       "x": -14,
-      "z": 31,
+      "z": 33,
       "axis": "z",
       "floor": 1
     },
@@ -820,28 +820,28 @@
     },
     {
       "id": "5th-usc-science",
-      "x": 5.5,
+      "x": 9,
       "z": -2,
       "axis": "x",
       "floor": 1
     },
     {
       "id": "5th-ucla-english",
-      "x": 10.5,
+      "x": 14,
       "z": -2,
       "axis": "x",
       "floor": 1
     },
     {
       "id": "5th-lmu-math",
-      "x": 29.5,
+      "x": 29,
       "z": -2,
       "axis": "x",
       "floor": 1
     },
     {
       "id": "5th-csun-humanities",
-      "x": 34.5,
+      "x": 34,
       "z": -2,
       "axis": "x",
       "floor": 1

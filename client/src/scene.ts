@@ -4621,7 +4621,8 @@ export function startPlaceholderScene(
       const onBuilding = building === "west" ? d.axis === "z" && d.x === -14 : d.axis === "x" && d.z === -2;
       if (!onBuilding) continue;
       const c = building === "west" ? d.z : d.x;
-      if (c <= along + 0.01 && (!best || c > best.c)) best = { id: d.id, c };
+      // upstairs a window belongs to the nearest door; downstairs to the nearest one before it
+      if (upper ? !best || Math.abs(c - along) < Math.abs(best.c - along) : c <= along + 0.01 && (!best || c > best.c)) best = { id: d.id, c };
     }
     return best?.id;
   }
@@ -4744,10 +4745,12 @@ export function startPlaceholderScene(
   // - 2nd floor east: 4 large windows touching walkway
   // - 2nd floor west: 4 standard exterior windows
   // - 1st floor west: 4 horizontal rectangular windows closer to top of wall
-  const westWallZPositions = [8.5, 18.5, 28.5, 38.5];
-  for (const z of westWallZPositions) {
+  // Upstairs, from the stairs on the MPR side: window, CSUN door, LMU door, window, window, UCLA door, USC door, window
+  for (const z of [38, 23, 18, 3]) {
     addLargeWindowZ(-14, z, 1);             // 2nd floor East side (large, begins from floor touching walkway)
     addWindowZ(-30, z, -1);                  // 2nd floor West side (standard exterior)
+  }
+  for (const z of [8.5, 18.5, 28.5, 38.5]) {
     addFirstFloorHighWindowZ(-30, z, -1);   // 1st floor West side (horizontal rectangular, closer to top of wall)
   }
 
@@ -4755,10 +4758,12 @@ export function startPlaceholderScene(
   // - 2nd floor south: 4 large windows touching walkway
   // - 2nd floor north: 4 standard exterior windows
   // - 1st floor north: 4 horizontal rectangular windows closer to top of wall
-  const northWallXPositions = [8, 20, 32, 42];
-  for (const x of northWallXPositions) {
+  // Upstairs, from the stairs on the east end: window, CSUN door, LMU door, window, window, UCLA door, USC door, window
+  for (const x of [39, 24, 19, 4]) {
     addLargeWindowX(x, -2, 1);              // 2nd floor South side (large, begins from floor touching walkway)
     addWindowX(x, -20, -1);                 // 2nd floor North side (standard exterior)
+  }
+  for (const x of [8, 20, 32, 42]) {
     addFirstFloorHighWindowX(x, -20, -1);   // 1st floor North side (horizontal rectangular, closer to top of wall)
   }
 
@@ -5616,14 +5621,16 @@ export function startPlaceholderScene(
     const plaqueTex = makeDoorHeaderSignTexture(mainLabel, subLabel, inst.data.id === "learning-center");
     const plaqueMesh = createHeaderPlaqueMesh(plaqueTex, 1.42, 0.45);
 
+    // upstairs the LMU and USC signs sit on the side away from their partner door (toward the window)
+    const signSide = door.floor === 1 && /-(lmu|usc)-/.test(door.id) ? -1.75 : 1.75;
     if (door.axis === "z") {
       // West building facing east
-      plaqueMesh.position.set(-13.92, dy + 0.35, door.z + 1.75); // clear of the door frame (it is 1.0 either side)
+      plaqueMesh.position.set(-13.92, dy + 0.35, door.z + signSide); // clear of the door frame (it is 1.0 either side)
       plaqueMesh.rotation.y = Math.PI / 2;
     } else {
       // North & Office buildings facing south
       const wallZ = door.z < -5 ? -10.38 : -1.88;
-      plaqueMesh.position.set(door.x + 1.75, dy + 0.35, wallZ);
+      plaqueMesh.position.set(door.x + signSide, dy + 0.35, wallZ);
       plaqueMesh.rotation.y = 0;
     }
     scene.add(plaqueMesh);
