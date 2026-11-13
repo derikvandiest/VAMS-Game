@@ -6535,6 +6535,41 @@ export function startPlaceholderScene(
     scene.add(group);
   });
 
+  // drinking from the fountain (E): leaning in for a few seconds while the water arcs into the basin
+  const fountainDrops: THREE.Mesh[] = [];
+  const FOUNTAIN_STAND = new THREE.Vector2(-13.0, 23.4); // where a player stands to drink
+  const DRINK_TIME = 3;
+  let drinkTimer = 0;
+  let drinkElapsed = 0;
+  const nearFountain = (): boolean =>
+    !inMprRoom && !currentClassroom && !drivingCar && !seatedChair && player.position.y < 1.5 &&
+    Math.hypot(player.position.x - FOUNTAIN_STAND.x, player.position.z - FOUNTAIN_STAND.y) <= 1.7;
+  function startDrinking(): void {
+    if (bballHeld) {
+      bballHeld = false;
+      bballPos.set(player.position.x + 0.5, BASKETBALL_GROUND_Y, player.position.z);
+      bballVel.set(0, 0, 0);
+    }
+    drinkTimer = DRINK_TIME;
+    drinkElapsed = 0;
+    player.position.x = FOUNTAIN_STAND.x;
+    player.position.z = FOUNTAIN_STAND.y;
+    player.rotation.y = -Math.PI / 2; // facing the wall
+  }
+  function stopDrinking(): void {
+    if (drinkTimer <= 0 && drinkElapsed === 0) return;
+    drinkTimer = 0;
+    drinkElapsed = 0;
+    for (const d of fountainDrops) d.visible = false;
+    torsoGroup.rotation.set(0, 0, 0);
+    headGroup.rotation.set(0, 0, 0);
+    leftArmPivot.rotation.set(0, 0, 0);
+    rightArmPivot.rotation.set(0, 0, 0);
+    leftElbowPivot.rotation.set(0, 0, 0);
+    rightElbowPivot.rotation.set(0, 0, 0);
+    bodyGroup.position.set(0, 0, 0);
+  }
+
   // --- Benches against the west building's wall (orange by the 7th USC door, blue ones between UCLA and LMU),
   // and a drinking fountain on the wall past the UCLA door. The wall face is at -13.8 where the door frames stand out.
   {
@@ -6572,14 +6607,16 @@ export function startPlaceholderScene(
       }
     };
     addBench(6.7, 0xf47a20); // orange, left of the 7th USC door
-    addBench(17.5, 0x2563eb); // two blue benches in a row between the 7th UCLA and 7th LMU doors
-    addBench(19.8, 0x2563eb);
+    addBench(16.6, 0x2563eb); // two blue benches in a row (with a gap) between the 7th UCLA and 7th LMU doors
+    addBench(20.0, 0x2563eb);
 
     // Wall-mounted drinking fountain, between the blue benches and the 7th LMU door (closest to LMU)
     const FOUNTAIN_Z = 23.4;
+    const FOUNTAIN_SCALE = 1.25;
     const steel = new THREE.MeshStandardMaterial({ color: 0xc4c9d0, roughness: 0.3, metalness: 0.8 });
     const fountain = new THREE.Group();
-    fountain.position.set(-13.8, 0, FOUNTAIN_Z);
+    fountain.position.set(-13.8, -0.2, FOUNTAIN_Z);
+    fountain.scale.setScalar(FOUNTAIN_SCALE);
     const plate = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.7, 0.55), steel); // backing on the wall
     plate.position.set(0.02, 1.15, 0);
     const basin = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.14, 0.5), steel);
@@ -6593,8 +6630,18 @@ export function startPlaceholderScene(
     button.position.set(0.05, 1.25, 0.18);
     for (const m of [plate, basin, spout, button]) m.castShadow = true;
     fountain.add(plate, basin, water, spout, button);
+    // the arc of water while someone drinks: a few droplets flying out of the spout and back into the basin
+    const dropMat = new THREE.MeshBasicMaterial({ color: 0x8fd3ff, transparent: true, opacity: 0.85 });
+    const dropGeo = new THREE.SphereGeometry(0.014, 6, 5);
+    for (let i = 0; i < 14; i++) {
+      const d = new THREE.Mesh(dropGeo, dropMat);
+      d.visible = false;
+      fountain.add(d);
+      fountainDrops.push(d);
+    }
     scene.add(fountain);
-    buildingSolids.push({ x: -13.58, z: FOUNTAIN_Z, w: 0.45, d: 0.55, yBase: 0.8, yTop: 1.5 });
+    buildingSolids.push({ x: -13.8 + 0.27, z: FOUNTAIN_Z, w: 0.6, d: 0.7, yBase: 0.7, yTop: 1.5 });
+    FOUNTAIN_STAND.set(-13.0, FOUNTAIN_Z);
   }
 
   // --- Lunch cover: the red roof over the tables (layout.json `cover`, ~35x10 m
@@ -7698,6 +7745,14 @@ export function startPlaceholderScene(
         toggleVehicleGate();
         return;
       }
+      if (drinkTimer > 0) {
+        stopDrinking();
+        return;
+      }
+      if (nearFountain()) {
+        startDrinking();
+        return;
+      }
       // Check nearest chair (range: 1.8m)
       let nearestChair: ChairSlot | null = null;
       let minChairDist = 1.8;
@@ -7747,6 +7802,7 @@ export function startPlaceholderScene(
     if (seatedChair && HANDLED_KEYS.has(key) && key !== "shift") {
       standUp();
     }
+    if (drinkTimer > 0 && HANDLED_KEYS.has(key) && key !== "shift" && key !== "e") stopDrinking();
     if (HANDLED_KEYS.has(key)) {
       keys.add(key);
       e.preventDefault(); // stop the page from scrolling
@@ -8395,6 +8451,31 @@ export function startPlaceholderScene(
       rightArmPivot.rotation.set(-0.48, -0.14, -0.18);
       leftElbowPivot.rotation.set(-0.62, 0.12, 0);
       rightElbowPivot.rotation.set(-0.62, -0.12, 0);
+    } else if (drinkTimer > 0) {
+      // Drinking: lean in toward the spout while the water arcs
+      drinkTimer -= dt;
+      drinkElapsed += dt;
+      moving = false;
+      rig.setLocomotion?.(0);
+      const lean = Math.min(1, drinkElapsed / 0.45) * Math.min(1, Math.max(0, drinkTimer) / 0.3);
+      torsoGroup.rotation.set(0.62 * lean, 0, 0);
+      headGroup.rotation.set(0.25 * lean, 0, 0);
+      leftArmPivot.rotation.set(-0.5 * lean, 0, 0.2 * lean);
+      rightArmPivot.rotation.set(-0.5 * lean, 0, -0.2 * lean);
+      leftElbowPivot.rotation.set(-0.6 * lean, 0, 0);
+      rightElbowPivot.rotation.set(-0.6 * lean, 0, 0);
+      leftLegPivot.rotation.x *= 0.8;
+      rightLegPivot.rotation.x *= 0.8;
+      leftKneePivot.rotation.x *= 0.8;
+      rightKneePivot.rotation.x *= 0.8;
+      // droplets: from the spout out and down into the basin
+      for (let i = 0; i < fountainDrops.length; i++) {
+        const ph = (drinkElapsed * 1.6 + i / fountainDrops.length) % 1;
+        const d = fountainDrops[i];
+        d.visible = drinkElapsed > 0.2 && drinkTimer > 0.15;
+        d.position.set(0.1 + 0.18 * ph, 1.12 + 0.2 * Math.sin(ph * Math.PI) * 0.9 - 0.12 * ph * ph, 0.0);
+      }
+      if (drinkTimer <= 0) stopDrinking();
     } else {
       // Normal walking simulation
       const sinA = Math.sin(camAngle);
@@ -9141,6 +9222,8 @@ export function startPlaceholderScene(
         hintText = hintElev;
       } else if (distToCarResetBtn <= 2.2) {
         hintText = "Press E or Click to reset cars 🚗";
+      } else if (nearFountain()) {
+        hintText = "Press E to take a drink 💧";
       } else if (nearestChairDist <= 1.8) {
         hintText = "Press E to take a seat 🪑";
       } else if (nearestCarDist <= 3.8 && nearestCar) {
