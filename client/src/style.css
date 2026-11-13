@@ -2155,3 +2155,167 @@ body {
 .lg-other { background: #1e293b; border: 1px dashed #64748b; }
 .lg-me { background: #38bdf8; border-radius: 50% !important; }
 .map-keyhint { margin-left: auto; color: #6b7280; }
+
+/* Color wheel (character creation) */
+.cc-sw-wheel {
+  background: conic-gradient(from 0deg, #ff3b3b, #ffd43b, #51d44a, #2fd1d1, #3b6bff, #c13bff, #ff3b9a, #ff3b3b);
+  position: relative;
+}
+.cc-sw-wheel::after {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: var(--custom, #ffffff);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+}
+.cc-sw-wheel.on::after,
+.cc-sw-wheel.open::after {
+  opacity: 1;
+}
+.cc-wheel-panel {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #0f1730;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.cc-wheel {
+  width: 176px;
+  height: 176px;
+  border-radius: 50%;
+  cursor: crosshair;
+  touch-action: none;
+  flex-shrink: 0;
+}
+.cc-wheel-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.cc-wheel-preview {
+  height: 44px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+.cc-wheel-hex {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #dbe4ff;
+}
+.cc-wheel-label {
+  font-size: 12px;
+  color: #9fb0d8;
+  font-weight: 700;
+}
+.cc-wheel-side input[type="range"] {
+  width: 100%;
+  accent-color: #6d8dff;
+}
+@media (max-width: 520px) {
+  .cc-wheel-panel {
+    flex-direction: column;
+  }
+}
+
+/* Dialogue options (numbered replies) and the survey QR code */
+.dialog-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+.dialog-opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f3f4f6;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+}
+.dialog-opt:hover,
+.dialog-opt:focus-visible {
+  background: rgba(153, 27, 27, 0.35);
+  border-color: #d4a017;
+  outline: none;
+  transform: translateX(2px);
+}
+.dialog-num {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #d4a017;
+  color: #1f1300;
+  font-weight: 800;
+  font-size: 14px;
+}
+.dialog-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 4px;
+}
+.dialog-qr-ph {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  padding: 8px;
+  background: #fff;
+  border-radius: 12px;
+  border: 2px dashed #9ca3af;
+}
+.dialog-qr-svg,
+.dialog-qr-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.dialog-qr-img {
+  width: 170px;
+  height: 170px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px;
+  object-fit: contain;
+}
+.dialog-qr-badge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-12deg);
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(17, 24, 39, 0.9);
+  color: #facc15;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+.dialog-qr-cap {
+  font-size: 13px;
+  color: #cbd5e1;
+  font-weight: 600;
+}

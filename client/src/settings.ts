@@ -15,6 +15,7 @@ import { setLocalPlayerName } from "./chat";
 import { createAvatarRig, AvatarRig, preloadAvatarAssets } from "./avatar";
 import {
   ACCENT_COLORS,
+  OUTFIT_COLORS,
   CharacterProfile,
   Gender,
   Homeroom,
@@ -153,7 +154,7 @@ export function initSettingsModal(onSave?: SaveCb): void {
         </div>
         <div class="cc-scroll" id="cc-body"></div>
         <div class="cc-homeroom-bar">
-          <div class="cc-label">Homeroom <span class="cc-hint">(colors your shirt)</span></div>
+          <div class="cc-label">Homeroom <span class="cc-hint">(shown on your name badge)</span></div>
           <div class="cc-homerooms" id="cc-homeroom" role="radiogroup" aria-label="Homeroom"></div>
         </div>
         <footer class="cc-foot">
@@ -285,6 +286,133 @@ export function initSettingsModal(onSave?: SaveCb): void {
     return `<div class="cc-swatches" role="radiogroup">${extra}${chips}</div>`;
   }
 
+  // ---- Color wheel ---------------------------------------------------------------------------
+  // Every color setting (outfit, hair, glasses, shoes) has preset swatches plus a "custom" swatch that opens
+  // a color wheel (hue around, saturation outward) with a brightness slider.
+  let wheelKey: string | null = null;
+  let wheel = { h: 0, s: 1, v: 1 };
+  const WHEEL = 176;
+
+  function hsvToHex(h: number, s: number, v: number): string {
+    const f = (n: number): number => {
+      const k = (n + h / 60) % 6;
+      return v - v * s * Math.max(0, Math.min(k, 4 - k, 1));
+    };
+    const to = (x: number): string => Math.round(x * 255).toString(16).padStart(2, "0");
+    return `#${to(f(5))}${to(f(3))}${to(f(1))}`;
+  }
+  function hexToHsv(hex: string): { h: number; s: number; v: number } {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    const max = Math.max(r, g, b);
+    const d = max - Math.min(r, g, b);
+    let h = 0;
+    if (d > 0) {
+      if (max === r) h = 60 * (((g - b) / d + 6) % 6);
+      else if (max === g) h = 60 * ((b - r) / d + 2);
+      else h = 60 * ((r - g) / d + 4);
+    }
+    return { h, s: max === 0 ? 0 : d / max, v: max };
+  }
+
+  /** Preset swatches + the custom (wheel) swatch, with the wheel panel below when it is open for this key. */
+  function colorControl(key: string, colors: Array<{ name: string; hex: string }>, selected: string, extra = ""): string {
+    const isPreset = colors.some((c) => c.hex.toLowerCase() === selected.toLowerCase());
+    const custom = `<button type="button" class="cc-sw cc-sw-wheel${!isPreset ? " on" : ""}${wheelKey === key ? " open" : ""}" data-wheel-toggle="${key}" title="Custom color" aria-label="Custom color wheel" aria-expanded="${wheelKey === key}"${
+      !isPreset ? ` style="--custom:${selected}"` : ""
+    }></button>`;
+    const chips = colors
+      .map((c) => radioBtn(`data-color="${key}:${c.hex}" style="background:${c.hex}"`, c.hex.toLowerCase() === selected.toLowerCase(), "cc-sw", "", c.name))
+      .join("");
+    const panel =
+      wheelKey === key
+        ? `<div class="cc-wheel-panel">
+             <canvas class="cc-wheel" id="cc-wheel" width="${WHEEL}" height="${WHEEL}" aria-label="Color wheel"></canvas>
+             <div class="cc-wheel-side">
+               <div class="cc-wheel-preview" id="cc-wheel-preview" style="background:${selected}"></div>
+               <div class="cc-wheel-hex" id="cc-wheel-hex">${selected.toUpperCase()}</div>
+               <label class="cc-wheel-label" for="cc-wheel-v">Brightness</label>
+               <input type="range" id="cc-wheel-v" min="0" max="100" value="${Math.round(wheel.v * 100)}" />
+             </div>
+           </div>`
+        : "";
+    return `<div class="cc-swatches" role="radiogroup">${extra}${chips}${custom}</div>${panel}`;
+  }
+
+  function drawWheel(): void {
+    const c = overlay.querySelector<HTMLCanvasElement>("#cc-wheel");
+    if (!c) return;
+    const ctx = c.getContext("2d")!;
+    const img = ctx.createImageData(WHEEL, WHEEL);
+    const R = WHEEL / 2;
+    for (let y = 0; y < WHEEL; y++) {
+      for (let x = 0; x < WHEEL; x++) {
+        const dx = x + 0.5 - R;
+        const dy = y + 0.5 - R;
+        const r = Math.hypot(dx, dy);
+        const i = (y * WHEEL + x) * 4;
+        if (r > R) {
+          img.data[i + 3] = 0;
+          continue;
+        }
+        const hue = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;
+        const hex = hsvToHex(hue, Math.min(1, r / (R - 1)), wheel.v);
+        img.data[i] = parseInt(hex.slice(1, 3), 16);
+        img.data[i + 1] = parseInt(hex.slice(3, 5), 16);
+        img.data[i + 2] = parseInt(hex.slice(5, 7), 16);
+        img.data[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    // marker at the current hue / saturation
+    const a = (wheel.h * Math.PI) / 180;
+    const mx = R + Math.cos(a) * wheel.s * (R - 1);
+    const my = R + Math.sin(a) * wheel.s * (R - 1);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(mx, my, 8, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "#000000";
+    ctx.beginPath();
+    ctx.arc(mx, my, 9.5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  /** Apply the wheel color without rebuilding the controls (so a drag is never interrupted). */
+  function applyWheel(): void {
+    if (!wheelKey) return;
+    const hex = hsvToHex(wheel.h, wheel.s, wheel.v);
+    const name = nameInput.value.slice(0, MAX_NAME_LENGTH);
+    draft = sanitizeProfile({ ...draft, [wheelKey]: hex });
+    draft.name = name;
+    refreshPreview();
+    const prev = overlay.querySelector<HTMLElement>("#cc-wheel-preview");
+    if (prev) prev.style.background = hex;
+    const label = overlay.querySelector<HTMLElement>("#cc-wheel-hex");
+    if (label) label.textContent = hex.toUpperCase();
+    const sw = overlay.querySelector<HTMLElement>(".cc-sw-wheel.open");
+    if (sw) {
+      sw.style.setProperty("--custom", hex);
+      sw.classList.add("on");
+    }
+    drawWheel();
+  }
+
+  let wheelDragging = false;
+  function wheelFromPointer(e: PointerEvent): void {
+    const c = e.currentTarget as HTMLCanvasElement;
+    const rect = c.getBoundingClientRect();
+    const R = rect.width / 2;
+    const dx = e.clientX - rect.left - R;
+    const dy = e.clientY - rect.top - R;
+    wheel.h = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;
+    wheel.s = Math.min(1, Math.hypot(dx, dy) / (R * ((WHEEL - 1) / WHEEL)));
+    applyWheel();
+  }
+
   const section = (title: string, html: string): string => `<div class="cc-label">${title}</div>${html}`;
 
   function renderControls(): void {
@@ -304,23 +432,25 @@ export function initSettingsModal(onSave?: SaveCb): void {
         ).join("")}</div>`
       );
       body += section("Look", itemGrid("look", "look", looksForGender(g), draft.look));
+      body += section("Outfit color", colorControl("outfitColor", OUTFIT_COLORS, draft.outfitColor));
       body += section("Skin tone", swatches("skinTone", SKIN_TONES.map((s) => ({ name: s.label, hex: s.hex })), draft.skinTone));
     } else if (tab === "hair") {
       body += section("Hairstyle", itemGrid("hair", "hairStyle", hairStylesFor(g), draft.hairStyle));
       if (g === "masculine") body += section("Facial hair", itemGrid("facial", "facialHair", facialHairFor(g), draft.facialHair));
-      body += section("Hair color", swatches("hairColor", HAIR_COLORS.map((h) => ({ name: h.label, hex: h.hex })), draft.hairColor));
+      body += section("Hair color", colorControl("hairColor", HAIR_COLORS.map((h) => ({ name: h.label, hex: h.hex })), draft.hairColor));
     } else {
       const hats = hatsFor(g);
       body += section("Hat", itemGrid("hat", "hat", hats, draft.hat));
       body += section("Glasses", itemGrid("glasses", "glasses", GLASSES, draft.glasses));
-      if (draft.glasses !== "none") body += section("Frame color", swatches("glassesColor", ACCENT_COLORS, draft.glassesColor));
+      if (draft.glasses !== "none") body += section("Frame color", colorControl("glassesColor", ACCENT_COLORS, draft.glassesColor));
       body += section("Shoes", itemGrid("shoes", "shoes", shoesFor(g), draft.shoes));
-      body += section("Shoe color", swatches("shoeColor", ACCENT_COLORS, draft.shoeColor));
+      body += section("Shoe color", colorControl("shoeColor", ACCENT_COLORS, draft.shoeColor));
     }
     const bodyEl = $("cc-body");
     const scrollTop = bodyEl.scrollTop;
     bodyEl.innerHTML = body;
     bodyEl.scrollTop = scrollTop;
+    drawWheel();
 
     $("cc-homeroom").innerHTML = HOMEROOMS.map((h) =>
       radioBtn(
@@ -377,7 +507,14 @@ export function initSettingsModal(onSave?: SaveCb): void {
       return;
     }
     const d = t.dataset;
-    if (d.tab) {
+    if (d.tab) wheelKey = null; // the wheel closes when switching tabs
+    if (d.wheelToggle) {
+      const key = d.wheelToggle;
+      wheelKey = wheelKey === key ? null : key;
+      if (wheelKey) wheel = hexToHsv((draft as unknown as Record<string, string>)[key] || "#ffffff");
+      renderControls();
+      overlay.querySelector(".cc-wheel-panel")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    } else if (d.tab) {
       tab = d.tab as Tab;
       renderControls();
       scheduleThumbs();
@@ -392,6 +529,38 @@ export function initSettingsModal(onSave?: SaveCb): void {
       setDraft({ [key]: rest.join(":") } as Partial<CharacterProfile>);
     } else if (d.homeroom) {
       setDraft({ homeroom: d.homeroom as Homeroom });
+    }
+  });
+
+  // Color wheel interaction (delegated: the wheel is re-created whenever the controls re-render)
+  overlay.addEventListener("pointerdown", (e) => {
+    const c = e.target as HTMLElement;
+    if (c.id !== "cc-wheel") return;
+    wheelDragging = true;
+    c.setPointerCapture(e.pointerId);
+    wheelFromPointer(e);
+  });
+  overlay.addEventListener("pointermove", (e) => {
+    if (wheelDragging && (e.target as HTMLElement).id === "cc-wheel") wheelFromPointer(e);
+  });
+  const endWheelDrag = (): void => {
+    if (!wheelDragging) return;
+    wheelDragging = false;
+    renderControls(); // refresh the selected swatch states
+    scheduleThumbs();
+  };
+  overlay.addEventListener("pointerup", endWheelDrag);
+  overlay.addEventListener("pointercancel", endWheelDrag);
+  overlay.addEventListener("input", (e) => {
+    const t = e.target as HTMLInputElement;
+    if (t.id !== "cc-wheel-v") return;
+    wheel.v = Number(t.value) / 100;
+    applyWheel();
+  });
+  overlay.addEventListener("change", (e) => {
+    if ((e.target as HTMLElement).id === "cc-wheel-v") {
+      renderControls();
+      scheduleThumbs();
     }
   });
 

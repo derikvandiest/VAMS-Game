@@ -3,6 +3,10 @@
  * NPC-only extras like the crown) and a place to stand.
  */
 import { CharacterProfile, getDefaultProfile } from "./profile";
+import type { DialogTree } from "./dialog";
+
+/** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
+export const SURVEY_QR_IMAGE = "";
 
 export interface NpcDef {
   id: string;
@@ -14,7 +18,7 @@ export interface NpcDef {
   rotY: number;
   profile: CharacterProfile;
   /** What the NPC says when a player talks to him/her (shown in a pop-up) */
-  dialog?: { paragraphs: string[] };
+  dialog?: DialogTree;
 }
 
 const BLACK = "#1f1f24";
@@ -42,11 +46,50 @@ export const NPC_VAN_DIEST: NpcDef = {
     shoeColor: BLACK,
   },
   dialog: {
-    paragraphs: [
-      "Thanks so much for participating in our unique ELD PD!",
-      "I used AI to make this game. I built it inside of Google's Antigravity, using a combination of models, including Gemini, Sonnet, Space Alpha Bunny, Laguna, Solar Mini, Nemotron 3.5, and more. The character models were created using Claude Code.",
-      "If you enjoy this presentation, let me know, so we can potentially introduce this to our students!",
-    ],
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: ["Hi there! Thanks so much for participating in our unique ELD PD!", "What can I help you with?"],
+        options: [
+          { label: "How was this game made?", next: "made" },
+          { label: "What do I need to do?", next: "tasks" },
+          { label: "I'd like to give feedback", next: "feedback" },
+          { label: "Goodbye" },
+        ],
+      },
+      made: {
+        paragraphs: [
+          "I used AI to make this game. I built it inside of Google's Antigravity, using a combination of models, including Gemini, Sonnet, Space Alpha Bunny, Laguna, Solar Mini, Nemotron 3.5, and more.",
+          "The character models were created using Claude Code.",
+        ],
+        options: [
+          { label: "That's amazing! I'd like to give feedback", next: "feedback" },
+          { label: "I have another question", next: "root" },
+          { label: "Goodbye" },
+        ],
+      },
+      tasks: {
+        paragraphs: [
+          "Explore the campus! Every homeroom classroom has an assignment, and a green exclamation mark floats above the door of each one you still need to do.",
+          "Complete all 16 assignments in any order, then turn in your work to me in the ELD classroom. After that, head to the parking lot and drive away in one of the cars to finish the game.",
+        ],
+        options: [
+          { label: "Got it! I have another question", next: "root" },
+          { label: "Goodbye" },
+        ],
+      },
+      feedback: {
+        paragraphs: [
+          "If you enjoy this presentation, let me know, so we can potentially introduce this to our students!",
+          "Please take a moment to complete our feedback survey by scanning the QR code below.",
+        ],
+        qr: { caption: "Scan to complete the feedback survey", qrImage: SURVEY_QR_IMAGE || undefined },
+        options: [
+          { label: "Thanks! I have another question", next: "root" },
+          { label: "Goodbye" },
+        ],
+      },
+    },
   },
 };
 

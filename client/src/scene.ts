@@ -6668,7 +6668,7 @@ export function startPlaceholderScene(
     const toNpc = Math.atan2(n.def.x - player.position.x, n.def.z - player.position.z);
     player.rotation.y = toNpc;
     n.rig.player.rotation.y = toNpc + Math.PI;
-    showDialog({ speaker: n.def.profile.name, title: n.def.profile.title, paragraphs: n.def.dialog.paragraphs }, () => {
+    showDialog({ name: n.def.profile.name, title: n.def.profile.title }, n.def.dialog, () => {
       n.rig.player.rotation.y = n.def.rotY;
     });
   }

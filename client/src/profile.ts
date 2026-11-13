@@ -74,6 +74,11 @@ export const HATS = options.hats as HatDef[];
 export const GLASSES = options.glasses as GlassesDef[];
 export const SHOES = options.shoes as ShoeDef[];
 export const ACCENT_COLORS = options.accentColors as Array<{ name: string; hex: string }>;
+/** Preset outfit colors (players can also pick any color on the color wheel) */
+export const OUTFIT_COLORS: Array<{ name: string; hex: string }> = [
+  ...ACCENT_COLORS,
+  ...(Object.keys(HOMEROOM_INFO) as Homeroom[]).map((h) => ({ name: h, hex: HOMEROOM_INFO[h].shirtColor })),
+];
 export const GENDERS = options.genders as Array<{ id: Gender; label: string }>;
 
 export const MAX_NAME_LENGTH = 16;
@@ -124,7 +129,7 @@ export function getDefaultProfile(): CharacterProfile {
     shoeColor: ACCENT_COLORS[0].hex,
     skinTone: SKIN_TONES[1].hex,
     hairColor: HAIR_COLORS[1].hex,
-    outfitColor: "",
+    outfitColor: HOMEROOM_INFO.UCLA.shirtColor,
     noHomeroom: false,
     title: "",
   };
@@ -144,9 +149,10 @@ export function sanitizeProfile(raw: unknown): CharacterProfile {
   const allowed = looksForGender(gender);
   const look = allowed.find((l) => l.id === lookId) ?? allowed[0];
   const npc = p.noHomeroom === true; // NPC profiles may use NPC-only options
+  const homeroom: Homeroom = HOMEROOMS.includes(p.homeroom as Homeroom) ? (p.homeroom as Homeroom) : fb.homeroom;
   return {
     name: (typeof p.name === "string" ? p.name.trim() : fb.name).slice(0, MAX_NAME_LENGTH),
-    homeroom: HOMEROOMS.includes(p.homeroom as Homeroom) ? (p.homeroom as Homeroom) : fb.homeroom,
+    homeroom,
     gender,
     look: look.id,
     hairStyle: byId(hairStylesFor(gender), p.hairStyle, hairStylesFor(gender)[0]).id,
@@ -159,7 +165,8 @@ export function sanitizeProfile(raw: unknown): CharacterProfile {
     shoeColor: isHex(p.shoeColor) ? p.shoeColor : fb.shoeColor,
     skinTone: isHex(p.skinTone) ? p.skinTone : fb.skinTone,
     hairColor: isHex(p.hairColor) ? p.hairColor : fb.hairColor,
-    outfitColor: isHex(p.outfitColor) ? p.outfitColor : "",
+    // older saves had no outfit color: they were tinted with the homeroom color, so keep that look
+    outfitColor: isHex(p.outfitColor) ? p.outfitColor : npc ? "" : HOMEROOM_INFO[homeroom].shirtColor,
     noHomeroom: npc,
     title: npc && typeof p.title === "string" ? p.title.slice(0, 40) : "",
   };
@@ -214,5 +221,6 @@ export function randomizeProfile(base: CharacterProfile): CharacterProfile {
     shoes: randOf(shoesFor(base.gender)).id,
     skinTone: randOf(SKIN_TONES).hex,
     hairColor: randOf(HAIR_COLORS).hex,
+    outfitColor: randOf(OUTFIT_COLORS).hex,
   };
 }
