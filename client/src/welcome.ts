@@ -11,8 +11,13 @@ const STEPS: Array<{ icon: string; title: string; text: string }> = [
   },
   {
     icon: "✨",
-    title: "Look for the glowing doors",
-    text: "When you finish a classroom's assignment, the entrance door to that room glows bright yellow, so you can see which rooms are done.",
+    title: "Follow the glowing doors",
+    text: "A classroom whose assignment is still waiting has an entrance door that glows bright yellow. When you complete that room's assignment, its glow turns off.",
+  },
+  {
+    icon: "🗺️",
+    title: "Open the map with M",
+    text: "Press M any time to see a map of the campus. It labels every classroom and highlights the ones you still need to visit.",
   },
   {
     icon: "📝",

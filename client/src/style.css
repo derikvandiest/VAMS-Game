@@ -1995,3 +1995,163 @@ body {
   justify-content: center;
   margin-top: 6px;
 }
+
+/* Map button (top-right, under the mode badge) */
+#map-btn {
+  position: fixed;
+  top: 64px;
+  right: 12px;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 21px;
+  border: 2px solid rgba(15, 23, 42, 0.3);
+  background: radial-gradient(circle at 50% 30%, #ffffff 0%, #f1f5f9 65%, #cbd5e1 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  z-index: 10;
+  align-items: center;
+  gap: 7px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #334155;
+  user-select: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+#map-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+#map-btn kbd {
+  margin-left: 4px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  border: 1px solid #94a3b8;
+  background: #fff;
+  font-size: 11px;
+  font-family: inherit;
+}
+
+/* Campus map */
+.map-overlay {
+  z-index: 125;
+}
+.map-card {
+  max-width: 640px;
+  width: 94%;
+  max-height: 94vh;
+  padding: 16px 18px 12px;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+.map-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.map-head > div:first-child {
+  flex: 1;
+  min-width: 180px;
+}
+.map-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #fff;
+}
+.map-remaining {
+  font-size: 13px;
+  color: #facc15;
+  font-weight: 600;
+}
+.map-floors {
+  display: flex;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.map-floor {
+  padding: 7px 12px;
+  background: transparent;
+  color: #cbd5e1;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.map-floor.active {
+  background: #991b1b;
+  color: #fff;
+}
+.map-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
+  cursor: pointer;
+  font-size: 14px;
+}
+.map-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  background: #0b1220;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px;
+}
+.map-svg {
+  height: min(68vh, 760px);
+  width: auto;
+  max-width: 100%;
+}
+.map-ground { fill: #1b2a3f; stroke: #475569; stroke-width: 0.4; }
+.map-lot { fill: #263244; stroke: #3b4a60; stroke-width: 0.25; }
+.map-field { fill: #1f5130; stroke: #2f7a47; stroke-width: 0.3; }
+.map-court { fill: #2b3a52; stroke: #4b5d7a; stroke-width: 0.3; }
+.map-building { fill: #3a2430; stroke: #b45309; stroke-width: 0.4; }
+.map-gate { fill: #b91c1c; }
+.map-area { fill: #94a3b8; font-size: 2.1px; font-weight: 700; letter-spacing: 0.15px; opacity: 0.8; }
+.map-small { fill: #cbd5e1; font-size: 1.9px; font-weight: 700; }
+.map-bname { fill: #fde68a; font-size: 2.1px; font-weight: 800; letter-spacing: 0.2px; opacity: 0.85; }
+.map-tick { stroke: #94a3b8; stroke-width: 0.35; }
+.map-chip-text { font-size: 2.1px; font-weight: 800; }
+.map-chip-todo rect { fill: #facc15; stroke: #fff7c2; stroke-width: 0.3; }
+.map-chip-todo .map-chip-text { fill: #1f1300; }
+.map-chip-done rect { fill: #334155; stroke: #64748b; stroke-width: 0.25; }
+.map-chip-done .map-chip-text { fill: #94a3b8; }
+.map-chip-other rect { fill: #1e293b; stroke: #64748b; stroke-width: 0.25; stroke-dasharray: 0.8 0.5; }
+.map-chip-other .map-chip-text { fill: #cbd5e1; font-size: 1.9px; }
+.map-me-halo { fill: rgba(56, 189, 248, 0.28); }
+.map-me { fill: #38bdf8; stroke: #fff; stroke-width: 0.4; }
+.map-me-arrow { fill: #38bdf8; }
+.map-north-ring { fill: rgba(15, 23, 42, 0.8); stroke: #94a3b8; stroke-width: 0.3; }
+.map-north-arrow { fill: #ef4444; }
+.map-north-n { fill: #fff; font-size: 2px; font-weight: 800; }
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #cbd5e1;
+  align-items: center;
+}
+.map-legend .lg {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 5px;
+  vertical-align: -2px;
+}
+.lg-todo { background: #facc15; box-shadow: 0 0 6px #facc15; }
+.lg-done { background: #334155; border: 1px solid #64748b; }
+.lg-other { background: #1e293b; border: 1px dashed #64748b; }
+.lg-me { background: #38bdf8; border-radius: 50% !important; }
+.map-keyhint { margin-left: auto; color: #6b7280; }

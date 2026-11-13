@@ -4,6 +4,7 @@ import classroomsData from "../../content/classrooms.json";
 import officeSignUrl from "./assets/office_sign.png";
 import { showWelcomePopup } from "./welcome";
 import { NPCS, NpcDef } from "./npcs";
+import { roomIdByObjective } from "./rooms";
 import { showDialog } from "./dialog";
 import { loadSlot, getActiveSlotId } from "./saveManager";
 import {
@@ -7489,9 +7490,8 @@ export function startPlaceholderScene(
   const clock = new THREE.Clock();
   let walkTime = 0;
 
-  // --- Completed classrooms: the entrance door glows bright yellow ----------
-  // Each of the 16 homeroom classrooms has an assignment. When it is done, its door lights up so the player
-  // (and everyone who passes) can see at a glance which rooms are finished.
+  // --- Classrooms with an assignment still to do: the entrance door glows bright yellow ----------
+  // Each of the 16 homeroom classrooms has an assignment. Its door glows until the assignment is complete.
   const glowFrameMat = new THREE.MeshStandardMaterial({ color: 0xffd400, emissive: 0xffc400, emissiveIntensity: 2.2, roughness: 0.4 });
   const glowPanelMat = new THREE.MeshStandardMaterial({ color: 0xffe14d, emissive: 0xffd000, emissiveIntensity: 1.8, roughness: 0.4 });
   const glowTexture = (() => {
@@ -7528,24 +7528,17 @@ export function startPlaceholderScene(
     }
   }
 
-  /** Objective id of a stamp classroom, e.g. "5th-csun-humanities" -> "obj_5th_csun" */
-  const roomIdByObjective = new Map<string, string>();
-  for (const c of classroomsData.classrooms as Array<{ id: string; type: string; grade?: number; homeroom?: string }>) {
-    if (c.type === "stamp" && c.grade && c.homeroom) roomIdByObjective.set(`obj_${c.grade}th_${c.homeroom.toLowerCase()}`, c.id);
-  }
-  function applyCompletedDoors(): void {
-    const slot = loadSlot(getActiveSlotId());
-    for (const id of slot?.objectives.completedIds ?? []) {
-      const room = roomIdByObjective.get(id);
-      if (room) setDoorGlow(room, true);
-    }
+  /** Doors of rooms whose assignment is still to do glow; finished rooms stop glowing */
+  function applyDoorGlows(): void {
+    const done = new Set(loadSlot(getActiveSlotId())?.objectives.completedIds ?? []);
+    for (const [objId, roomId] of roomIdByObjective) setDoorGlow(roomId, !done.has(objId));
   }
   const onObjectiveComplete = (e: Event): void => {
     const room = roomIdByObjective.get((e as CustomEvent<{ id: string }>).detail?.id);
-    if (room) setDoorGlow(room, true);
+    if (room) setDoorGlow(room, false);
   };
   window.addEventListener("eld-objective-complete", onObjectiveComplete);
-  applyCompletedDoors();
+  applyDoorGlows();
 
   renderer.setAnimationLoop(() => {
     const dt = Math.min(clock.getDelta(), 0.1); // clamp to avoid huge jumps

@@ -1,3 +1,4 @@
+import { initMap, setMapSource } from "./map";
 import { startPlaceholderScene, SceneController } from "./scene";
 import { connectToServer, disconnectFromServer, setOfflineBadge } from "./net";
 import { initChat } from "./chat";
@@ -37,6 +38,7 @@ const hudElements = [
   "compass",
   "settings-btn",
   "unstuck-btn",
+  "map-btn",
   "leave-game-btn",
   "objective-hud",
   "controls-hint",
@@ -46,7 +48,7 @@ function setHudVisibility(visible: boolean): void {
   for (const id of hudElements) {
     const el = document.getElementById(id);
     if (el) {
-      el.style.display = visible ? (id === "compass" || id === "settings-btn" || id === "unstuck-btn" || id === "leave-game-btn" ? "flex" : "block") : "none";
+      el.style.display = visible ? (id === "compass" || id === "settings-btn" || id === "unstuck-btn" || id === "leave-game-btn" || id === "map-btn" ? "flex" : "block") : "none";
     }
   }
 
@@ -59,6 +61,7 @@ function setHudVisibility(visible: boolean): void {
 
 // Hide HUD before starting game
 setHudVisibility(false);
+initMap();
 
 function updateObjectiveHud(slot: SaveSlotData): void {
   const stampsEl = document.getElementById("obj-hud-stamps");
@@ -117,6 +120,7 @@ function launchGame(mode: "singleplayer" | "multiplayer", slotData: SaveSlotData
       activeScene.stop();
     }
     activeScene = startPlaceholderScene(app, slotData.playerTransform);
+    setMapSource(() => activeScene?.getPlayerTransform() ?? null);
   } catch (error) {
     console.error("[client] The 3D scene failed to start:", error);
   }
@@ -166,6 +170,7 @@ function returnToMainMenu(): void {
     activeScene.stop();
     activeScene = null;
   }
+  setMapSource(null);
 
   if (currentMode === "multiplayer") {
     disconnectFromServer();
