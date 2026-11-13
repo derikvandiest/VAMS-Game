@@ -4,6 +4,7 @@
  */
 import { CharacterProfile, getDefaultProfile } from "./profile";
 import type { DialogTree } from "./dialog";
+import vanDiestPortrait from "./assets/vandiest_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -19,6 +20,8 @@ export interface NpcDef {
   profile: CharacterProfile;
   /** What the NPC says when a player talks to him/her (shown in a pop-up) */
   dialog?: DialogTree;
+  /** Cartoon portrait shown in the dialogue box (URL) */
+  portrait?: string;
   /** A glowing "!" floats above the NPC until this objective is complete (see saveManager.ts) */
   talkObjective?: string;
 }
@@ -48,6 +51,7 @@ export const NPC_VAN_DIEST: NpcDef = {
     glasses: "round",
     glassesColor: BLACK,
   },
+  portrait: vanDiestPortrait,
   talkObjective: "obj_survey",
   dialog: {
     start: "root",

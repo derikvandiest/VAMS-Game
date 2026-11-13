@@ -31,6 +31,8 @@ export interface DialogTree {
 export interface DialogSpeaker {
   name: string;
   title?: string;
+  /** Portrait image URL; without one a plain icon is shown */
+  portrait?: string;
 }
 
 let open = false;
@@ -73,7 +75,11 @@ export function showDialog(speaker: DialogSpeaker, tree: DialogTree, onClose?: (
   overlay.innerHTML = `
     <div class="modal-card dialog-card" role="dialog" aria-modal="true" aria-labelledby="dialog-speaker">
       <div class="dialog-head">
-        <div class="dialog-avatar" aria-hidden="true">🎓</div>
+        ${
+          speaker.portrait
+            ? `<img class="dialog-portrait" src="${esc(speaker.portrait)}" alt="${esc(speaker.name)}" />`
+            : `<div class="dialog-avatar" aria-hidden="true">🎓</div>`
+        }
         <div>
           <div id="dialog-speaker" class="dialog-speaker">${esc(speaker.name)}</div>
           ${speaker.title ? `<div class="dialog-title">${esc(speaker.title)}</div>` : ""}

@@ -6733,7 +6733,7 @@ export function startPlaceholderScene(
     player.rotation.y = toNpc;
     n.rig.player.rotation.y = toNpc + Math.PI;
     showDialog(
-      { name: n.def.profile.name, title: n.def.profile.title },
+      { name: n.def.profile.name, title: n.def.profile.title, portrait: n.def.portrait },
       n.def.dialog,
       () => {
         n.rig.player.rotation.y = n.def.rotY;

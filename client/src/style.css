@@ -2342,3 +2342,16 @@ body {
   0%, 100% { box-shadow: 0 0 6px rgba(250, 204, 21, 0.6); }
   50% { box-shadow: 0 0 16px rgba(250, 204, 21, 1); }
 }
+
+/* NPC portrait in the dialogue box */
+.dialog-portrait {
+  width: 84px;
+  height: 84px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: 50% 18%;
+  background: linear-gradient(160deg, #1e3a8a, #0f172a);
+  border: 3px solid #d4a017;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
