@@ -4900,7 +4900,7 @@ export function startPlaceholderScene(
   type Deck = { minX: number; maxX: number; minZ: number; maxZ: number };
   // Campus elevator: in front of the Learning Center (ground floor) and the Theater (upper walkway), doors facing the building.
   // Created before the walkway rails so the railing can be opened up in front of the upper door.
-  const elevator = new Elevator(scene, { x: -4, zFront: 1.45, floorHeight: floor2, deckEdgeZ: 1.0 });
+  const elevator = new Elevator(scene, { x: -6.8, zFront: 1.45, floorHeight: floor2, deckEdgeZ: 1.0 });
   const decks: Deck[] = [];
   const deckBuildings: Array<LayoutWall | undefined> = [];
   const deckStairs: Array<LayoutStair | undefined> = [];
@@ -7691,7 +7691,7 @@ export function startPlaceholderScene(
       const t = performance.now() * 0.003;
       for (const m of doorMarkers.values()) m.position.y = (m.userData.baseY as number) + Math.sin(t) * 0.12;
     }
-    elevator.update(dt, player.position.x, player.position.y, player.position.z);
+    elevator.update(dt, player.position.x, player.position.y, player.position.z, camera.position.x, camera.position.z);
     let inRight = 0;
     let inForward = 0;
     if (keys.has("w") || keys.has("arrowup")) inForward += 1;

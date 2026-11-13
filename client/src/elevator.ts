@@ -1,7 +1,9 @@
 /**
- * Campus elevator: a square glass-and-steel tower with a box-shaped cab that travels between the ground floor
- * (in front of the Learning Center) and the upper walkway (in front of the Theater). The doors face the
- * building (north). Press E outside to call the cab, and E inside to go up or down.
+ * Campus elevator: a square tower, clad like the school (cream walls, red trim, a flat roof like the
+ * classroom roofs), with a box-shaped cab that travels between the ground floor (in front of the Learning
+ * Center) and the upper walkway (in front of the Theater). The doors face the building (north). The call
+ * buttons are on the wall to the west (left) of the door. Press E outside to call the cab, E inside to go
+ * up or down.
  */
 import * as THREE from "three";
 
@@ -32,11 +34,18 @@ export interface ElevatorSolid {
 }
 
 type Phase = "idle" | "closing" | "moving" | "opening";
+/** W/E/S = west/east/south walls, N = the door face, T = roof and cab ceiling */
+type Side = "W" | "E" | "S" | "N" | "T";
+const SIDES: Side[] = ["W", "E", "S", "N", "T"];
 
 const DOOR_W = 1.7; // clear opening
 const DOOR_H = 2.5;
 const TRAVEL_TIME = 3.2; // seconds between floors
 const DOOR_SPEED = 1.5; // door travel per second (0..1)
+// Easter egg: the elevator is slow to arrive when you call it (like the one at school). The trip takes this
+// long, with a pause halfway ("it stopped!") before it carries on.
+const CALL_TIME = 14;
+const CALL_PHASES = { moveA: 5, stall: 3.5 }; // seconds: first leg, then the pause (the rest is the second leg)
 
 export class Elevator {
   readonly group = new THREE.Group();
@@ -53,16 +62,24 @@ export class Elevator {
   private progress = 0;
   private doorOpen = 0;
   private doorTarget = 0;
+  /** true while the cab is on its way to a caller (the slow trip), false when carrying a passenger */
+  private isCall = false;
+  private callT = 0;
+  private indicators: Array<{ level: 0 | 1; ctx: CanvasRenderingContext2D; tex: THREE.CanvasTexture }> = [];
+  private indicatorKey = "";
+  private lamps: THREE.Mesh[] = [];
   private cab = new THREE.Group();
   private cabDoors: THREE.Mesh[] = [];
   private shaftDoors: Array<{ level: 0 | 1; panels: THREE.Mesh[] }> = [];
-  private lamp: THREE.Mesh | null = null;
   readonly cx: number;
   readonly cz: number;
   readonly half: number;
-  /** Meshes that turn see-through while someone is inside, so the camera can always see the passenger */
-  private fadeMeshes: THREE.Mesh[] = [];
-  private fade = 1;
+  /**
+   * Parts of the tower and cab by side. While a passenger is inside, the side facing the camera (and the roof)
+   * is cut away, like the classroom cutaway, so the passenger is always visible and the inside is clean.
+   */
+  private parts: Record<Side, THREE.Mesh[]> = { W: [], E: [], S: [], N: [], T: [] };
+  private partVis: Record<Side, number> = { W: 1, E: 1, S: 1, N: 1, T: 1 };
 
   constructor(scene: THREE.Scene, cfg: ElevatorConfig) {
     this.cfg = { size: 3.2, wallColor: 0xe8e0d2, trimColor: 0x7a2f2f, ...cfg };
@@ -73,58 +90,75 @@ export class Elevator {
     scene.add(this.group);
   }
 
+  /** Tower height: the same as the second-story walls of the school buildings */
+  private get towerHeight(): number {
+    return this.cfg.floorHeight + 4;
+  }
+
   // ------------------------------------------------------------------ geometry
   private build(): void {
     const { floorHeight: F, size: S, zFront } = this.cfg;
-    const H = F + 3.7; // tower height: the upper door plus a header and a roof
+    const H = this.towerHeight;
     const g = this.group;
-    // Exterior: the same cream walls and red trim as the school buildings
-    const steel = new THREE.MeshStandardMaterial({ color: this.cfg.trimColor, roughness: 0.7, metalness: 0.2 }); // red posts / bands
-    const darkSteel = new THREE.MeshStandardMaterial({ color: 0x5e2222, roughness: 0.6, metalness: 0.2 }); // plinth and roof cap
-    const glass = new THREE.MeshStandardMaterial({ color: this.cfg.wallColor, roughness: 0.9 }); // solid school-colored walls
-    const brushed = new THREE.MeshStandardMaterial({ color: this.cfg.wallColor, roughness: 0.9 });
-    const fadeSet = new Set<THREE.Material>([glass, brushed, steel]);
-    const add = (parent: THREE.Object3D, geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number, shadow = true): THREE.Mesh => {
+    const cx = this.cx;
+    const cz = this.cz;
+    const h = S / 2;
+
+    // Exterior: the school's cream walls and red trim
+    const wallMat = new THREE.MeshStandardMaterial({ color: this.cfg.wallColor, roughness: 0.9 });
+    const trimMat = new THREE.MeshStandardMaterial({ color: this.cfg.trimColor, roughness: 0.7, metalness: 0.2 });
+    const plinthMat = new THREE.MeshStandardMaterial({ color: 0x5e2222, roughness: 0.6, metalness: 0.2 });
+    // Roof: the same as the classroom roofs (cool-roof membrane, metal coping, a rooftop HVAC unit)
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0xbac2ca, roughness: 0.95 });
+    const copingMat = new THREE.MeshStandardMaterial({ color: 0x8a929a, roughness: 0.5, metalness: 0.25 });
+    const curbMat = new THREE.MeshStandardMaterial({ color: 0x3e454d, roughness: 0.9 });
+    const hvacMat = new THREE.MeshStandardMaterial({ color: 0x98a0a8, roughness: 0.45, metalness: 0.35 });
+    const grilleMat = new THREE.MeshStandardMaterial({ color: 0x2e353c, roughness: 0.8 });
+    // Inside the cab: plain light panels and a neutral floor (no red, no glass)
+    const cabWall = new THREE.MeshStandardMaterial({ color: 0xdfe1e4, roughness: 0.6, metalness: 0.15 });
+    const cabFloor = new THREE.MeshStandardMaterial({ color: 0x555a62, roughness: 0.7 });
+    const cabCeiling = new THREE.MeshStandardMaterial({ color: 0xcfd2d6, roughness: 0.6 });
+    const doorMat = new THREE.MeshStandardMaterial({ color: 0xc9ced6, roughness: 0.3, metalness: 0.85 });
+
+    const add = (parent: THREE.Object3D, geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number, side?: Side, shadow = true): THREE.Mesh => {
       const m = new THREE.Mesh(geo, mat);
       m.position.set(x, y, z);
       m.castShadow = shadow;
       m.receiveShadow = true;
       parent.add(m);
-      if (fadeSet.has(mat)) this.fadeMeshes.push(m);
+      if (side) this.parts[side].push(m);
       return m;
     };
-    const cx = this.cx;
-    const cz = this.cz;
-    const h = S / 2;
 
-    // base plinth and roof cap
-    add(g, new THREE.BoxGeometry(S + 0.2, 0.12, S + 0.2), darkSteel, cx, 0.06, cz);
-    add(g, new THREE.BoxGeometry(S + 0.3, 0.3, S + 0.3), darkSteel, cx, H + 0.15, cz);
-    add(g, new THREE.BoxGeometry(S * 0.5, 0.35, S * 0.5), steel, cx, H + 0.47, cz); // machine housing on the roof
+    // base plinth
+    add(g, new THREE.BoxGeometry(S + 0.2, 0.12, S + 0.2), plinthMat, cx, 0.06, cz);
 
-    // four corner posts
+    // four corner posts (red); each belongs to the two walls it joins
+    const postSide: Record<string, [Side, Side]> = { "-1,-1": ["W", "N"], "1,-1": ["E", "N"], "-1,1": ["W", "S"], "1,1": ["E", "S"] };
     for (const sx of [-1, 1]) {
-      for (const sz of [-1, 1]) add(g, new THREE.BoxGeometry(0.2, H, 0.2), steel, cx + sx * (h - 0.1), H / 2, cz + sz * (h - 0.1));
+      for (const sz of [-1, 1]) {
+        const m = add(g, new THREE.BoxGeometry(0.2, H, 0.2), trimMat.clone(), cx + sx * (h - 0.1), H / 2, cz + sz * (h - 0.1));
+        m.userData.sides = postSide[`${sx},${sz}`];
+      }
     }
-    // glass: west, east and back (south) walls
-    add(g, new THREE.BoxGeometry(0.2, H, S - 0.2), glass, cx - h + 0.1, H / 2, cz);
-    add(g, new THREE.BoxGeometry(0.2, H, S - 0.2), glass, cx + h - 0.1, H / 2, cz);
-    add(g, new THREE.BoxGeometry(S - 0.2, H, 0.2), glass, cx, H / 2, cz + h - 0.1);
-    // horizontal frame bands at the floor lines and the top
-    for (const y of [0.18, F - 0.05, H - 0.05]) {
-      add(g, new THREE.BoxGeometry(S, 0.1, 0.12), steel, cx, y, cz - h + 0.06);
-      add(g, new THREE.BoxGeometry(S, 0.1, 0.12), steel, cx, y, cz + h - 0.06);
-      add(g, new THREE.BoxGeometry(0.12, 0.1, S), steel, cx - h + 0.06, y, cz);
-      add(g, new THREE.BoxGeometry(0.12, 0.1, S), steel, cx + h - 0.06, y, cz);
+    // solid school-colored walls: west, east and back (south)
+    add(g, new THREE.BoxGeometry(0.2, H, S - 0.2), wallMat, cx - h + 0.1, H / 2, cz, "W");
+    add(g, new THREE.BoxGeometry(0.2, H, S - 0.2), wallMat, cx + h - 0.1, H / 2, cz, "E");
+    add(g, new THREE.BoxGeometry(S - 0.2, H, 0.2), wallMat, cx, H / 2, cz + h - 0.1, "S");
+    // red bands at the floor lines (outside trim)
+    for (const y of [0.18, F - 0.05]) {
+      add(g, new THREE.BoxGeometry(S, 0.1, 0.12), trimMat, cx, y, cz + h - 0.06, "S");
+      add(g, new THREE.BoxGeometry(0.12, 0.1, S), trimMat, cx - h + 0.06, y, cz, "W");
+      add(g, new THREE.BoxGeometry(0.12, 0.1, S), trimMat, cx + h - 0.06, y, cz, "E");
+      add(g, new THREE.BoxGeometry(S, 0.1, 0.12), trimMat, cx, y, cz - h + 0.06, "N");
     }
 
-    // north (door) face: steel strips either side of the opening, headers above each door
+    // north (door) face: wall strips either side of the opening and headers above each door
     const strip = (S - DOOR_W) / 2;
     const zN = zFront + 0.06;
-    for (const sx of [-1, 1]) add(g, new THREE.BoxGeometry(strip, H, 0.12), brushed, cx + sx * (DOOR_W / 2 + strip / 2), H / 2, zN);
-    const headerY0 = DOOR_H;
-    add(g, new THREE.BoxGeometry(DOOR_W, F - headerY0 - 0.1, 0.12), brushed, cx, (headerY0 + F - 0.1) / 2 + 0.05, zN); // above the ground door
-    add(g, new THREE.BoxGeometry(DOOR_W, H - (F + DOOR_H), 0.12), brushed, cx, (F + DOOR_H + H) / 2, zN); // above the upper door
+    for (const sx of [-1, 1]) add(g, new THREE.BoxGeometry(strip, H, 0.12), wallMat, cx + sx * (DOOR_W / 2 + strip / 2), H / 2, zN, "N");
+    add(g, new THREE.BoxGeometry(DOOR_W, F - DOOR_H - 0.1, 0.12), wallMat, cx, (DOOR_H + F - 0.1) / 2 + 0.05, zN, "N"); // above the ground door
+    add(g, new THREE.BoxGeometry(DOOR_W, H - (F + DOOR_H), 0.12), wallMat, cx, (F + DOOR_H + H) / 2, zN, "N"); // above the upper door
 
     // "ELEVATOR" signs above the doors
     const sign = (() => {
@@ -151,9 +185,10 @@ export class Elevator {
       m.position.set(cx, y, zFront - 0.002);
       m.rotation.y = Math.PI; // faces north (-z)
       g.add(m);
+      this.parts.N.push(m);
     }
 
-    // call-button panels beside each door (an up/down arrow plate)
+    // call buttons: an up / down plate on the wall to the WEST (left) of each door
     const plate = (() => {
       const c = document.createElement("canvas");
       c.width = 64;
@@ -177,19 +212,44 @@ export class Elevator {
       return t;
     })();
     for (const y of [1.25, F + 1.25]) {
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.4), new THREE.MeshBasicMaterial({ map: plate }));
-      m.position.set(cx + DOOR_W / 2 + 0.2, y, zFront - 0.002);
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.44), new THREE.MeshBasicMaterial({ map: plate }));
+      m.position.set(cx - DOOR_W / 2 - 0.2, y, zFront - 0.002);
       m.rotation.y = Math.PI;
       g.add(m);
+      this.parts.N.push(m);
+    }
+
+    // floor indicator above each door (shows where the cab is, and an arrow while it is travelling)
+    for (const level of [0, 1] as const) {
+      const c = document.createElement("canvas");
+      c.width = 128;
+      c.height = 64;
+      const ctx = c.getContext("2d")!;
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.25), new THREE.MeshBasicMaterial({ map: tex }));
+      m.position.set(cx, (level === 1 ? F : 0) + DOOR_H + 0.24, zFront - 0.004);
+      m.rotation.y = Math.PI;
+      g.add(m);
+      this.parts.N.push(m);
+      this.indicators.push({ level, ctx, tex });
+    }
+    this.drawIndicators("1", "");
+    // a lamp above each call-button plate: lit while the elevator has been called
+    for (const y of [1.25 + 0.4, F + 1.25 + 0.4]) {
+      const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.03), new THREE.MeshStandardMaterial({ color: 0x4a3b10, emissive: 0x000000 }));
+      lamp.position.set(cx - DOOR_W / 2 - 0.2, y, zFront - 0.01);
+      g.add(lamp);
+      this.parts.N.push(lamp);
+      this.lamps.push(lamp);
     }
 
     // shaft doors (one pair per floor)
-    const doorMat = new THREE.MeshStandardMaterial({ color: 0xc9ced6, roughness: 0.3, metalness: 0.85 });
     for (const level of [0, 1] as const) {
       const y = (level === 1 ? F : 0) + DOOR_H / 2 + 0.02;
       const panels: THREE.Mesh[] = [];
       for (const sx of [-1, 1]) {
-        const m = add(g, new THREE.BoxGeometry(DOOR_W / 2, DOOR_H, 0.07), doorMat, cx + sx * (DOOR_W / 4), y, zFront + 0.13);
+        const m = add(g, new THREE.BoxGeometry(DOOR_W / 2, DOOR_H, 0.07), doorMat, cx + sx * (DOOR_W / 4), y, zFront + 0.13, "N");
         m.userData.sx = sx;
         m.userData.baseX = m.position.x;
         panels.push(m);
@@ -203,55 +263,102 @@ export class Elevator {
       add(g, new THREE.BoxGeometry(DOOR_W + 0.5, 0.3, padDepth + 0.05), new THREE.MeshStandardMaterial({ color: 0x7a6a58, roughness: 0.8 }), cx, F - 0.15, this.cfg.deckEdgeZ + padDepth / 2);
     }
 
+    // ---- roof, like the classroom roofs: flat membrane, metal coping, an HVAC unit ----
+    const roof = new THREE.Group();
+    const R = S + 0.3;
+    add(roof, new THREE.BoxGeometry(R, 0.16, R), roofMat, cx, H + 0.08, cz, "T");
+    const cope = 0.18;
+    const ch = 0.16;
+    add(roof, new THREE.BoxGeometry(R, ch, cope), copingMat, cx, H + 0.16 + ch / 2 - 0.04, cz - R / 2 + cope / 2, "T");
+    add(roof, new THREE.BoxGeometry(R, ch, cope), copingMat, cx, H + 0.16 + ch / 2 - 0.04, cz + R / 2 - cope / 2, "T");
+    add(roof, new THREE.BoxGeometry(cope, ch, R - 2 * cope), copingMat, cx - R / 2 + cope / 2, H + 0.16 + ch / 2 - 0.04, cz, "T");
+    add(roof, new THREE.BoxGeometry(cope, ch, R - 2 * cope), copingMat, cx + R / 2 - cope / 2, H + 0.16 + ch / 2 - 0.04, cz, "T");
+    const hx = cx + 0.45;
+    const hz = cz + 0.5;
+    add(roof, new THREE.BoxGeometry(1.5, 0.12, 1.1), curbMat, hx, H + 0.22, hz, "T");
+    add(roof, new THREE.BoxGeometry(1.35, 0.6, 0.95), hvacMat, hx, H + 0.58, hz, "T");
+    add(roof, new THREE.BoxGeometry(0.62, 0.05, 0.62), grilleMat, hx, H + 0.9, hz, "T");
+    g.add(roof);
+
     // ---- cab (moves up and down inside the tower) ----
     const CS = S - 0.5; // cab outer size
     const CH = 2.75;
-    const ch = CS / 2;
+    const cabHalf = CS / 2;
     const cab = this.cab;
     cab.position.set(cx, 0, cz);
-    const wall = new THREE.MeshStandardMaterial({ color: 0x8b929d, roughness: 0.4, metalness: 0.75 });
-    const inner = new THREE.MeshStandardMaterial({ color: 0xd8dce2, roughness: 0.5, metalness: 0.3 });
-    fadeSet.add(wall);
-    fadeSet.add(inner);
-    fadeSet.add(doorMat);
-    add(cab, new THREE.BoxGeometry(CS, 0.14, CS), darkSteel, 0, 0.07, 0); // floor
-    add(cab, new THREE.BoxGeometry(CS, 0.12, CS), steel, 0, CH + 0.06, 0); // ceiling
-    add(cab, new THREE.BoxGeometry(CS, CH, 0.1), wall, 0, CH / 2, ch - 0.05); // back
-    add(cab, new THREE.BoxGeometry(0.1, CH, CS), wall, -ch + 0.05, CH / 2, 0);
-    add(cab, new THREE.BoxGeometry(0.1, CH, CS), wall, ch - 0.05, CH / 2, 0);
-    add(cab, new THREE.BoxGeometry(CS - 0.2, CH - 0.3, 0.02), inner, 0, CH / 2, ch - 0.12); // interior panel
+    add(cab, new THREE.BoxGeometry(CS, 0.14, CS), cabFloor, 0, 0.07, 0); // floor (always visible)
+    add(cab, new THREE.BoxGeometry(CS, 0.12, CS), cabCeiling, 0, CH + 0.06, 0, "T"); // ceiling
+    add(cab, new THREE.BoxGeometry(CS, CH, 0.1), cabWall, 0, CH / 2, cabHalf - 0.05, "S"); // back
+    add(cab, new THREE.BoxGeometry(0.1, CH, CS), cabWall, -cabHalf + 0.05, CH / 2, 0, "W");
+    add(cab, new THREE.BoxGeometry(0.1, CH, CS), cabWall, cabHalf - 0.05, CH / 2, 0, "E");
     // front of the cab: strips beside the opening and a lintel
     const cStrip = (CS - DOOR_W) / 2;
-    for (const sx of [-1, 1]) add(cab, new THREE.BoxGeometry(cStrip, CH, 0.1), wall, sx * (DOOR_W / 2 + cStrip / 2), CH / 2, -ch + 0.05);
-    add(cab, new THREE.BoxGeometry(DOOR_W, CH - DOOR_H - 0.02, 0.1), wall, 0, (DOOR_H + 0.02 + CH) / 2, -ch + 0.05);
+    for (const sx of [-1, 1]) add(cab, new THREE.BoxGeometry(cStrip, CH, 0.1), cabWall, sx * (DOOR_W / 2 + cStrip / 2), CH / 2, -cabHalf + 0.05, "N");
+    add(cab, new THREE.BoxGeometry(DOOR_W, CH - DOOR_H - 0.02, 0.1), cabWall, 0, (DOOR_H + 0.02 + CH) / 2, -cabHalf + 0.05, "N");
     for (const sx of [-1, 1]) {
-      const m = add(cab, new THREE.BoxGeometry(DOOR_W / 2, DOOR_H, 0.06), doorMat, sx * (DOOR_W / 4), DOOR_H / 2 + 0.14, -ch + 0.12);
+      const m = add(cab, new THREE.BoxGeometry(DOOR_W / 2, DOOR_H, 0.06), doorMat, sx * (DOOR_W / 4), DOOR_H / 2 + 0.14, -cabHalf + 0.12, "N");
       m.userData.sx = sx;
       m.userData.baseX = m.position.x;
       this.cabDoors.push(m);
     }
-    // ceiling light and a control panel with up / down buttons
-    const lampMat = new THREE.MeshStandardMaterial({ color: 0xfff6d8, emissive: 0xfff0b8, emissiveIntensity: 1.6 });
-    add(cab, new THREE.BoxGeometry(CS * 0.5, 0.04, CS * 0.5), lampMat, 0, CH - 0.03, 0, false);
-    this.lamp = add(cab, new THREE.BoxGeometry(0.01, 0.01, 0.01), lampMat, 0, 0, 0, false);
-    const panel = add(cab, new THREE.BoxGeometry(0.3, 0.7, 0.04), darkSteel, ch - 0.16, 1.25, -ch + 0.4); // beside the door on the right wall? (inside, east wall)
-    panel.position.set(ch - 0.14, 1.25, -ch * 0.35);
-    panel.rotation.y = -Math.PI / 2;
-    for (const [i, c] of [0xffd34d, 0xffd34d].entries()) {
-      const b = add(cab, new THREE.CylinderGeometry(0.06, 0.06, 0.03, 16), new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 1.2 }), ch - 0.17, 1.4 - i * 0.2, -ch * 0.35, false);
-      b.rotation.z = Math.PI / 2;
-    }
+    // ceiling light (the buttons are outside, beside the door)
+    const lampMat = new THREE.MeshStandardMaterial({ color: 0xfff6d8, emissive: 0xfff0b8, emissiveIntensity: 1.4 });
+    add(cab, new THREE.BoxGeometry(CS * 0.5, 0.04, CS * 0.5), lampMat, 0, CH - 0.03, 0, "T", false);
     const cabLight = new THREE.PointLight(0xfff0c8, 0.9, 5, 2);
     cabLight.position.set(0, CH - 0.4, 0);
     cab.add(cabLight);
     g.add(cab);
+
+    // every part gets its own material copy so a cut-away wall never changes another
+    for (const side of SIDES) {
+      for (const m of this.parts[side]) m.material = (m.material as THREE.Material).clone();
+    }
+  }
+
+  private drawIndicators(floor: string, arrow: string): void {
+    for (const ind of this.indicators) {
+      const c = ind.ctx;
+      c.fillStyle = "#07090d";
+      c.fillRect(0, 0, 128, 64);
+      c.strokeStyle = "#3a3f4a";
+      c.lineWidth = 4;
+      c.strokeRect(2, 2, 124, 60);
+      c.fillStyle = "#ffb020";
+      c.font = "800 44px ui-monospace, Consolas, monospace";
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      c.fillText(`${arrow}${floor}`.trim() || "-", 64, 34);
+      ind.tex.needsUpdate = true;
+    }
+  }
+
+  /** Where the slow trip to a caller is, 0..1 (first leg, a pause halfway, second leg) */
+  private callProgress(t: number): number {
+    const a = CALL_PHASES.moveA;
+    const s = CALL_PHASES.stall;
+    const smooth = (x: number): number => x * x * (3 - 2 * x);
+    if (t < a) return 0.5 * smooth(t / a);
+    if (t < a + s) return 0.5;
+    return 0.5 + 0.5 * smooth(Math.min(1, (t - a - s) / (CALL_TIME - a - s)));
+  }
+
+  /** The lines the player reads while waiting for the elevator */
+  private waitingMessage(): string {
+    const t = this.callT;
+    const a = CALL_PHASES.moveA;
+    const s = CALL_PHASES.stall;
+    if (this.phase === "closing" || t < 1.5) return "Calling the elevator… 🛗";
+    if (t < a) return "The elevator is on its way… 🛗";
+    if (t < a + s) return "Hmm… it seems to have stopped. Any second now… ⏳";
+    if (t < a + s + 2.5) return "…and it's moving again! 🛗";
+    return "Almost there… 🛗";
   }
 
   // ------------------------------------------------------------------ collision
   /** Walls of the tower plus the doorways (closed doors block). */
   solids(): ElevatorSolid[] {
     const { size: S, zFront, floorHeight: F } = this.cfg;
-    const H = F + 3.7;
+    const H = this.towerHeight;
     const out: ElevatorSolid[] = [];
     const t = 0.2;
     out.push({ x: this.cx - this.half + t / 2, z: this.cz, w: t, d: S, yBase: 0, yTop: H }); // west
@@ -302,7 +409,11 @@ export class Elevator {
 
   /** What E would do right now, for the on-screen hint (empty = nothing). */
   hint(x: number, y: number, z: number): string {
-    if (this.riding || this.phase !== "idle") return "";
+    if (this.riding) return "";
+    if (this.phase !== "idle") {
+      // the cab is on its way to a caller: tell people near the doors how it is going
+      return this.isCall && Math.hypot(x - this.cx, z - this.cfg.zFront) < 6 ? this.waitingMessage() : "";
+    }
     if (this.inShaft(x, z)) return this.level === 0 ? "Press E to go up to the second floor ▲" : "Press E to go down to the first floor ▼";
     const lvl = this.playerLevel(y);
     if (this.nearDoor(x, z, y, lvl) && Math.hypot(x - this.cx, z - this.cfg.zFront) < 3.0) {
@@ -330,40 +441,71 @@ export class Elevator {
   }
 
   private begin(): void {
+    this.isCall = !this.riding;
+    this.callT = 0;
     this.phase = "closing";
     this.doorTarget = 0;
   }
 
-  // ------------------------------------------------------------------ see-through while occupied
-  private applyFade(): void {
-    const f = this.fade;
-    for (const m of this.fadeMeshes) {
-      const mat = m.material as THREE.MeshStandardMaterial;
-      if (!mat.userData.private) {
-        // private copy, so fading one part never affects another that shares the material
-        m.material = mat.clone();
-        (m.material as THREE.MeshStandardMaterial).userData.private = true;
-      }
-      const mm = m.material as THREE.MeshStandardMaterial;
-      const was = mm.transparent;
-      mm.opacity = f;
-      mm.transparent = f < 0.99;
-      mm.depthWrite = f > 0.5;
-      if (was !== mm.transparent) mm.needsUpdate = true;
-      m.castShadow = f > 0.5;
+  // ------------------------------------------------------------------ cut-away while occupied
+  private updateCutaway(dt: number, occupied: boolean, camX: number, camZ: number): void {
+    // which wall faces the camera? (only that one, plus the roof, is cut away)
+    let hide: Side | null = null;
+    if (occupied) {
+      const dx = camX - this.cx;
+      const dz = camZ - this.cz;
+      hide = Math.abs(dx) > Math.abs(dz) ? (dx < 0 ? "W" : "E") : dz < 0 ? "N" : "S";
+    }
+    for (const side of SIDES) {
+      const wantHidden = occupied && (side === "T" || side === hide);
+      const target = wantHidden ? 0 : 1;
+      const cur = this.partVis[side];
+      if (cur === target) continue;
+      const next = Math.abs(cur - target) < 0.02 ? target : cur + (target - cur) * Math.min(1, dt * 12);
+      this.partVis[side] = next;
+    }
+    for (const side of SIDES) this.applyVis(side);
+    // posts belong to two walls: hidden when either of them is cut away
+    for (const m of this.group.children) {
+      const sides = (m as THREE.Mesh).userData.sides as [Side, Side] | undefined;
+      if (!sides) continue;
+      const vis = Math.min(this.partVis[sides[0]], this.partVis[sides[1]]);
+      this.setMeshVis(m as THREE.Mesh, vis);
     }
   }
 
-  // ------------------------------------------------------------------ per-frame
-  update(dt: number, px: number, py: number, pz: number): void {
-    const inside = this.inShaft(px, pz);
-    // walls and cab turn see-through while a passenger is inside (or riding), so the camera never loses them
-    const target = inside || this.riding ? 0.13 : 1;
-    if (Math.abs(this.fade - target) > 0.002) {
-      this.fade += (target - this.fade) * Math.min(1, dt * 8);
-      if (Math.abs(this.fade - target) < 0.01) this.fade = target;
-      this.applyFade();
+  private setMeshVis(m: THREE.Mesh, vis: number): void {
+    const mat = m.material as THREE.MeshStandardMaterial | THREE.MeshBasicMaterial;
+    if (vis >= 0.99) {
+      m.visible = true;
+      if (mat.transparent) {
+        mat.transparent = false;
+        mat.opacity = 1;
+        mat.needsUpdate = true;
+      }
+      return;
     }
+    if (vis <= 0.03) {
+      m.visible = false;
+      return;
+    }
+    m.visible = true;
+    if (!mat.transparent) {
+      mat.transparent = true;
+      mat.needsUpdate = true;
+    }
+    mat.opacity = vis;
+  }
+
+  private applyVis(side: Side): void {
+    const vis = this.partVis[side];
+    for (const m of this.parts[side]) this.setMeshVis(m, vis);
+  }
+
+  // ------------------------------------------------------------------ per-frame
+  update(dt: number, px: number, py: number, pz: number, camX = this.cx, camZ = this.cz - 10): void {
+    const inside = this.inShaft(px, pz);
+    this.updateCutaway(dt, inside || this.riding, camX, camZ);
     switch (this.phase) {
       case "idle": {
         const wantOpen = inside || this.nearDoor(px, pz, py, this.level);
@@ -383,12 +525,22 @@ export class Elevator {
         }
         break;
       case "moving": {
-        this.progress = Math.min(1, this.progress + dt / TRAVEL_TIME);
-        const p = this.progress;
-        const e = p * p * (3 - 2 * p); // smooth start and stop
+        let e: number;
+        let p: number;
+        if (this.isCall) {
+          // the slow trip to a caller
+          this.callT += dt;
+          e = this.callProgress(this.callT);
+          p = this.callT >= CALL_TIME ? 1 : 0;
+        } else {
+          this.progress = Math.min(1, this.progress + dt / TRAVEL_TIME);
+          p = this.progress;
+          e = p * p * (3 - 2 * p); // smooth start and stop
+        }
         const to = this.dest === 1 ? this.cfg.floorHeight : 0;
         this.cabY = this.from + (to - this.from) * e;
         if (p >= 1) {
+          this.isCall = false;
           this.level = this.dest;
           this.cabY = to;
           this.phase = "opening";
@@ -403,6 +555,23 @@ export class Elevator {
         }
         break;
     }
+    // floor indicator and call lamp
+    const floorNum = this.cabY < this.cfg.floorHeight / 2 ? "1" : "2";
+    const stalled = this.phase === "moving" && this.isCall && this.callT >= CALL_PHASES.moveA && this.callT < CALL_PHASES.moveA + CALL_PHASES.stall;
+    const arrow = this.phase === "moving" ? (this.dest === 1 ? "▲" : "▼") : "";
+    const blink = stalled && Math.floor(performance.now() / 450) % 2 === 0;
+    const key = `${floorNum}|${arrow}|${blink}`;
+    if (key !== this.indicatorKey) {
+      this.indicatorKey = key;
+      this.drawIndicators(blink ? "--" : floorNum, blink ? "" : arrow);
+    }
+    const called = this.isCall && this.phase !== "idle";
+    for (const lamp of this.lamps) {
+      const m = lamp.material as THREE.MeshStandardMaterial;
+      m.emissive.setHex(called ? 0xffb020 : 0x000000);
+      m.emissiveIntensity = called ? 1.6 : 0;
+      m.color.setHex(called ? 0xffd34d : 0x4a3b10);
+    }
     const step = DOOR_SPEED * dt;
     this.doorOpen += Math.max(-step, Math.min(step, this.doorTarget - this.doorOpen));
     this.cab.position.y = this.cabY;
@@ -415,6 +584,5 @@ export class Elevator {
       const s = open * (DOOR_W / 2 - 0.02);
       for (const m of d.panels) m.position.x = (m.userData.baseX as number) + (m.userData.sx as number) * s;
     }
-    void this.lamp;
   }
 }
