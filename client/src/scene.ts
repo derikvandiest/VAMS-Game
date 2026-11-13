@@ -6535,40 +6535,65 @@ export function startPlaceholderScene(
     scene.add(group);
   });
 
-  // --- Orange bench on the left of the 7th USC door (as you face the door), against the west building's wall
+  // --- Benches against the west building's wall between the 7th USC and 7th UCLA doors (orange, then blue),
+  // and a drinking fountain on the wall past the UCLA door. The wall face is at -13.8 where the door frames stand out.
   {
-    const BENCH_X = -13.5; // center (the wall face is at -13.8 where the door frames stand out)
-    const BENCH_Z = 6.7;
+    const BENCH_X = -13.5; // center
     const BENCH_LEN = 2.2;
-    const wood = new THREE.MeshStandardMaterial({ color: 0xf47a20, roughness: 0.7 });
     const metal = new THREE.MeshStandardMaterial({ color: 0x2b2f36, roughness: 0.5, metalness: 0.5 });
-    const bench = new THREE.Group();
-    bench.position.set(BENCH_X, 0, BENCH_Z);
-    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, BENCH_LEN), wood);
-    seat.position.set(0, 0.39, 0);
-    const back = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, BENCH_LEN), wood);
-    back.position.set(-0.22, 0.66, 0);
-    seat.castShadow = back.castShadow = true;
-    seat.receiveShadow = back.receiveShadow = true;
-    bench.add(seat, back);
-    for (const lz of [-BENCH_LEN / 2 + 0.15, BENCH_LEN / 2 - 0.15]) {
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.36, 0.06), metal);
-      leg.position.set(0, 0.18, lz);
-      bench.add(leg);
-    }
-    scene.add(bench);
-    buildingSolids.push({ x: BENCH_X, z: BENCH_Z, w: 0.5, d: BENCH_LEN, yBase: 0, yTop: 0.9 });
-    for (const dz of [-0.5, 0.5]) {
-      chairSlots.push({
-        chairX: BENCH_X + 0.05,
-        chairZ: BENCH_Z + dz,
-        seatY: 0.4,
-        tableX: BENCH_X + 2,
-        tableZ: BENCH_Z + dz,
-        facingAngle: Math.PI / 2, // looking out over the walkway
-        bench: { exitX: -12.7, exitZ: BENCH_Z + dz },
-      });
-    }
+    const addBench = (benchZ: number, color: number): void => {
+      const wood = new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
+      const bench = new THREE.Group();
+      bench.position.set(BENCH_X, 0, benchZ);
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, BENCH_LEN), wood);
+      seat.position.set(0, 0.39, 0);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, BENCH_LEN), wood);
+      back.position.set(-0.22, 0.66, 0);
+      seat.castShadow = back.castShadow = true;
+      seat.receiveShadow = back.receiveShadow = true;
+      bench.add(seat, back);
+      for (const lz of [-BENCH_LEN / 2 + 0.15, BENCH_LEN / 2 - 0.15]) {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.36, 0.06), metal);
+        leg.position.set(0, 0.18, lz);
+        bench.add(leg);
+      }
+      scene.add(bench);
+      buildingSolids.push({ x: BENCH_X, z: benchZ, w: 0.5, d: BENCH_LEN, yBase: 0, yTop: 0.9 });
+      for (const dz of [-0.5, 0.5]) {
+        chairSlots.push({
+          chairX: BENCH_X + 0.05,
+          chairZ: benchZ + dz,
+          seatY: 0.4,
+          tableX: BENCH_X + 2,
+          tableZ: benchZ + dz,
+          facingAngle: Math.PI / 2, // looking out over the walkway
+          bench: { exitX: -12.7, exitZ: benchZ + dz },
+        });
+      }
+    };
+    addBench(6.7, 0xf47a20); // orange, left of the 7th USC door
+    addBench(9.1, 0x2563eb); // blue, right next to it
+
+    // Wall-mounted drinking fountain, south of the 7th UCLA door
+    const FOUNTAIN_Z = 15.6;
+    const steel = new THREE.MeshStandardMaterial({ color: 0xc4c9d0, roughness: 0.3, metalness: 0.8 });
+    const fountain = new THREE.Group();
+    fountain.position.set(-13.8, 0, FOUNTAIN_Z);
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.7, 0.55), steel); // backing on the wall
+    plate.position.set(0.02, 1.15, 0);
+    const basin = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.14, 0.5), steel);
+    basin.position.set(0.21, 0.95, 0);
+    const water = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.01, 0.4), new THREE.MeshStandardMaterial({ color: 0x1b2430, roughness: 0.2, metalness: 0.6 }));
+    water.position.set(0.22, 1.025, 0);
+    const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.12, 8), steel);
+    spout.position.set(0.1, 1.1, 0);
+    const button = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.03, 12), new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.5 }));
+    button.rotation.z = Math.PI / 2;
+    button.position.set(0.05, 1.25, 0.18);
+    for (const m of [plate, basin, spout, button]) m.castShadow = true;
+    fountain.add(plate, basin, water, spout, button);
+    scene.add(fountain);
+    buildingSolids.push({ x: -13.58, z: FOUNTAIN_Z, w: 0.45, d: 0.55, yBase: 0.8, yTop: 1.5 });
   }
 
   // --- Lunch cover: the red roof over the tables (layout.json `cover`, ~35x10 m
