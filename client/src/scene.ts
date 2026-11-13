@@ -5240,7 +5240,7 @@ export function startPlaceholderScene(
   });
   const glassDoorHandleMaterial = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.2, metalness: 0.9 });
   const DOOR_HEIGHT = 2.6;
-  const doorParts = new Map<string, { frame: THREE.Mesh; panel: THREE.Mesh; x: number; y: number; z: number }>();
+  const doorParts = new Map<string, { frame: THREE.Mesh; panel: THREE.Mesh; x: number; y: number; z: number; axis: "x" | "z" }>();
   for (const door of doors) {
     const isDouble = door.id.includes("double");
     const isMpr = door.id.startsWith("mpr");
@@ -5284,7 +5284,7 @@ export function startPlaceholderScene(
       const panel = new THREE.Mesh(new THREE.BoxGeometry(pw, DOOR_HEIGHT - 0.2, pd), panelMat);
       panel.position.set(door.x, dy, door.z);
       scene.add(panel);
-      doorParts.set(door.id, { frame, panel, x: door.x, y: dy, z: door.z });
+      doorParts.set(door.id, { frame, panel, x: door.x, y: dy, z: door.z, axis: door.axis as "x" | "z" });
 
       const gw = door.axis === "z" ? 0.38 : 0.8;
       const gd = door.axis === "z" ? 0.8 : 0.38;
@@ -7497,18 +7497,20 @@ export function startPlaceholderScene(
     const c = document.createElement("canvas");
     c.width = c.height = 128;
     const g = c.getContext("2d")!;
-    g.fillStyle = "#16a34a";
-    g.beginPath();
-    g.arc(64, 64, 58, 0, Math.PI * 2);
-    g.fill();
-    g.lineWidth = 7;
+    // a bold green "!" (stem and dot) with a white outline, no circle; drawn as shapes so it is crisp and
+    // sits well inside the canvas (nothing is clipped)
+    const stem = new Path2D();
+    stem.roundRect(47, 10, 34, 72, 14);
+    const dot = new Path2D();
+    dot.arc(64, 106, 17, 0, Math.PI * 2);
+    g.lineJoin = "round";
+    g.lineWidth = 12;
     g.strokeStyle = "#ffffff";
-    g.stroke();
-    g.fillStyle = "#ffffff";
-    g.font = "bold 96px system-ui, -apple-system, Segoe UI, sans-serif";
-    g.textAlign = "center";
-    g.textBaseline = "middle";
-    g.fillText("!", 64, 70);
+    g.stroke(stem);
+    g.stroke(dot);
+    g.fillStyle = "#16a34a";
+    g.fill(stem);
+    g.fill(dot);
     const t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace;
     return t;
@@ -7521,9 +7523,10 @@ export function startPlaceholderScene(
     const cur = doorMarkers.get(roomId);
     if (on && !cur) {
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: markerTexture, transparent: true }));
-      sprite.position.set(parts.x, parts.y + DOOR_HEIGHT / 2 + 0.85, parts.z);
+      // in front of the wall (doors in west-building walls face +x, doors in north-building walls face +z)
+      sprite.position.set(parts.x + (parts.axis === "z" ? 0.9 : 0), parts.y + DOOR_HEIGHT / 2 + 0.46, parts.z + (parts.axis === "x" ? 0.9 : 0));
       sprite.userData.baseY = sprite.position.y;
-      sprite.scale.set(1.15, 1.15, 1);
+      sprite.scale.set(0.85, 0.85, 1);
       scene.add(sprite);
       doorMarkers.set(roomId, sprite);
     } else if (!on && cur) {
