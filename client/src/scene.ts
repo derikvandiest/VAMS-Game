@@ -6815,8 +6815,20 @@ export function startPlaceholderScene(
     const dz = Math.abs(player.position.z - wb.z);
     return Math.hypot(dx, dz) <= 2.4;
   }
+  /** Sit the character in a random free seat of the current classroom (not one another player is using) */
+  function takeRandomSeat(): void {
+    if (!currentClassroom || seatedChair) return;
+    // student desks only (the teacher's chair is the first one registered); skip seats other players are using
+    const free = currentClassroom.chairs.slice(1).filter((c) => !presence?.seatTaken(seatedPosX(c), seatedPosZ(c)));
+    if (free.length === 0) return; // class is full: just read it standing up
+    sitInChair(free[Math.floor(Math.random() * free.length)]);
+  }
+  const seatedPosX = (c: ChairSlot): number => c.chairX - Math.sin(c.facingAngle) * 0.08;
+  const seatedPosZ = (c: ChairSlot): number => c.chairZ - Math.cos(c.facingAngle) * 0.08;
+
   function openAssignment(): void {
     if (!currentClassroom) return;
+    takeRandomSeat(); // working on the assignment happens at a desk; stand up any time (E or move)
     const room = roomById(currentClassroom.id);
     const objectiveId = room?.objectiveId;
     const done = !!objectiveId && !!loadSlot(getActiveSlotId())?.objectives.completedIds.includes(objectiveId);
@@ -6824,6 +6836,35 @@ export function startPlaceholderScene(
     showDialog(speaker, tree, undefined, (event) => {
       if (event === "assignment-complete" && objectiveId) (window as any).__completeObjective?.(objectiveId);
     });
+  }
+
+  // --- Gold "!" on the whiteboard of every classroom whose assignment is still to do -------------------
+  const boardMarkers = new Map<string, { sprite: THREE.Group; baseY: number }>();
+  function ensureBoardMarker(): void {
+    const inst = currentClassroom;
+    if (!inst) return;
+    const room = roomById(inst.id);
+    if (!room || room.type !== "stamp" || boardMarkers.has(inst.id)) return;
+    const group = new THREE.Group();
+    const wb = inst.whiteboard;
+    const baseY = 2.2;
+    group.position.set(wb.x, baseY, wb.z + 0.45); // hovering on the board
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: npcGlowTexture, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+    glow.scale.set(2.6, 2.6, 1);
+    const mark = new THREE.Sprite(new THREE.SpriteMaterial({ map: npcMarkTexture, transparent: true, depthWrite: false }));
+    mark.scale.set(1.0, 1.0, 1);
+    group.add(glow, mark);
+    inst.group.add(group);
+    boardMarkers.set(inst.id, { sprite: group, baseY });
+  }
+  /** Show each classroom's whiteboard mark until its assignment is complete */
+  function updateBoardMarkers(): void {
+    ensureBoardMarker();
+    const done = new Set(loadSlot(getActiveSlotId())?.objectives.completedIds ?? []);
+    for (const [roomId, m] of boardMarkers) {
+      const obj = roomById(roomId)?.objectiveId;
+      m.sprite.visible = !obj || !done.has(obj);
+    }
   }
 
   /** On entering the MPR the character and the camera start out facing Mr. Van Diest (the camera sits behind the player). */
@@ -6892,6 +6933,7 @@ export function startPlaceholderScene(
     }
     triggerTransition(() => {
       currentClassroom = inst;
+      updateBoardMarkers();
       inst.group.visible = true;
       for (const obj of outdoorObjects) {
         obj.visible = false;
@@ -6959,6 +7001,7 @@ export function startPlaceholderScene(
     if (inst) {
       if (!scene.children.includes(inst.group)) scene.add(inst.group);
       currentClassroom = inst;
+      updateBoardMarkers();
       inst.group.visible = true;
       for (const obj of outdoorObjects) {
         obj.visible = false;
@@ -7747,6 +7790,7 @@ export function startPlaceholderScene(
     const room = roomIdByObjective.get((e as CustomEvent<{ id: string }>).detail?.id);
     if ((e as CustomEvent<{ id: string }>).detail?.id === "obj_mpr_seat") applyDoorMarkers();
     updateNpcMarkers();
+    updateBoardMarkers();
     if (room) setDoorMarker(room, false);
   };
   window.addEventListener("eld-objective-complete", onObjectiveComplete);
@@ -7762,6 +7806,17 @@ export function startPlaceholderScene(
         m.group.position.y = m.baseY + Math.sin(t) * 0.1;
         (m.glow.material as THREE.SpriteMaterial).opacity = 0.65 + 0.35 * pulse;
         m.glow.scale.setScalar(2.4 + 0.5 * pulse);
+      }
+    }
+    if (boardMarkers.size) {
+      const t = performance.now() * 0.003;
+      const pulse = 0.5 + 0.5 * Math.sin(t * 1.6);
+      for (const m of boardMarkers.values()) {
+        if (!m.sprite.visible) continue;
+        m.sprite.position.y = m.baseY + Math.sin(t) * 0.08;
+        const glow = m.sprite.children[0] as THREE.Sprite;
+        (glow.material as THREE.SpriteMaterial).opacity = 0.65 + 0.35 * pulse;
+        glow.scale.setScalar(2.3 + 0.5 * pulse);
       }
     }
     if (doorMarkers.size) {

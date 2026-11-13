@@ -52,6 +52,8 @@ const STALE_AFTER = 8; // drop a remote player we have not heard from for this l
 
 export interface Presence {
   update(dt: number, local: LocalPresence): void;
+  /** Is another player sitting at (x, z)? (used to pick a free seat) */
+  seatTaken(x: number, z: number): boolean;
   dispose(): void;
 }
 
@@ -187,6 +189,12 @@ export function startPresence(scene: THREE.Scene): Presence | null {
         }
         r.rig.syncSkeleton?.();
       }
+    },
+    seatTaken(x: number, z: number): boolean {
+      for (const r of remotes.values()) {
+        if (r.seatY !== null && Math.hypot(r.target.x - x, r.target.z - z) < 0.55) return true;
+      }
+      return false;
     },
     dispose(): void {
       socket.off("presence:snapshot", onSnapshot);
