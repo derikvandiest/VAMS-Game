@@ -4746,7 +4746,7 @@ export function startPlaceholderScene(
   // - 2nd floor west: 4 standard exterior windows
   // - 1st floor west: 4 horizontal rectangular windows closer to top of wall
   // Upstairs, from the stairs on the MPR side: window, CSUN door, LMU door, window, window, UCLA door, USC door, window
-  for (const z of [35.6, 25.4, 15.6, 5.4]) {
+  for (const z of [34.3, 26.7, 14.3, 6.7]) {
     addLargeWindowZ(-14, z, 1);             // 2nd floor East side (large, begins from floor touching walkway)
     addWindowZ(-30, z, -1);                  // 2nd floor West side (standard exterior)
   }
@@ -4759,7 +4759,7 @@ export function startPlaceholderScene(
   // - 2nd floor north: 4 standard exterior windows
   // - 1st floor north: 4 horizontal rectangular windows closer to top of wall
   // Upstairs, from the stairs on the east end: window, CSUN door, LMU door, window, window, UCLA door, USC door, window
-  for (const x of [36.6, 26.4, 16.6, 6.4]) {
+  for (const x of [35.3, 27.7, 15.3, 7.7]) {
     addLargeWindowX(x, -2, 1);              // 2nd floor South side (large, begins from floor touching walkway)
     addWindowX(x, -20, -1);                 // 2nd floor North side (standard exterior)
   }
@@ -5621,9 +5621,9 @@ export function startPlaceholderScene(
     const plaqueTex = makeDoorHeaderSignTexture(mainLabel, subLabel, inst.data.id === "learning-center");
     const plaqueMesh = createHeaderPlaqueMesh(plaqueTex, 1.42, 0.45);
 
-    // the sign is mounted on the door itself, low on the panel (below the glass; the objective mark hangs higher)
-    plaqueMesh.scale.setScalar(0.85);
-    const signY = dy - 0.72;
+    // the sign is mounted on the door itself, at the top of the panel above the glass and the handle
+    plaqueMesh.scale.setScalar(0.8);
+    const signY = dy + 1.0;
     if (door.axis === "z") {
       // West building facing east
       plaqueMesh.position.set(door.x + 0.2, signY, door.z);
@@ -8104,7 +8104,7 @@ export function startPlaceholderScene(
       const out = ground ? 1.15 : 0.9;
       sprite.position.set(
         parts.x + (parts.axis === "z" ? out : 0),
-        ground ? parts.y + 0.95 : parts.y + DOOR_HEIGHT / 2 + 0.46,
+        ground ? parts.y + 0.15 : parts.y + DOOR_HEIGHT / 2 + 0.46,
         parts.z + (parts.axis === "x" ? out : 0)
       );
       sprite.userData.baseY = sprite.position.y;
