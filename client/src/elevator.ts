@@ -1,5 +1,5 @@
 /**
- * Campus elevator: a square tower, clad like the school (cream walls, red trim, a flat roof like the
+ * Campus elevator: a square tower, clad like the school (cream walls, a flat roof like the
  * classroom roofs), with a box-shaped cab that travels between the ground floor (in front of the Learning
  * Center) and the upper walkway (in front of the Theater). The doors face the building (north). The call
  * buttons are on the wall to the west (left) of the door. Press E outside to call the cab, E inside to go
@@ -20,8 +20,6 @@ export interface ElevatorConfig {
   deckEdgeZ: number;
   /** Exterior wall color (same as the school walls) */
   wallColor?: number;
-  /** Trim color (same as the school's red posts and railings) */
-  trimColor?: number;
 }
 
 export interface ElevatorSolid {
@@ -42,10 +40,9 @@ const DOOR_W = 1.7; // clear opening
 const DOOR_H = 2.5;
 const TRAVEL_TIME = 3.2; // seconds between floors
 const DOOR_SPEED = 1.5; // door travel per second (0..1)
-// Easter egg: the elevator is slow to arrive when you call it (like the one at school). The trip takes this
-// long, with a pause halfway ("it stopped!") before it carries on.
-const CALL_TIME = 14;
-const CALL_PHASES = { moveA: 5, stall: 3.5 }; // seconds: first leg, then the pause (the rest is the second leg)
+// Easter egg: the elevator is slow to arrive when you call it (like the one at school): a long, steady trip
+// with a few cheeky waiting messages.
+const CALL_TIME = 12;
 
 export class Elevator {
   readonly group = new THREE.Group();
@@ -82,7 +79,7 @@ export class Elevator {
   private partVis: Record<Side, number> = { W: 1, E: 1, S: 1, N: 1, T: 1 };
 
   constructor(scene: THREE.Scene, cfg: ElevatorConfig) {
-    this.cfg = { size: 3.2, wallColor: 0xe8e0d2, trimColor: 0x7a2f2f, ...cfg };
+    this.cfg = { size: 3.2, wallColor: 0xe8e0d2, ...cfg };
     this.half = this.cfg.size / 2;
     this.cx = cfg.x;
     this.cz = cfg.zFront + this.half;
@@ -106,8 +103,7 @@ export class Elevator {
 
     // Exterior: the school's cream walls and red trim
     const wallMat = new THREE.MeshStandardMaterial({ color: this.cfg.wallColor, roughness: 0.9 });
-    const trimMat = new THREE.MeshStandardMaterial({ color: this.cfg.trimColor, roughness: 0.7, metalness: 0.2 });
-    const plinthMat = new THREE.MeshStandardMaterial({ color: 0x5e2222, roughness: 0.6, metalness: 0.2 });
+    const plinthMat = new THREE.MeshStandardMaterial({ color: 0xb9b3a6, roughness: 0.9 }); // plain concrete base
     // Roof: the same as the classroom roofs (cool-roof membrane, metal coping, a rooftop HVAC unit)
     const roofMat = new THREE.MeshStandardMaterial({ color: 0xbac2ca, roughness: 0.95 });
     const copingMat = new THREE.MeshStandardMaterial({ color: 0x8a929a, roughness: 0.5, metalness: 0.25 });
@@ -133,26 +129,13 @@ export class Elevator {
     // base plinth
     add(g, new THREE.BoxGeometry(S + 0.2, 0.12, S + 0.2), plinthMat, cx, 0.06, cz);
 
-    // four corner posts (red); each belongs to the two walls it joins
-    const postSide: Record<string, [Side, Side]> = { "-1,-1": ["W", "N"], "1,-1": ["E", "N"], "-1,1": ["W", "S"], "1,1": ["E", "S"] };
-    for (const sx of [-1, 1]) {
-      for (const sz of [-1, 1]) {
-        const m = add(g, new THREE.BoxGeometry(0.2, H, 0.2), trimMat.clone(), cx + sx * (h - 0.1), H / 2, cz + sz * (h - 0.1));
-        m.userData.sides = postSide[`${sx},${sz}`];
-      }
-    }
     // solid school-colored walls: west, east and back (south)
-    add(g, new THREE.BoxGeometry(0.2, H, S - 0.2), wallMat, cx - h + 0.1, H / 2, cz, "W");
-    add(g, new THREE.BoxGeometry(0.2, H, S - 0.2), wallMat, cx + h - 0.1, H / 2, cz, "E");
-    add(g, new THREE.BoxGeometry(S - 0.2, H, 0.2), wallMat, cx, H / 2, cz + h - 0.1, "S");
-    // red bands at the floor lines (outside trim)
-    for (const y of [0.18, F - 0.05]) {
-      add(g, new THREE.BoxGeometry(S, 0.1, 0.12), trimMat, cx, y, cz + h - 0.06, "S");
-      add(g, new THREE.BoxGeometry(0.12, 0.1, S), trimMat, cx - h + 0.06, y, cz, "W");
-      add(g, new THREE.BoxGeometry(0.12, 0.1, S), trimMat, cx + h - 0.06, y, cz, "E");
-      add(g, new THREE.BoxGeometry(S, 0.1, 0.12), trimMat, cx, y, cz - h + 0.06, "N");
-    }
-
+    // (the walls meet edge to edge, never overlapping, so no faces fight each other)
+    const sideLen = S - 0.12 - 0.2; // between the front strips (0.12 deep) and the back wall (0.2 deep)
+    const sideZ = zFront + 0.12 + sideLen / 2;
+    add(g, new THREE.BoxGeometry(0.2, H, sideLen), wallMat, cx - h + 0.1, H / 2, sideZ, "W");
+    add(g, new THREE.BoxGeometry(0.2, H, sideLen), wallMat, cx + h - 0.1, H / 2, sideZ, "E");
+    add(g, new THREE.BoxGeometry(S, H, 0.2), wallMat, cx, H / 2, cz + h - 0.1, "S");
     // north (door) face: wall strips either side of the opening and headers above each door
     const strip = (S - DOOR_W) / 2;
     const zN = zFront + 0.06;
@@ -315,25 +298,19 @@ export class Elevator {
     }
   }
 
-  /** Where the slow trip to a caller is, 0..1 (first leg, a pause halfway, second leg) */
+  /** Where the slow trip to a caller is, 0..1 (smooth start and stop, steady in between) */
   private callProgress(t: number): number {
-    const a = CALL_PHASES.moveA;
-    const s = CALL_PHASES.stall;
-    const smooth = (x: number): number => x * x * (3 - 2 * x);
-    if (t < a) return 0.5 * smooth(t / a);
-    if (t < a + s) return 0.5;
-    return 0.5 + 0.5 * smooth(Math.min(1, (t - a - s) / (CALL_TIME - a - s)));
+    const x = Math.min(1, t / CALL_TIME);
+    return x * x * (3 - 2 * x);
   }
 
   /** The lines the player reads while waiting for the elevator */
   private waitingMessage(): string {
     const t = this.callT;
-    const a = CALL_PHASES.moveA;
-    const s = CALL_PHASES.stall;
     if (this.phase === "closing" || t < 1.5) return "Calling the elevator… 🛗";
-    if (t < a) return "The elevator is on its way… 🛗";
-    if (t < a + s) return "Hmm… it seems to have stopped. Any second now… ⏳";
-    if (t < a + s + 2.5) return "…and it's moving again! 🛗";
+    if (t < 4) return "The elevator is on its way… 🛗";
+    if (t < 7) return "It's a slow one… 🐌";
+    if (t < 10) return "Still coming… this elevator takes its time 🐌";
     return "Almost there… 🛗";
   }
 
@@ -448,13 +425,6 @@ export class Elevator {
       this.partVis[side] = next;
     }
     for (const side of SIDES) this.applyVis(side);
-    // posts belong to two walls: hidden when either of them is cut away
-    for (const m of this.group.children) {
-      const sides = (m as THREE.Mesh).userData.sides as [Side, Side] | undefined;
-      if (!sides) continue;
-      const vis = Math.min(this.partVis[sides[0]], this.partVis[sides[1]]);
-      this.setMeshVis(m as THREE.Mesh, vis);
-    }
   }
 
   private setMeshVis(m: THREE.Mesh, vis: number): void {
@@ -540,13 +510,11 @@ export class Elevator {
     }
     // floor indicator and call lamp
     const floorNum = this.cabY < this.cfg.floorHeight / 2 ? "1" : "2";
-    const stalled = this.phase === "moving" && this.isCall && this.callT >= CALL_PHASES.moveA && this.callT < CALL_PHASES.moveA + CALL_PHASES.stall;
     const arrow = this.phase === "moving" ? (this.dest === 1 ? "▲" : "▼") : "";
-    const blink = stalled && Math.floor(performance.now() / 450) % 2 === 0;
-    const key = `${floorNum}|${arrow}|${blink}`;
+    const key = `${floorNum}|${arrow}`;
     if (key !== this.indicatorKey) {
       this.indicatorKey = key;
-      this.drawIndicators(blink ? "--" : floorNum, blink ? "" : arrow);
+      this.drawIndicators(floorNum, arrow);
     }
     const called = (this.isCall || this.riding) && this.phase !== "idle";
     for (const lamp of this.lamps) {
