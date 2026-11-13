@@ -160,34 +160,6 @@ export class Elevator {
     add(g, new THREE.BoxGeometry(DOOR_W, F - DOOR_H - 0.1, 0.12), wallMat, cx, (DOOR_H + F - 0.1) / 2 + 0.05, zN, "N"); // above the ground door
     add(g, new THREE.BoxGeometry(DOOR_W, H - (F + DOOR_H), 0.12), wallMat, cx, (F + DOOR_H + H) / 2, zN, "N"); // above the upper door
 
-    // "ELEVATOR" signs above the doors
-    const sign = (() => {
-      const c = document.createElement("canvas");
-      c.width = 512;
-      c.height = 128;
-      const g2 = c.getContext("2d")!;
-      g2.fillStyle = "#101826";
-      g2.fillRect(0, 0, 512, 128);
-      g2.strokeStyle = "#d4a017";
-      g2.lineWidth = 8;
-      g2.strokeRect(6, 6, 500, 116);
-      g2.fillStyle = "#ffffff";
-      g2.font = "800 64px system-ui, -apple-system, Segoe UI, sans-serif";
-      g2.textAlign = "center";
-      g2.textBaseline = "middle";
-      g2.fillText("ELEVATOR", 256, 68);
-      const t = new THREE.CanvasTexture(c);
-      t.colorSpace = THREE.SRGBColorSpace;
-      return t;
-    })();
-    for (const y of [F - 0.5, F + DOOR_H + 0.55]) {
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.32), new THREE.MeshBasicMaterial({ map: sign }));
-      m.position.set(cx, y, zFront - 0.002);
-      m.rotation.y = Math.PI; // faces north (-z)
-      g.add(m);
-      this.parts.N.push(m);
-    }
-
     // call buttons: an up / down plate on the wall to the WEST (left) of each door
     const plate = (() => {
       const c = document.createElement("canvas");
@@ -249,7 +221,7 @@ export class Elevator {
       const y = (level === 1 ? F : 0) + DOOR_H / 2 + 0.02;
       const panels: THREE.Mesh[] = [];
       for (const sx of [-1, 1]) {
-        const m = add(g, new THREE.BoxGeometry(DOOR_W / 2, DOOR_H, 0.07), doorMat, cx + sx * (DOOR_W / 4), y, zFront + 0.13, "N");
+        const m = add(g, new THREE.BoxGeometry(DOOR_W / 2, DOOR_H, 0.07), doorMat, cx + sx * (DOOR_W / 4), y, zFront + 0.06, "N");
         m.userData.sx = sx;
         m.userData.baseX = m.position.x;
         panels.push(m);
@@ -296,12 +268,23 @@ export class Elevator {
     for (const sx of [-1, 1]) add(cab, new THREE.BoxGeometry(cStrip, CH, 0.1), cabWall, sx * (DOOR_W / 2 + cStrip / 2), CH / 2, -cabHalf + 0.05, "N");
     add(cab, new THREE.BoxGeometry(DOOR_W, CH - DOOR_H - 0.02, 0.1), cabWall, 0, (DOOR_H + 0.02 + CH) / 2, -cabHalf + 0.05, "N");
     for (const sx of [-1, 1]) {
-      const m = add(cab, new THREE.BoxGeometry(DOOR_W / 2, DOOR_H, 0.06), doorMat, sx * (DOOR_W / 4), DOOR_H / 2 + 0.14, -cabHalf + 0.12, "N");
+      const m = add(cab, new THREE.BoxGeometry(DOOR_W / 2, DOOR_H, 0.06), doorMat, sx * (DOOR_W / 4), DOOR_H / 2 + 0.14, -cabHalf + 0.05, "N");
       m.userData.sx = sx;
       m.userData.baseX = m.position.x;
       this.cabDoors.push(m);
     }
-    // ceiling light (the buttons are outside, beside the door)
+    // inside switch: on the same wall and side as the outside one (the front wall, west/left of the door)
+    const insidePlate = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.44), new THREE.MeshBasicMaterial({ map: plate }));
+    insidePlate.position.set(-(DOOR_W / 2 + cStrip / 2), 1.25, -cabHalf + 0.115);
+    cab.add(insidePlate); // faces +z, into the cab
+    this.parts.N.push(insidePlate);
+    const insideLamp = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.03), new THREE.MeshStandardMaterial({ color: 0x4a3b10, emissive: 0x000000 }));
+    insideLamp.position.set(-(DOOR_W / 2 + cStrip / 2), 1.65, -cabHalf + 0.12);
+    cab.add(insideLamp);
+    this.parts.N.push(insideLamp);
+    this.lamps.push(insideLamp);
+
+    // ceiling light
     const lampMat = new THREE.MeshStandardMaterial({ color: 0xfff6d8, emissive: 0xfff0b8, emissiveIntensity: 1.4 });
     add(cab, new THREE.BoxGeometry(CS * 0.5, 0.04, CS * 0.5), lampMat, 0, CH - 0.03, 0, "T", false);
     const cabLight = new THREE.PointLight(0xfff0c8, 0.9, 5, 2);
@@ -565,7 +548,7 @@ export class Elevator {
       this.indicatorKey = key;
       this.drawIndicators(blink ? "--" : floorNum, blink ? "" : arrow);
     }
-    const called = this.isCall && this.phase !== "idle";
+    const called = (this.isCall || this.riding) && this.phase !== "idle";
     for (const lamp of this.lamps) {
       const m = lamp.material as THREE.MeshStandardMaterial;
       m.emissive.setHex(called ? 0xffb020 : 0x000000);
