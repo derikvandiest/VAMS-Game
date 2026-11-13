@@ -4746,7 +4746,7 @@ export function startPlaceholderScene(
   // - 2nd floor west: 4 standard exterior windows
   // - 1st floor west: 4 horizontal rectangular windows closer to top of wall
   // Upstairs, from the stairs on the MPR side: window, CSUN door, LMU door, window, window, UCLA door, USC door, window
-  for (const z of [37.2, 23.8, 17.2, 3.8]) {
+  for (const z of [35.6, 25.4, 15.6, 5.4]) {
     addLargeWindowZ(-14, z, 1);             // 2nd floor East side (large, begins from floor touching walkway)
     addWindowZ(-30, z, -1);                  // 2nd floor West side (standard exterior)
   }
@@ -4759,7 +4759,7 @@ export function startPlaceholderScene(
   // - 2nd floor north: 4 standard exterior windows
   // - 1st floor north: 4 horizontal rectangular windows closer to top of wall
   // Upstairs, from the stairs on the east end: window, CSUN door, LMU door, window, window, UCLA door, USC door, window
-  for (const x of [38.2, 24.8, 18.2, 4.8]) {
+  for (const x of [36.6, 26.4, 16.6, 6.4]) {
     addLargeWindowX(x, -2, 1);              // 2nd floor South side (large, begins from floor touching walkway)
     addWindowX(x, -20, -1);                 // 2nd floor North side (standard exterior)
   }
@@ -5621,17 +5621,16 @@ export function startPlaceholderScene(
     const plaqueTex = makeDoorHeaderSignTexture(mainLabel, subLabel, inst.data.id === "learning-center");
     const plaqueMesh = createHeaderPlaqueMesh(plaqueTex, 1.42, 0.45);
 
-    // upstairs the LMU and USC signs sit on the side away from their partner door (toward the window)
-    // (centered in the gap between the door frame and the window)
-    const signSide = door.floor === 1 && /-(csun|lmu|ucla|usc)-/.test(door.id) ? (/-(lmu|usc)-/.test(door.id) ? -2.0 : 2.0) : 1.75;
+    // the sign is mounted on the door itself, low on the panel (below the glass; the objective mark hangs higher)
+    plaqueMesh.scale.setScalar(0.85);
+    const signY = dy - 0.72;
     if (door.axis === "z") {
       // West building facing east
-      plaqueMesh.position.set(-13.92, dy + 0.35, door.z + signSide); // clear of the door frame (it is 1.0 either side)
+      plaqueMesh.position.set(door.x + 0.2, signY, door.z);
       plaqueMesh.rotation.y = Math.PI / 2;
     } else {
       // North & Office buildings facing south
-      const wallZ = door.z < -5 ? -10.38 : -1.88;
-      plaqueMesh.position.set(door.x + signSide, dy + 0.35, wallZ);
+      plaqueMesh.position.set(door.x, signY, door.z + 0.2);
       plaqueMesh.rotation.y = 0;
     }
     scene.add(plaqueMesh);
