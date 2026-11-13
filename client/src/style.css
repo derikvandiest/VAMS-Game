@@ -2319,3 +2319,26 @@ body {
   color: #cbd5e1;
   font-weight: 600;
 }
+
+.dialog-opt-label {
+  flex: 1;
+}
+.dialog-bang {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #facc15;
+  color: #1f1300;
+  font-weight: 900;
+  font-size: 16px;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.85);
+  animation: dialogBang 1.4s ease-in-out infinite;
+}
+@keyframes dialogBang {
+  0%, 100% { box-shadow: 0 0 6px rgba(250, 204, 21, 0.6); }
+  50% { box-shadow: 0 0 16px rgba(250, 204, 21, 1); }
+}

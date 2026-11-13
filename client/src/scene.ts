@@ -5,6 +5,7 @@ import officeSignUrl from "./assets/office_sign.png";
 import { showWelcomePopup } from "./welcome";
 import { NPCS, NpcDef } from "./npcs";
 import { roomIdByObjective } from "./rooms";
+import { Elevator } from "./elevator";
 import { showDialog } from "./dialog";
 import { loadSlot, getActiveSlotId } from "./saveManager";
 import {
@@ -4897,6 +4898,9 @@ export function startPlaceholderScene(
   const walkwayMaterial = new THREE.MeshStandardMaterial({ color: 0xd9c9a3, roughness: 1 });
   const handrailMaterial = new THREE.MeshStandardMaterial({ color: 0x7a2f2f, roughness: 0.6, metalness: 0.25 });
   type Deck = { minX: number; maxX: number; minZ: number; maxZ: number };
+  // Campus elevator: in front of the Learning Center (ground floor) and the Theater (upper walkway), doors facing the building.
+  // Created before the walkway rails so the railing can be opened up in front of the upper door.
+  const elevator = new Elevator(scene, { x: -4, zFront: 1.45, floorHeight: floor2, deckEdgeZ: 1.0 });
   const decks: Deck[] = [];
   const deckBuildings: Array<LayoutWall | undefined> = [];
   const deckStairs: Array<LayoutStair | undefined> = [];
@@ -4981,7 +4985,7 @@ export function startPlaceholderScene(
         ? { minX: st.center.x - hw, maxX: st.center.x + hw, minZ: st.top - 0.3, maxZ: st.top + 0.3 }
         : { minX: st.top - 0.3, maxX: st.top + 0.3, minZ: st.center.z - hw, maxZ: st.center.z + hw };
     });
-    const cutters = [...decks.filter((d) => d !== self), ...buildingRects, ...stairCutter];
+    const cutters = [...decks.filter((d) => d !== self), ...buildingRects, ...stairCutter, elevator.railCutter()];
     for (const c of cutters) {
       const onLine = alongX
         ? fixed >= c.minZ - eps && fixed <= c.maxZ + eps
@@ -6736,7 +6740,8 @@ export function startPlaceholderScene(
       (event) => {
         // Reaching the feedback survey step completes the survey objective (removes the NPC's "!")
         if (event === "survey" && n.def.talkObjective) (window as any).__completeObjective?.(n.def.talkObjective);
-      }
+      },
+      (objectiveId) => !!loadSlot(getActiveSlotId())?.objectives.completedIds.includes(objectiveId)
     );
   }
 
@@ -7260,6 +7265,7 @@ export function startPlaceholderScene(
         shootBasketball();
         return;
       }
+      if (!inMprRoom && !currentClassroom && elevator.press(player.position.x, player.position.y, player.position.z)) return;
       const talkNpc = nearbyNpc();
       if (talkNpc) {
         talkToNpc(talkNpc);
@@ -7471,7 +7477,7 @@ export function startPlaceholderScene(
 
     const playerTop = py + PLAYER_HEIGHT;
     const onStairs = inStairZone(px, pz);
-    const solids: Solid[] = (onStairs ? [] : buildingSolids).concat(railingSolids);
+    const solids: Solid[] = (onStairs ? [] : buildingSolids).concat(railingSolids, elevator.solids());
     for (const s of solids) {
       if (py >= s.yTop - STEP_UP || playerTop <= s.yBase) continue; // no vertical overlap
       const halfW = s.w / 2;
@@ -7526,7 +7532,10 @@ export function startPlaceholderScene(
   function targetFloorY(px: number, pz: number): number {
     // If already up high and still over a roof/walkway, stay up (prevents
     // snapping down while walking across it).
-    if (player.position.y > floor2 * 0.5 && (onRoof(px, pz) || onDeck(px, pz))) return floor2;
+    // inside the elevator the floor is the cab; the landing pad in front of the upper door is at floor2
+    const inElevator = elevator.floorAt(px, pz);
+    if (inElevator !== null) return inElevator;
+    if (player.position.y > floor2 * 0.5 && (onRoof(px, pz) || onDeck(px, pz) || elevator.onPad(px, pz))) return floor2;
 
     for (const stair of stairs) {
       const halfW = stair.width / 2;
@@ -7643,12 +7652,18 @@ export function startPlaceholderScene(
       const t = performance.now() * 0.003;
       for (const m of doorMarkers.values()) m.position.y = (m.userData.baseY as number) + Math.sin(t) * 0.12;
     }
+    elevator.update(dt, player.position.x, player.position.y, player.position.z);
     let inRight = 0;
     let inForward = 0;
     if (keys.has("w") || keys.has("arrowup")) inForward += 1;
     if (keys.has("s") || keys.has("arrowdown")) inForward -= 1;
     if (keys.has("a") || keys.has("arrowleft")) inRight -= 1;
     if (keys.has("d") || keys.has("arrowright")) inRight += 1;
+
+    if (elevator.riding) {
+      inRight = 0;
+      inForward = 0; // no walking while the elevator carries the player
+    }
 
     // Input is relative to the SCREEN: W goes away from the camera, so it works
     // at any orbit angle. (Camera sits at +sin/+cos of camAngle from the player.)
@@ -7837,6 +7852,7 @@ export function startPlaceholderScene(
 
       const targetY = targetFloorY(player.position.x, player.position.z);
       player.position.y += (targetY - player.position.y) * Math.min(1, dt * 12);
+      if (elevator.riding) player.position.y = elevator.cabY; // ride exactly with the cab
       bodyGroup.position.y = 0; // the walk/run clips carry their own bounce
       void bob;
     }
@@ -8414,8 +8430,11 @@ export function startPlaceholderScene(
         }
       }
       const hintNpc = nearbyNpc();
+      const hintElev = !inMprRoom && !currentClassroom ? elevator.hint(player.position.x, player.position.y, player.position.z) : "";
       if (hintNpc) {
         hintText = `Press E to talk to ${hintNpc.def.profile.name} 💬`;
+      } else if (hintElev) {
+        hintText = hintElev;
       } else if (distToCarResetBtn <= 2.2) {
         hintText = "Press E or Click to reset cars 🚗";
       } else if (nearestChairDist <= 1.8) {

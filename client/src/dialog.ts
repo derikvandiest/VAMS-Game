@@ -10,6 +10,8 @@ export interface DialogOption {
   label: string;
   /** Id of the node this option leads to; omit to end the conversation */
   next?: string;
+  /** Shows a gold "!" next to the option until this objective is complete */
+  markerObjective?: string;
 }
 
 export interface DialogNode {
@@ -61,7 +63,7 @@ function qrPlaceholderSvg(): string {
   return `<svg viewBox="-1 -1 ${N + 2} ${N + 2}" class="dialog-qr-svg" aria-hidden="true"><rect x="-1" y="-1" width="${N + 2}" height="${N + 2}" fill="#fff"/><g fill="#111">${cells}${finder(0.5, 0.5)}${finder(N - 6.5, 0.5)}${finder(0.5, N - 6.5)}</g></svg>`;
 }
 
-export function showDialog(speaker: DialogSpeaker, tree: DialogTree, onClose?: () => void, onEvent?: (event: string) => void): void {
+export function showDialog(speaker: DialogSpeaker, tree: DialogTree, onClose?: () => void, onEvent?: (event: string) => void, isDone?: (objectiveId: string) => boolean): void {
   if (open) return;
   open = true;
 
@@ -71,7 +73,7 @@ export function showDialog(speaker: DialogSpeaker, tree: DialogTree, onClose?: (
   overlay.innerHTML = `
     <div class="modal-card dialog-card" role="dialog" aria-modal="true" aria-labelledby="dialog-speaker">
       <div class="dialog-head">
-        <div class="dialog-avatar" aria-hidden="true">👑</div>
+        <div class="dialog-avatar" aria-hidden="true">🎓</div>
         <div>
           <div id="dialog-speaker" class="dialog-speaker">${esc(speaker.name)}</div>
           ${speaker.title ? `<div class="dialog-title">${esc(speaker.title)}</div>` : ""}
@@ -118,7 +120,9 @@ export function showDialog(speaker: DialogSpeaker, tree: DialogTree, onClose?: (
     optsEl.innerHTML = node.options
       .map(
         (o, i) =>
-          `<button type="button" class="dialog-opt" data-i="${i}" role="listitem"><span class="dialog-num">${i + 1}</span><span>${esc(o.label)}</span></button>`
+          `<button type="button" class="dialog-opt" data-i="${i}" role="listitem"><span class="dialog-num">${i + 1}</span><span class="dialog-opt-label">${esc(o.label)}</span>${
+            o.markerObjective && !isDone?.(o.markerObjective) ? `<span class="dialog-bang" title="Still to do" aria-label="Still to do">!</span>` : ""
+          }</button>`
       )
       .join("");
     optsEl.querySelectorAll<HTMLButtonElement>(".dialog-opt").forEach((b) => b.addEventListener("click", () => choose(Number(b.dataset.i))));

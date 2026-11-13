@@ -45,6 +45,8 @@ export const NPC_VAN_DIEST: NpcDef = {
     facialHair: "full-beard",
     shoes: "dress",
     shoeColor: BLACK,
+    glasses: "round",
+    glassesColor: BLACK,
   },
   talkObjective: "obj_survey",
   dialog: {
@@ -55,7 +57,7 @@ export const NPC_VAN_DIEST: NpcDef = {
         options: [
           { label: "How was this game made?", next: "made" },
           { label: "What do I need to do?", next: "tasks" },
-          { label: "I'd like to give feedback", next: "feedback" },
+          { label: "I'd like to give feedback", next: "feedback", markerObjective: "obj_survey" },
           { label: "Goodbye" },
         ],
       },
@@ -65,7 +67,7 @@ export const NPC_VAN_DIEST: NpcDef = {
           "The character models were created using Claude Code.",
         ],
         options: [
-          { label: "That's amazing! I'd like to give feedback", next: "feedback" },
+          { label: "That's amazing! I'd like to give feedback", next: "feedback", markerObjective: "obj_survey" },
           { label: "I have another question", next: "root" },
           { label: "Goodbye" },
         ],
