@@ -5,14 +5,15 @@
 import { CharacterProfile, getDefaultProfile } from "./profile";
 import type { DialogTree } from "./dialog";
 import vanDiestPortrait from "./assets/vandiest_portrait.png";
+import perryPortrait from "./assets/perry_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
 
 export interface NpcDef {
   id: string;
-  /** Where the NPC is placed: "mpr" = Multi-Purpose Room */
-  room: "mpr";
+  /** Where the NPC is placed: "mpr" = inside the Multi-Purpose Room, "campus" = outdoors */
+  room: "mpr" | "campus";
   x: number;
   z: number;
   /** Rotation about Y in radians (0 faces +z, PI faces -z) */
@@ -102,4 +103,54 @@ export const NPC_VAN_DIEST: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST];
+/** The school principal, standing where the elevator, the soccer field and the lunch tables meet. */
+export const NPC_PRINCIPAL: NpcDef = {
+  id: "npc-principal",
+  room: "campus",
+  x: 1.5,
+  z: 9.5,
+  rotY: 0.8, // looking out toward the field
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mr. Perry",
+    title: "Principal",
+    noHomeroom: true,
+    gender: "masculine",
+    look: "masc-suit",
+    outfitColor: "#1e293b",
+    hairStyle: "m-ponytail",
+    hairColor: "#1a1410",
+    skinTone: "#5C3317", // the darkest skin tone
+    shoes: "dress",
+    shoeColor: BLACK,
+  },
+  portrait: perryPortrait,
+  // SAMPLE TEXT: replace with the principal's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Welcome to Valor Academy! I'm the principal. It's great to see everyone out here today.",
+          "This is placeholder dialogue. The real conversation will go here.",
+        ],
+        options: [
+          { label: "Tell me about the school", next: "school" },
+          { label: "Goodbye" },
+        ],
+      },
+      school: {
+        paragraphs: [
+          "(Sample text) Our students and teachers work hard every day, and we're proud of this campus.",
+          "Take your time exploring, and let me know if you have any questions.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Goodbye" },
+        ],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL];

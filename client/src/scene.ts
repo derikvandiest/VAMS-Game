@@ -6636,21 +6636,26 @@ export function startPlaceholderScene(
   mprRoomGroup.visible = false;
   scene.add(mprRoomGroup);
 
-  // NPCs standing in the MPR (they hide and show with the room)
+  // NPCs: in the MPR (they hide and show with the room) or outdoors on the campus
   const npcRigs: AvatarRig[] = [];
   const npcList: Array<{ def: NpcDef; rig: AvatarRig }> = [];
-  for (const def of NPCS.filter((n) => n.room === "mpr")) {
+  for (const def of NPCS) {
     const npcRig = createAvatarRig({ nameTag: true, scale: GAME_AVATAR_SCALE });
     npcRig.apply(def.profile);
     npcRig.player.position.set(def.x, 0, def.z);
     npcRig.player.rotation.y = def.rotY;
-    mprRoomGroup.add(npcRig.player);
-    mprSolids.push({ x: def.x, z: def.z, w: 0.7, d: 0.7, yBase: 0, yTop: 2.6 });
+    const solid = { x: def.x, z: def.z, w: 0.7, d: 0.7, yBase: 0, yTop: 2.6 };
+    if (def.room === "mpr") {
+      mprRoomGroup.add(npcRig.player);
+      mprSolids.push(solid);
+    } else {
+      scene.add(npcRig.player);
+      outdoorObjects.add(npcRig.player); // hidden while inside the MPR or a classroom
+      buildingSolids.push(solid);
+    }
     npcRigs.push(npcRig);
     npcList.push({ def, rig: npcRig });
   }
-
-
 
   // --- Glowing "!" above an NPC the player should talk to (until its objective is complete) ----------
   const npcMarkers = new Map<string, { group: THREE.Group; glow: THREE.Sprite; mark: THREE.Sprite; baseY: number }>();
@@ -6710,14 +6715,16 @@ export function startPlaceholderScene(
   }
   updateNpcMarkers();
 
-  /** The NPC the player is close enough to talk to (inside the MPR only) */
+  /** The NPC the player is close enough to talk to (in the same place: the MPR, or outdoors on the ground floor) */
   const NPC_TALK_RANGE = 3.8;
   function nearbyNpc(): { def: NpcDef; rig: AvatarRig } | null {
-    if (!inMprRoom || seatedChair || drivingCar) return null;
+    if (seatedChair || drivingCar || currentClassroom) return null;
+    const here: "mpr" | "campus" = inMprRoom ? "mpr" : "campus";
+    if (here === "campus" && player.position.y > 1.5) return null; // not from the upper walkway
     let best: { def: NpcDef; rig: AvatarRig } | null = null;
     let bestD = NPC_TALK_RANGE;
     for (const n of npcList) {
-      if (!n.def.dialog) continue;
+      if (!n.def.dialog || n.def.room !== here) continue;
       const d = Math.hypot(player.position.x - n.def.x, player.position.z - n.def.z);
       if (d <= bestD) {
         bestD = d;
@@ -7926,7 +7933,11 @@ export function startPlaceholderScene(
       void bob;
     }
     rig.syncSkeleton?.();
-    if (inMprRoom) for (const n of npcRigs) n.syncSkeleton?.();
+    // NPCs animate only where the player can see them
+    for (let i = 0; i < npcList.length; i++) {
+      const room = npcList[i].def.room;
+      if (room === "mpr" ? inMprRoom : !inMprRoom && !currentClassroom) npcRigs[i].syncSkeleton?.();
+    }
 
     // --- Gate: swing the panels toward their open/closed target ----------
     gatePanels.forEach((pivot, i) => {
