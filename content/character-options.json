@@ -424,13 +424,6 @@
   ],
   "shoes": [
     {
-      "id": "default",
-      "name": "Original",
-      "genders": [
-        "masculine"
-      ]
-    },
-    {
       "id": "sneakers",
       "name": "Sneakers",
       "donors": {

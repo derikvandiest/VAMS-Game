@@ -315,7 +315,7 @@ export function initSettingsModal(onSave?: SaveCb): void {
       body += section("Glasses", itemGrid("glasses", "glasses", GLASSES, draft.glasses));
       if (draft.glasses !== "none") body += section("Frame color", swatches("glassesColor", ACCENT_COLORS, draft.glassesColor));
       body += section("Shoes", itemGrid("shoes", "shoes", shoesFor(g), draft.shoes));
-      if (draft.shoes !== "default") body += section("Shoe color", swatches("shoeColor", ACCENT_COLORS, draft.shoeColor));
+      body += section("Shoe color", swatches("shoeColor", ACCENT_COLORS, draft.shoeColor));
     }
     const bodyEl = $("cc-body");
     const scrollTop = bodyEl.scrollTop;
