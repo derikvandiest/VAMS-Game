@@ -6537,7 +6537,7 @@ export function startPlaceholderScene(
 
   // drinking from the fountain (E): leaning in for a few seconds while the water arcs into the basin
   const fountainDrops: THREE.Mesh[] = [];
-  const FOUNTAIN_STAND = new THREE.Vector2(-13.0, 23.4); // where a player stands to drink
+  const FOUNTAIN_STAND = new THREE.Vector2(-12.78, 23.4); // where a player stands to drink
   const DRINK_TIME = 3;
   let drinkTimer = 0;
   let drinkElapsed = 0;
@@ -6640,8 +6640,8 @@ export function startPlaceholderScene(
       fountainDrops.push(d);
     }
     scene.add(fountain);
-    buildingSolids.push({ x: -13.8 + 0.27, z: FOUNTAIN_Z, w: 0.6, d: 0.7, yBase: 0.7, yTop: 1.5 });
-    FOUNTAIN_STAND.set(-13.0, FOUNTAIN_Z);
+    buildingSolids.push({ x: -13.55, z: FOUNTAIN_Z, w: 0.5, d: 0.7, yBase: 0.7, yTop: 1.5 });
+    FOUNTAIN_STAND.set(-12.78, FOUNTAIN_Z); // just outside the solid (player radius 0.5)
   }
 
   // --- Lunch cover: the red roof over the tables (layout.json `cover`, ~35x10 m
