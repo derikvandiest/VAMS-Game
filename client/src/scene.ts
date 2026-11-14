@@ -6614,7 +6614,7 @@ export function startPlaceholderScene(
         });
       }
     };
-    addBench(10.8, 0xf47a20); // orange, next to the 7th UCLA door
+    addBench(8.5, 0xf47a20); // orange, exactly midway between the 7th USC (3.5) and 7th UCLA (13.5) doors
     addBench(16.6, 0x2563eb); // two blue benches in a row (with a gap) between the 7th UCLA and 7th LMU doors
     addBench(20.0, 0x2563eb);
     // 8th grade side (north building, ground floor): two between LMU and UCLA, two between UCLA and USC,
@@ -6658,33 +6658,27 @@ export function startPlaceholderScene(
   // --- Black music stands in a row on the upper walkway, against the wall just outside the music room door
   {
     const black = new THREE.MeshStandardMaterial({ color: 0x15171b, roughness: 0.45, metalness: 0.6 });
-    const paper = new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.9 });
-    const STAND_Z = -9.85; // the office building's wall face is at -10.3
-    [-24.4, -23.6, -22.8, -22.0, -21.2].forEach((x, i) => {
+        const STAND_Z = -9.85; // the office building's wall face is at -10.3
+    // stored away: turned sideways and lined up close together, trays folded upright, like a stack waiting to be used
+    const STAND_PITCH = 0.28;
+    [0, 1, 2, 3, 4].forEach((i) => {
+      const x = -22.8 + (i - 2) * STAND_PITCH;
       const stand = new THREE.Group();
       stand.position.set(x, floor2, STAND_Z);
-      stand.rotation.y = (i % 2 === 0 ? 0.05 : -0.05); // not perfectly aligned, like real ones
+      stand.rotation.y = Math.PI / 2;
       const baseDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.03, 14), black);
       baseDisc.position.y = 0.015;
       const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.0, 8), black);
       pole.position.y = 0.53;
       const tray = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.32, 0.015), black);
       tray.position.set(0, 1.08, 0);
-      tray.rotation.x = -0.28;
       const lip = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.025, 0.07), black);
-      lip.position.set(0, 0.95, 0.05);
-      lip.rotation.x = -0.28;
+      lip.position.set(0, 0.93, 0.03);
       for (const m2 of [baseDisc, pole, tray, lip]) m2.castShadow = true;
       stand.add(baseDisc, pole, tray, lip);
-      if (i % 2 === 0) {
-        const sheet = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.26), paper);
-        sheet.position.set(0, 1.085, 0.009);
-        sheet.rotation.x = -0.28;
-        stand.add(sheet);
-      }
       scene.add(stand);
-      buildingSolids.push({ x, z: STAND_Z, w: 0.45, d: 0.4, yBase: floor2, yTop: floor2 + 1.3 });
     });
+    buildingSolids.push({ x: -22.8, z: STAND_Z, w: STAND_PITCH * 4 + 0.45, d: 0.5, yBase: floor2, yTop: floor2 + 1.3 });
   }
 
   // --- Lunch cover: the red roof over the tables (layout.json `cover`, ~35x10 m
