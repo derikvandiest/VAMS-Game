@@ -6618,9 +6618,8 @@ export function startPlaceholderScene(
     addBench(16.6, 0x2563eb); // two blue benches in a row (with a gap) between the 7th UCLA and 7th LMU doors
     addBench(20.0, 0x2563eb);
     // 8th grade side (north building, ground floor): two between LMU and UCLA, two between UCLA and USC,
-    // and three short ones in the narrow stretch between the Learning Center and USC
-    for (const x of [18.0, 22.0, 6.0, 10.0]) addBench(x, 0x2563eb, "north");
-    for (const x of [-2.2, -1.0, 0.2]) addBench(x, 0x2563eb, "north", 1.15);
+    // and three full-size ones between the Learning Center and USC
+    for (const x of [-1.5, 1.1, 3.7, 9.9, 14.3, 21.9, 25.9]) addBench(x, 0x2563eb, "north");
 
     // Wall-mounted drinking fountain, between the blue benches and the 7th LMU door (closest to LMU)
     const FOUNTAIN_Z = 23.4;
