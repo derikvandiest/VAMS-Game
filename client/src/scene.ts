@@ -5636,6 +5636,27 @@ export function startPlaceholderScene(
     scene.add(plaqueMesh);
   }
 
+  // A door that does not open, under the music room door: the ground-floor "Office" entrance (decoration only)
+  {
+    const OFFICE_DECOR_X = -26;
+    const OFFICE_WALL_Z = -10.5;
+    const dyO = DOOR_HEIGHT / 2;
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(2, DOOR_HEIGHT, 0.4), redDoorMaterial);
+    frame.position.set(OFFICE_DECOR_X, dyO, OFFICE_WALL_Z);
+    frame.castShadow = true;
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(1.7, DOOR_HEIGHT - 0.2, 0.36), redDoorPanelMaterial);
+    panel.position.set(OFFICE_DECOR_X, dyO, OFFICE_WALL_Z);
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.0, 0.38), glassMaterial);
+    glass.position.set(OFFICE_DECOR_X, dyO + 0.3, OFFICE_WALL_Z);
+    const handle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.25, 0.42), doorHandleMaterial);
+    handle.position.set(OFFICE_DECOR_X + 0.6, dyO - 0.1, OFFICE_WALL_Z);
+    scene.add(frame, panel, glass, handle);
+    const officeSign = createHeaderPlaqueMesh(makeDoorHeaderSignTexture("OFFICE"), 1.42, 0.45);
+    officeSign.scale.setScalar(0.8);
+    officeSign.position.set(OFFICE_DECOR_X, dyO + 1.0, OFFICE_WALL_Z + 0.2);
+    scene.add(officeSign);
+  }
+
 
   // --- Interactive Parking Lot Cars --------------------------------------
   // Detailed low-poly drivable cars with wheels, steering pivots, headlights,
