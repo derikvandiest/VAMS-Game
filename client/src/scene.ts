@@ -6573,42 +6573,54 @@ export function startPlaceholderScene(
   // --- Benches against the west building's wall (orange by the 7th USC door, blue ones between UCLA and LMU),
   // and a drinking fountain on the wall past the UCLA door. The wall face is at -13.8 where the door frames stand out.
   {
-    const BENCH_X = -13.5; // center
+    const BENCH_X = -13.5; // center (west wall)
+    const BENCH_NORTH_Z = -1.5; // center (north wall, whose face is at -1.8)
     const BENCH_LEN = 2.2;
     const metal = new THREE.MeshStandardMaterial({ color: 0x2b2f36, roughness: 0.5, metalness: 0.5 });
-    const addBench = (benchZ: number, color: number): void => {
+    /** A bench against the west building's wall (facing east) or the north building's wall (facing south), at `along` */
+    const addBench = (along: number, color: number, wall: "west" | "north" = "west", len = BENCH_LEN): void => {
       const wood = new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
       const bench = new THREE.Group();
-      bench.position.set(BENCH_X, 0, benchZ);
-      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, BENCH_LEN), wood);
+      const north = wall === "north";
+      const bx = north ? along : BENCH_X;
+      const bz = north ? BENCH_NORTH_Z : along;
+      bench.position.set(bx, 0, bz);
+      bench.rotation.y = north ? -Math.PI / 2 : 0; // local +x is the way the bench faces
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, len), wood);
       seat.position.set(0, 0.39, 0);
-      const back = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, BENCH_LEN), wood);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, len), wood);
       back.position.set(-0.22, 0.66, 0);
       seat.castShadow = back.castShadow = true;
       seat.receiveShadow = back.receiveShadow = true;
       bench.add(seat, back);
-      for (const lz of [-BENCH_LEN / 2 + 0.15, BENCH_LEN / 2 - 0.15]) {
+      for (const lz of [-len / 2 + 0.15, len / 2 - 0.15]) {
         const leg = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.36, 0.06), metal);
         leg.position.set(0, 0.18, lz);
         bench.add(leg);
       }
       scene.add(bench);
-      buildingSolids.push({ x: BENCH_X, z: benchZ, w: 0.5, d: BENCH_LEN, yBase: 0, yTop: 0.9 });
-      for (const dz of [-0.5, 0.5]) {
+      buildingSolids.push({ x: bx, z: bz, w: north ? len : 0.5, d: north ? 0.5 : len, yBase: 0, yTop: 0.9 });
+      for (const off of len > 1.5 ? [-0.5, 0.5] : [0]) {
+        const sx = north ? bx + off : bx + 0.05;
+        const sz = north ? bz + 0.05 : bz + off;
         chairSlots.push({
-          chairX: BENCH_X + 0.05,
-          chairZ: benchZ + dz,
+          chairX: sx,
+          chairZ: sz,
           seatY: 0.4,
-          tableX: BENCH_X + 2,
-          tableZ: benchZ + dz,
-          facingAngle: Math.PI / 2, // looking out over the walkway
-          bench: { exitX: -12.7, exitZ: benchZ + dz },
+          tableX: north ? sx : sx + 2,
+          tableZ: north ? sz + 2 : sz,
+          facingAngle: north ? 0 : Math.PI / 2, // looking out over the walkway
+          bench: north ? { exitX: sx, exitZ: -0.7 } : { exitX: -12.7, exitZ: sz },
         });
       }
     };
     addBench(6.7, 0xf47a20); // orange, left of the 7th USC door
     addBench(16.6, 0x2563eb); // two blue benches in a row (with a gap) between the 7th UCLA and 7th LMU doors
     addBench(20.0, 0x2563eb);
+    // 8th grade side (north building, ground floor): two between LMU and UCLA, two between UCLA and USC,
+    // and three short ones in the narrow stretch between the Learning Center and USC
+    for (const x of [18.0, 22.0, 6.0, 10.0]) addBench(x, 0x2563eb, "north");
+    for (const x of [-2.2, -1.0, 0.2]) addBench(x, 0x2563eb, "north", 1.15);
 
     // Wall-mounted drinking fountain, between the blue benches and the 7th LMU door (closest to LMU)
     const FOUNTAIN_Z = 23.4;
@@ -7757,7 +7769,7 @@ export function startPlaceholderScene(
       let nearestChair: ChairSlot | null = null;
       let minChairDist = 1.8;
       for (const c of chairSlots) {
-        if (c.bench && (player.position.y > 1.5 || presence?.seatTaken(c.chairX - 0.08, c.chairZ))) continue; // not from the walkway above, not an occupied seat
+        if (c.bench && (player.position.y > 1.5 || presence?.seatTaken(c.chairX - Math.sin(c.facingAngle) * 0.08, c.chairZ - Math.cos(c.facingAngle) * 0.08))) continue; // not from the walkway above, not an occupied seat
         const d = Math.hypot(player.position.x - c.chairX, player.position.z - c.chairZ);
         if (d < minChairDist) {
           minChairDist = d;
@@ -9200,7 +9212,7 @@ export function startPlaceholderScene(
       const distToCarResetBtn = Math.hypot(player.position.x - CAR_RESET_BTN_X, player.position.z - CAR_RESET_BTN_Z);
       let nearestChairDist = 999;
       for (const c of chairSlots) {
-        if (c.bench && (player.position.y > 1.5 || presence?.seatTaken(c.chairX - 0.08, c.chairZ))) continue;
+        if (c.bench && (player.position.y > 1.5 || presence?.seatTaken(c.chairX - Math.sin(c.facingAngle) * 0.08, c.chairZ - Math.cos(c.facingAngle) * 0.08))) continue;
         const d = Math.hypot(player.position.x - c.chairX, player.position.z - c.chairZ);
         if (d < nearestChairDist) nearestChairDist = d;
       }
