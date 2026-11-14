@@ -6614,7 +6614,7 @@ export function startPlaceholderScene(
         });
       }
     };
-    addBench(6.7, 0xf47a20); // orange, left of the 7th USC door
+    addBench(10.8, 0xf47a20); // orange, next to the 7th UCLA door
     addBench(16.6, 0x2563eb); // two blue benches in a row (with a gap) between the 7th UCLA and 7th LMU doors
     addBench(20.0, 0x2563eb);
     // 8th grade side (north building, ground floor): two between LMU and UCLA, two between UCLA and USC,
