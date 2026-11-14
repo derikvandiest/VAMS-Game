@@ -631,7 +631,9 @@ export function startPlaceholderScene(
     leafGroup.position.set(-55.0, 0, -leaf.hingeZ);
     pivot.add(leafGroup);
     scene.add(pivot);
-    pivot.userData.dir = leaf.name === "north" ? -1 : 1; // both leaves swing in toward campus
+    pivot.userData.dir = leaf.name === "north" ? -1 : 1; // the north leaf slides north, the south leaf south
+    pivot.userData.open = 0;
+    pivot.userData.baseZ = leaf.hingeZ;
     vehicleGateLeaves.push(pivot);
   }
 
@@ -737,7 +739,7 @@ export function startPlaceholderScene(
   const signTex = makeGateSignTexture();
   const signBacking = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.62, 1.05), gateHardwareMat);
   signBacking.position.set(55.0, 2.05, 58.0);
-  vehicleGateLeaves[0].children[0].add(signBacking); // the warning sign is on the gate: it swings with it
+  vehicleGateLeaves[0].children[0].add(signBacking); // the warning sign is on the gate: it slides with it
 
   // Campus-facing sign (faces -X toward basketball court)
   const signFaceCampus = new THREE.Mesh(
@@ -6737,21 +6739,21 @@ export function startPlaceholderScene(
   // cane drop bolts, slide latch, and center ground stop). While CLOSED it blocks east-west movement
   // through the gap (solid in `collides`); the player opens/closes it with E when within ~3.5 units.
   const GATE_INTERACT_RANGE = 3.5; // units (README controls)
-  const GATE_OPEN_ANGLE = 1.5; // radians each panel swings outward (~86 degrees)
+  const GATE_SLIDE = 4.3; // how far each panel slides sideways, into the walls of the buildings either side
   let gateOpen = false;
 
   // --- The vehicle gate by the school buses (east fence): opens and closes like the main gate ----------
   let vehicleGateOpen = false;
-  const VEHICLE_GATE_ANGLE = 1.45; // radians each leaf swings in toward the campus
+  const VEHICLE_GATE_SLIDE = 3.3; // how far each leaf slides along the fence (just inside it) to open
   const vehicleGateSolid = buildingSolids.find((s) => s.x === 55 && s.z === 58 && s.d === 6.8)!;
-  // while the gate is open only its two posts (and, fully open, the swung leaves) are solid
+  // while the gate is open only its two posts (and, fully open, the slid leaves) are solid
   const vehicleGatePosts: Solid[] = [
     { x: 55.0, z: 54.6, w: 0.3, d: 0.3, yBase: 0, yTop: 3.8 },
     { x: 55.0, z: 61.4, w: 0.3, d: 0.3, yBase: 0, yTop: 3.8 },
   ];
   const vehicleGateLeafSolids: Solid[] = [
-    { x: 53.4, z: 54.78, w: 3.22, d: 0.2, yBase: 0, yTop: 3.6 },
-    { x: 53.4, z: 61.22, w: 3.22, d: 0.2, yBase: 0, yTop: 3.6 },
+    { x: 54.7, z: 56.35 - VEHICLE_GATE_SLIDE, w: 0.2, d: 3.22, yBase: 0, yTop: 3.6 },
+    { x: 54.7, z: 59.65 + VEHICLE_GATE_SLIDE, w: 0.2, d: 3.22, yBase: 0, yTop: 3.6 },
   ];
   const inList = (list: Solid[], s: Solid): boolean => list.indexOf(s) >= 0;
   const setSolid = (s: Solid, on: boolean): void => {
@@ -6761,7 +6763,7 @@ export function startPlaceholderScene(
   };
   /** Collision follows the animation: the barrier goes as soon as it starts opening, the swung leaves only count once open */
   function syncVehicleGateSolids(): void {
-    const openness = Math.abs(vehicleGateLeaves[0].rotation.y) / VEHICLE_GATE_ANGLE;
+    const openness = (vehicleGateLeaves[0].userData.open as number) ?? 0;
     setSolid(vehicleGateSolid, openness < 0.2 && !vehicleGateOpen);
     for (const p of vehicleGatePosts) setSolid(p, true);
     for (const l of vehicleGateLeafSolids) setSolid(l, openness > 0.97);
@@ -6913,6 +6915,10 @@ export function startPlaceholderScene(
 
       pivot.add(leafGroup);
       scene.add(pivot);
+      pivot.userData.dir = -dir; // each panel slides away from the middle, into the building wall on its side
+      pivot.userData.open = 0;
+      pivot.userData.alongZ = alongZ;
+      pivot.userData.base = pivot.position.clone();
       gatePanels.push(pivot);
     });
   }
@@ -7984,10 +7990,8 @@ export function startPlaceholderScene(
       if (dx * dx + dz * dz < PLAYER_RADIUS * PLAYER_RADIUS) return true;
     }
 
-    // Gate: solid while closed (its panels have swung less than ~30
-    // degrees). Once swung open, the passage through the corner gap
-    // is walkable.
-    if (gatePanels.length > 0 && Math.abs(gatePanels[0].rotation.y) < 0.5) {
+    // Gate: solid while closed; once the panels have slid a third of the way open the passage is walkable.
+    if (gatePanels.length > 0 && (gatePanels[0].userData.open as number) < 0.35) {
       for (const gate of gates) {
         if (py >= gate.height || playerTop <= 0) continue; // gate spans y 0..height
         const gw = gate.axis === "z" ? gate.thickness : gate.length;
@@ -8621,18 +8625,29 @@ export function startPlaceholderScene(
       if (room === "mpr" ? inMprRoom : !inMprRoom && !currentClassroom) npcRigs[i].syncSkeleton?.();
     }
 
-    // --- Vehicle gate: swing the leaves toward their open/closed target ----------
+    // --- Vehicle gate: slide the leaves toward their open/closed position ----------
     for (const pivot of vehicleGateLeaves) {
-      const target = (pivot.userData.dir as number) * (vehicleGateOpen ? VEHICLE_GATE_ANGLE : 0);
-      pivot.rotation.y += (target - pivot.rotation.y) * Math.min(1, dt * 3);
-      if (Math.abs(target - pivot.rotation.y) < 0.005) pivot.rotation.y = target;
+      // slide sideways along the fence, a little inside it so the leaves clear the posts
+      const target = vehicleGateOpen ? 1 : 0;
+      let open = pivot.userData.open as number;
+      open += (target - open) * Math.min(1, dt * 3);
+      if (Math.abs(target - open) < 0.005) open = target;
+      pivot.userData.open = open;
+      pivot.position.z = (pivot.userData.baseZ as number) + (pivot.userData.dir as number) * VEHICLE_GATE_SLIDE * open;
+      pivot.position.x = 55.0 - 0.3 * Math.min(1, open * 4);
     }
     syncVehicleGateSolids();
 
-    // --- Gate: swing the panels toward their open/closed target ----------
-    gatePanels.forEach((pivot, i) => {
-      const target = (i % 2 === 0 ? 1 : -1) * (gateOpen ? GATE_OPEN_ANGLE : 0);
-      pivot.rotation.y += (target - pivot.rotation.y) * Math.min(1, dt * 6);
+    // --- Gate: slide the panels toward their open/closed position ----------
+    gatePanels.forEach((pivot) => {
+      let open = pivot.userData.open as number;
+      const target = gateOpen ? 1 : 0;
+      open += (target - open) * Math.min(1, dt * 4);
+      if (Math.abs(target - open) < 0.005) open = target;
+      pivot.userData.open = open;
+      const base = pivot.userData.base as THREE.Vector3;
+      const slide = (pivot.userData.dir as number) * GATE_SLIDE * open;
+      pivot.position.set(base.x + (pivot.userData.alongZ ? 0 : slide), base.y, base.z + (pivot.userData.alongZ ? slide : 0));
     });
 
     // --- Gate interaction prompt (shown when standing close) -------------
