@@ -1,6 +1,7 @@
 /**
  * Player inventory: a quick bar of 5 slots (always on screen, bottom centre) and a backpack for everything else
- * (the 🎒 button under the Map button, or the I key). Items are dragged between any two slots with the mouse or a
+ * (the 🎒 button under the Map button, or the I key). There is no inventory until the player picks up a backpack
+ * from the hooks in the MPR (equipBackpack): then the bar and the button appear and the character wears it. Items are dragged between any two slots with the mouse or a
  * finger: drop on a slot to move there (swapping with what is in it, or stacking the same item). Keys 1-5 pick the
  * active quick slot.
  *
@@ -9,6 +10,7 @@
  */
 import itemsData from "../../content/items.json";
 import { getActiveSlotId } from "./saveManager";
+import { loadCharacterProfile, saveCharacterProfile } from "./profile";
 
 export interface ItemDef {
   id: string;
@@ -31,10 +33,12 @@ const itemById = (id: string): ItemDef | undefined => ITEMS.find((i) => i.id ===
 const QUICK_SLOTS = 5;
 const BAG_SLOTS = 20;
 
-const state: { quick: Slot[]; bag: Slot[]; selected: number } = {
+const state: { quick: Slot[]; bag: Slot[]; selected: number; backpack: string | null; starterGiven: boolean } = {
   quick: new Array(QUICK_SLOTS).fill(null),
   bag: new Array(BAG_SLOTS).fill(null),
   selected: 0,
+  backpack: null, // the color of the backpack the player picked up (null = none yet: no inventory)
+  starterGiven: false,
 };
 let started = false;
 let panel: HTMLElement | null = null;
@@ -60,6 +64,8 @@ function load(): void {
   state.quick = new Array(QUICK_SLOTS).fill(null);
   state.bag = new Array(BAG_SLOTS).fill(null);
   state.selected = 0;
+  state.backpack = null;
+  state.starterGiven = false;
   try {
     const raw = localStorage.getItem(storageKey());
     if (raw) {
@@ -67,14 +73,44 @@ function load(): void {
       state.quick = sanitize(d.quick, QUICK_SLOTS);
       state.bag = sanitize(d.bag, BAG_SLOTS);
       state.selected = Math.max(0, Math.min(QUICK_SLOTS - 1, Number(d.selected) || 0));
-      return;
+      state.backpack = typeof d.backpack === "string" && /^#[0-9a-fA-F]{6}$/.test(d.backpack) ? d.backpack : null;
+      state.starterGiven = d.starterGiven === true || state.quick.some(Boolean) || state.bag.some(Boolean);
     }
   } catch {
     /* start fresh */
   }
-  // a new player starts with the PD basics in the backpack
-  ITEMS.filter((i) => i.starter).forEach((i, k) => (state.bag[k] = { id: i.id, qty: 1 }));
+  wearBackpack(state.backpack);
+}
+
+/** Show the backpack on the character (the profile carries it, so other players see it too) */
+function wearBackpack(color: string | null): void {
+  const p = loadCharacterProfile();
+  if ((p.backpack || "") !== (color || "")) saveCharacterProfile({ ...p, backpack: color || "" });
+}
+
+/** Does the player have a backpack (and so an inventory)? */
+export function hasBackpack(): boolean {
+  return state.backpack !== null;
+}
+
+/** The color of the backpack the player wears, or null */
+export function backpackColor(): string | null {
+  return state.backpack;
+}
+
+/** Pick up (or swap to) a backpack of this color: the inventory opens up; the first one comes with the PD supplies. */
+export function equipBackpack(color: string): void {
+  state.backpack = color;
+  if (!state.starterGiven) {
+    state.starterGiven = true;
+    ITEMS.filter((i) => i.starter).forEach((i) => {
+      const k = state.bag.indexOf(null);
+      if (k >= 0) state.bag[k] = { id: i.id, qty: 1 };
+    });
+  }
   save();
+  wearBackpack(color);
+  render();
 }
 
 function save(): void {
@@ -91,7 +127,7 @@ function save(): void {
 /** Put items in the inventory (stacks first, then the first empty backpack slot, then the quick bar). Returns how many fit. */
 export function addItem(id: string, qty = 1): number {
   const def = itemById(id);
-  if (!def || qty <= 0) return 0;
+  if (!def || qty <= 0 || !state.backpack) return 0; // nothing to carry it in
   let left = qty;
   for (const list of [state.quick, state.bag]) {
     for (const s of list) {
@@ -197,6 +233,12 @@ function buildBar(): void {
 }
 
 function render(): void {
+  // no backpack, no inventory: the quick bar and the backpack button only appear once the player has one
+  const has = state.backpack !== null;
+  const btn = document.getElementById("backpack-btn");
+  if (btn && bar) btn.style.display = has ? "flex" : "none";
+  if (bar) bar.style.display = has ? "flex" : "none";
+  if (!has && panel) closeBackpack();
   if (bar) {
     const sel = selectedItem();
     bar.innerHTML =
@@ -221,14 +263,14 @@ function showDetail(area: Area, i: number): void {
 }
 
 export function openBackpack(): void {
-  if (panel) return;
+  if (panel || !state.backpack) return;
   panel = document.createElement("div");
   panel.id = "backpack-panel";
   panel.setAttribute("role", "dialog");
   panel.setAttribute("aria-label", "Backpack");
   panel.innerHTML = `
     <div class="inv-head">
-      <div class="inv-title">🎒 Backpack <span class="inv-count"></span></div>
+      <div class="inv-title"><span class="inv-swatch" style="background:${state.backpack}"></span>Backpack <span class="inv-count"></span></div>
       <button type="button" class="inv-close" aria-label="Close backpack">✕</button>
     </div>
     <div class="inv-grid"></div>
@@ -264,14 +306,14 @@ function onGlobalKey(e: KeyboardEvent): void {
     closeBackpack();
     return;
   }
-  if (e.code === "KeyI" && !e.repeat) {
+  if (e.code === "KeyI" && !e.repeat && state.backpack) {
     e.preventDefault();
     if (panel) closeBackpack();
     else openBackpack();
     return;
   }
   const n = Number(e.key);
-  if (n >= 1 && n <= QUICK_SLOTS && !e.repeat) {
+  if (n >= 1 && n <= QUICK_SLOTS && !e.repeat && state.backpack) {
     state.selected = n - 1;
     save();
     render();

@@ -41,6 +41,7 @@ import {
 } from "./classrooms";
 import { createAvatarRig, GAME_AVATAR_SCALE, AvatarRig } from "./avatar";
 import { openMap } from "./map";
+import { equipBackpack, backpackColor } from "./inventory";
 import { loadCharacterProfile, onProfileChange } from "./profile";
 import { initSettingsModal } from "./settings";
 
@@ -7099,6 +7100,69 @@ export function startPlaceholderScene(
 
   // Build the isolated MPR Room
   const { group: mprRoomGroup, solids: mprSolids, chairs: mprChairs } = buildMprRoom();
+
+  // --- Backpacks on hooks in the MPR, on the west wall (the one with the doors to the campus), south of the doors.
+  // Press E next to one to take it: the character wears it and gets an inventory (see inventory.ts).
+  const BACKPACK_COLORS = [
+    { name: "black", hex: "#1f2125" },
+    { name: "gray", hex: "#8a8f98" },
+    { name: "white", hex: "#eceff1" },
+    { name: "blue", hex: "#2563eb" },
+    { name: "red", hex: "#dc2626" },
+  ];
+  const BACKPACK_WALL_X = 388.12; // the MPR's west wall (inner face)
+  const backpackHooks: Array<{ name: string; hex: string; x: number; z: number }> = [];
+  {
+    const wood = new THREE.MeshStandardMaterial({ color: 0x8b5e34, roughness: 0.7 });
+    const metal = new THREE.MeshStandardMaterial({ color: 0x9ca3af, roughness: 0.35, metalness: 0.8 });
+    const z0 = 394.0;
+    const STEP = 1.2;
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.14, STEP * BACKPACK_COLORS.length + 0.4), wood);
+    rail.position.set(BACKPACK_WALL_X + 0.03, 1.72, z0 + (STEP * (BACKPACK_COLORS.length - 1)) / 2);
+    rail.castShadow = true;
+    mprRoomGroup.add(rail);
+    BACKPACK_COLORS.forEach((c, i) => {
+      const z = z0 + i * STEP;
+      const hook = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.16, 8), metal);
+      hook.rotation.z = Math.PI / 2;
+      hook.position.set(BACKPACK_WALL_X + 0.13, 1.72, z);
+      mprRoomGroup.add(hook);
+      // the hanging backpack: back against the wall, front pocket facing into the room
+      const fabric = new THREE.MeshStandardMaterial({ color: c.hex, roughness: 0.85 });
+      const trim = new THREE.MeshStandardMaterial({ color: new THREE.Color(c.hex).multiplyScalar(0.6), roughness: 0.8 });
+      const bag = new THREE.Group();
+      bag.position.set(BACKPACK_WALL_X + 0.14, 1.3, z);
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.46, 0.4), fabric);
+      const top = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.4, 14), fabric);
+      top.rotation.x = Math.PI / 2;
+      top.position.set(0, 0.23, 0);
+      const pocket = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.2, 0.3), trim);
+      pocket.position.set(0.13, -0.1, 0);
+      const zip = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.26), metal);
+      zip.position.set(0.105, 0.05, 0);
+      const loop = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.01, 6, 12), trim);
+      loop.position.set(0.0, 0.36, 0);
+      for (const m of [body, top, pocket]) m.castShadow = true;
+      bag.add(body, top, pocket, zip, loop);
+      mprRoomGroup.add(bag);
+      backpackHooks.push({ ...c, x: BACKPACK_WALL_X + 0.4, z });
+    });
+    mprSolids.push({ x: BACKPACK_WALL_X + 0.2, z: z0 + (STEP * (BACKPACK_COLORS.length - 1)) / 2, w: 0.4, d: STEP * BACKPACK_COLORS.length, yBase: 0, yTop: 2 });
+  }
+  /** The backpack hook the player is standing at (inside the MPR), if any */
+  function nearbyBackpack(): { name: string; hex: string } | null {
+    if (!inMprRoom || seatedChair) return null;
+    let best: { name: string; hex: string } | null = null;
+    let bestD = 1.5;
+    for (const h of backpackHooks) {
+      const d = Math.hypot(player.position.x - h.x, player.position.z - h.z);
+      if (d < bestD) {
+        bestD = d;
+        best = h;
+      }
+    }
+    return best;
+  }
   mprRoomGroup.visible = false;
   scene.add(mprRoomGroup);
 
@@ -7900,6 +7964,11 @@ export function startPlaceholderScene(
         return;
       }
       if (inMprRoom) {
+        const bp = nearbyBackpack();
+        if (bp && bp.hex !== backpackColor()) {
+          equipBackpack(bp.hex); // put it on: the inventory opens up
+          return;
+        }
         const distToWestExit = Math.hypot(player.position.x - MPR_EXIT_DOOR_X, player.position.z - MPR_EXIT_DOOR_Z);
         const distToEastExit = Math.hypot(player.position.x - MPR_EAST_EXIT_DOOR_X, player.position.z - MPR_EAST_EXIT_DOOR_Z);
         if (distToWestExit <= 2.6) {
@@ -8843,7 +8912,16 @@ export function startPlaceholderScene(
       if (inMprRoom) {
         const distToWestExit = Math.hypot(player.position.x - MPR_EXIT_DOOR_X, player.position.z - MPR_EXIT_DOOR_Z);
         const distToEastExit = Math.hypot(player.position.x - MPR_EAST_EXIT_DOOR_X, player.position.z - MPR_EAST_EXIT_DOOR_Z);
-        if (distToWestExit <= 2.6) {
+        const bp = nearbyBackpack();
+        if (bp) {
+          const mine = backpackColor();
+          wanted =
+            bp.hex === mine
+              ? `You're wearing the ${bp.name} backpack 🎒`
+              : mine
+                ? `Press E to switch to the ${bp.name} backpack 🎒`
+                : `Press E to take the ${bp.name} backpack 🎒`;
+        } else if (distToWestExit <= 2.6) {
           wanted = "Press E to exit to courtyard";
         } else if (distToEastExit <= 2.6) {
           wanted = "Press E to exit to parking lot";

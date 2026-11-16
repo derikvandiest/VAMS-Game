@@ -679,6 +679,95 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     return { box, eye };
   }
 
+  /**
+   * A backpack on the character's back: sized from the torso (so every outfit and both genders fit), with two
+   * shoulder straps coming over to the front, attached to the Chest bone so it moves with the upper body.
+   */
+  function buildBackpack(color: string): THREE.Object3D[] | null {
+    const root = armatureScene;
+    const chest = root?.getObjectByName("Chest") as THREE.Bone | undefined;
+    if (!root || !chest) return null;
+    root.updateMatrixWorld(true);
+    const inv = root.matrixWorld.clone().invert();
+    // the torso: body meshes between the chest bone and a little below it, arms excluded by width
+    const c = chest.getWorldPosition(new THREE.Vector3()).applyMatrix4(inv);
+    const body = new THREE.Box3();
+    root.traverse((o) => {
+      const m = o as THREE.SkinnedMesh;
+      if (!m.isSkinnedMesh || m.userData.role || !/_Body/.test(partName(m))) return;
+      body.union(new THREE.Box3().setFromObject(m, true));
+    });
+    if (body.isEmpty()) return null;
+    body.applyMatrix4(inv);
+    // depth of the torso at chest height: sample the body's vertices near the chest bone
+    let back = Infinity;
+    let front = -Infinity;
+    const v = new THREE.Vector3();
+    root.traverse((o) => {
+      const m = o as THREE.SkinnedMesh;
+      if (!m.isSkinnedMesh || m.userData.role || !/_Body/.test(partName(m))) return;
+      const pos = m.geometry.getAttribute("position");
+      const toModel = inv.clone().multiply(m.matrixWorld).multiply(m.bindMatrix);
+      for (let i = 0; i < pos.count; i += 2) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(toModel);
+        if (Math.abs(v.y - c.y) < 0.12 && Math.abs(v.x - c.x) < 0.12) {
+          back = Math.min(back, v.z);
+          front = Math.max(front, v.z);
+        }
+      }
+    });
+    if (!isFinite(back)) {
+      back = c.z - 0.12;
+      front = c.z + 0.12;
+    }
+    const W = 0.34;
+    const H = 0.42;
+    const D = 0.15;
+    const g = new THREE.Group();
+    const fabric = new THREE.MeshStandardMaterial({ color, roughness: 0.85 });
+    const trim = new THREE.MeshStandardMaterial({ color: new THREE.Color(color).multiplyScalar(0.6), roughness: 0.8 });
+    const zipper = new THREE.MeshStandardMaterial({ color: 0x9ca3af, roughness: 0.4, metalness: 0.6 });
+    const cy = c.y - 0.1; // the pack hangs from the shoulders, centred a little below the chest bone
+    const cz = back - D / 2 - 0.01;
+    const add = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number): THREE.Mesh => {
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x, y, z);
+      mesh.castShadow = true;
+      mesh.userData.role = "fixed";
+      g.add(mesh);
+      return mesh;
+    };
+    // main bag with rounded top
+    add(new THREE.BoxGeometry(W, H * 0.82, D), fabric, c.x, cy - H * 0.09, cz);
+    const top = add(new THREE.CylinderGeometry(D / 2, D / 2, W, 16), fabric, c.x, cy + H * 0.32, cz);
+    top.rotation.z = Math.PI / 2; // a rounded top running across the bag
+    // front pocket, its zipper and the carry handle
+    add(new THREE.BoxGeometry(W * 0.72, H * 0.36, D * 0.4), trim, c.x, cy - H * 0.22, cz - D / 2 - D * 0.18);
+    add(new THREE.BoxGeometry(W * 0.6, 0.012, 0.012), zipper, c.x, cy - H * 0.05, cz - D / 2 - D * 0.39);
+    const handle = add(new THREE.TorusGeometry(0.035, 0.008, 6, 12, Math.PI), trim, c.x, cy + H * 0.41, cz);
+    handle.rotation.y = Math.PI / 2;
+    // shoulder straps: over each shoulder and down the front of the chest
+    // shoulder height from the shoulder bones (so the straps rest on the shoulders, not above them)
+    const sh = (["Shoulder.L", "Shoulder.R", "ShoulderL", "ShoulderR"] as const)
+      .map((n) => root.getObjectByName(n))
+      .filter((o): o is THREE.Object3D => !!o)
+      .map((o) => o.getWorldPosition(new THREE.Vector3()).applyMatrix4(inv).y);
+    const yTop = sh.length ? Math.max(...sh) + 0.015 : c.y + 0.06;
+    const sw = 0.04;
+    for (const sx of [-1, 1]) {
+      const x = c.x + sx * 0.1;
+      const over = front - back;
+      add(new THREE.BoxGeometry(sw, 0.012, over), trim, x, yTop, (front + back) / 2);
+      // down the front, lying on the chest (a touch inside the surface so it never floats)
+      const f = add(new THREE.BoxGeometry(sw, 0.2, 0.01), trim, x, yTop - 0.1, front - 0.004);
+      f.rotation.x = -0.12;
+    }
+    root.add(g);
+    root.updateMatrixWorld(true);
+    chest.attach(g); // keeps the placement and follows the upper body from now on
+    return [g];
+  }
+
   /** Build a procedural accessory, fit it to the head as it is now, and attach it to the head bone. */
   function buildOnHead(kind: Parameters<typeof buildProcedural>[0]): THREE.Object3D[] | null {
     const root = armatureScene;
@@ -869,6 +958,8 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
 
     const gl = getGlasses(p.glasses);
     setSlot("glasses", gl.proc ? L(gl.id) : "", () => buildOnHead(gl.proc!));
+
+    setSlot("backpack", p.backpack ? L(`backpack-${p.backpack}-${p.gender}`) : "", () => buildBackpack(p.backpack));
 
     const shoe = getShoes(p.shoes);
     const tint = shoe.tint?.[g] ?? [];

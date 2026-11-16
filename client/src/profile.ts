@@ -55,6 +55,8 @@ export interface CharacterProfile {
   noHomeroom: boolean;
   /** NPCs: job title shown under the name */
   title: string;
+  /** The backpack the character wears (its color), "" = none. Picked up from the hooks in the MPR. */
+  backpack: string;
   /** NPCs only: exact colors for named model materials (e.g. { Tie: "#9b1b30" }), applied last */
   partColors?: Record<string, string>;
   /** NPCs only: extra procedural hair on top of the hairstyle (e.g. "locs") */
@@ -143,6 +145,7 @@ export function getDefaultProfile(): CharacterProfile {
     outfitColor: HOMEROOM_INFO.UCLA.shirtColor,
     noHomeroom: false,
     title: "",
+    backpack: "",
   };
 }
 
@@ -180,6 +183,7 @@ export function sanitizeProfile(raw: unknown): CharacterProfile {
     outfitColor: isHex(p.outfitColor) ? p.outfitColor : npc ? "" : HOMEROOM_INFO[homeroom].shirtColor,
     noHomeroom: npc,
     title: npc && typeof p.title === "string" ? p.title.slice(0, 40) : "",
+    backpack: isHex(p.backpack) ? p.backpack : "",
     ...(npc && p.partColors && typeof p.partColors === "object"
       ? { partColors: Object.fromEntries(Object.entries(p.partColors as Record<string, unknown>).filter(([, v]) => isHex(v))) as Record<string, string> }
       : {}),
