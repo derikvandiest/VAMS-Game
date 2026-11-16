@@ -7485,6 +7485,7 @@ export function startPlaceholderScene(
   // NPCs: in the MPR (they hide and show with the room) or outdoors on the campus
   const npcRigs: AvatarRig[] = [];
   const npcList: Array<{ def: NpcDef; rig: AvatarRig }> = [];
+  const npcCups = new Map<string, THREE.Group>(); // coffee cups NPCs hold
   for (const def of NPCS) {
     const npcRig = createAvatarRig({ nameTag: true, scale: GAME_AVATAR_SCALE });
     npcRig.apply(def.profile);
@@ -7514,6 +7515,20 @@ export function startPlaceholderScene(
       for (let k = chairSlots.length - 1; k >= 0; k--) {
         if (Math.hypot(chairSlots[k].chairX - def.x, chairSlots[k].chairZ - def.z) < 0.3) chairSlots.splice(k, 1);
       }
+    }
+    if (def.holding === "coffee") {
+      // a paper coffee cup with a lid and sleeve, held in the right hand (placed every frame, see below)
+      const cup = new THREE.Group();
+      const paper = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.034, 0.14, 16), new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.8 }));
+      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.0435, 0.039, 0.055, 16), new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.9 }));
+      sleeve.position.y = 0.005;
+      const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.047, 0.018, 16), new THREE.MeshStandardMaterial({ color: 0x1f1f1f, roughness: 0.6 }));
+      lid.position.y = 0.078;
+      cup.add(paper, sleeve, lid);
+      for (const m of [paper, sleeve, lid]) m.castShadow = true;
+      scene.add(cup);
+      outdoorObjects.add(cup);
+      npcCups.set(def.id, cup);
     }
     npcRigs.push(npcRig);
     npcList.push({ def, rig: npcRig });
@@ -9195,7 +9210,33 @@ export function startPlaceholderScene(
         r.rightElbowPivot.rotation.set(-0.62, -0.12, 0);
         r.setLocomotion?.(0);
       }
+      const cup = npcCups.get(npcList[i].def.id);
+      if (cup) {
+        // right forearm raised, holding the cup in front of the chest; the cup rides on the hand bone
+        const r = npcRigs[i];
+        r.rightArmPivot.rotation.set(-0.35, -0.2, -0.12);
+        r.rightElbowPivot.rotation.set(-1.45, 0, 0);
+        r.setLocomotion?.(0);
+        // the cup sits in the hand: from the wrist toward the fingers, upright (positioned after the pose below)
+        cup.userData.rig = r;
+      }
       npcRigs[i].syncSkeleton?.();
+      if (cup) {
+        const r = npcRigs[i];
+        const wrist = r.player.getObjectByName("WristR") ?? r.player.getObjectByName("Wrist.R");
+        const elbow = r.player.getObjectByName("LowerArmR") ?? r.player.getObjectByName("LowerArm.R");
+        if (wrist && elbow) {
+          r.player.updateMatrixWorld(true);
+          const w = wrist.getWorldPosition(new THREE.Vector3());
+          const e = elbow.getWorldPosition(new THREE.Vector3());
+          const along = w.clone().sub(e).normalize(); // forearm direction: on to the palm
+          const fwd = new THREE.Vector3(Math.sin(r.player.rotation.y), 0, Math.cos(r.player.rotation.y));
+          cup.position.copy(w).addScaledVector(along, 0.13).addScaledVector(fwd, 0.06); // held in the curled fingers
+          cup.position.y -= 0.07;
+          cup.rotation.set(0, r.player.rotation.y, 0);
+          cup.visible = true;
+        }
+      }
     }
 
     // --- Vehicle gate: slide the leaves toward their open/closed position ----------

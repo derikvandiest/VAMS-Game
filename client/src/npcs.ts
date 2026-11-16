@@ -15,6 +15,7 @@ import castanedaPortrait from "./assets/castaneda_portrait.png";
 import tunsonPortrait from "./assets/tunson_portrait.png";
 import staufferPortrait from "./assets/stauffer_portrait.png";
 import roldanPortrait from "./assets/roldan_portrait.png";
+import guerreroPortrait from "./assets/guerrero_portrait.png";
 import daniPortrait from "./assets/dani_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
@@ -44,6 +45,8 @@ export interface NpcDef {
   talkRange?: number;
   /** Sitting (on a bench or chair) with the seat at this height; x/z/rotY are then the seated position */
   seatY?: number;
+  /** Something held in the right hand */
+  holding?: "coffee";
 }
 
 const BLACK = "#1f1f24";
@@ -907,4 +910,73 @@ export const NPC_ROLDAN: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN];
+/**
+ * Mr. Guerrero, Assistant Principal for the upper school, standing between the 8th UCLA classroom and the field,
+ * looking out at the field with a coffee cup in his hand. Matches his portrait: warm tan skin, short neat black
+ * hair, a mustache and goatee, a crisp white button-up shirt.
+ */
+const GUERRERO_SHIRT = "#eef2f6";
+export const NPC_GUERRERO: NpcDef = {
+  id: "npc-guerrero",
+  room: "campus",
+  x: 18.6, // in front of the 8th UCLA door (x = 18, wall z = -2), halfway to the field (its edge is at z = 10.5)
+  z: 5.2,
+  rotY: 0.08, // looking out at the field
+  holding: "coffee",
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mr. Guerrero",
+    title: "Assistant Principal, Upper School",
+    noHomeroom: true,
+    gender: "masculine",
+    look: "masc-suit",
+    outfitColor: GUERRERO_SHIRT,
+    hairStyle: "m-suit", // short, neat, swept up
+    hairColor: "#141214",
+    facialHair: "goatee",
+    skinTone: "#D49C74",
+    glasses: "none",
+    shoes: "dress",
+    shoeColor: "#1f1f24",
+    partColors: { White: GUERRERO_SHIRT, Tie: GUERRERO_SHIRT, "Legs:Suit": "#283041" },
+  },
+  portrait: guerreroPortrait,
+  // SAMPLE TEXT: replace with Mr. Guerrero's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Good morning! I'm Mr. Guerrero, the Assistant Principal for our upper school, grades 6 through 8.",
+          "Just grabbing a quick coffee and watching the field. Best seat in the house! How's the PD going?",
+        ],
+        options: [
+          { label: "What does an Assistant Principal do?", next: "ap" },
+          { label: "Any advice for our English learners in the upper grades?", next: "eld" },
+          { label: "Enjoy your coffee, Mr. Guerrero!" },
+        ],
+      },
+      ap: {
+        paragraphs: [
+          "(Sample text) A little of everything! I support our 6th, 7th and 8th grade teachers in their classrooms, help with student support and discipline, and work with families so every student has what they need.",
+          "Most of all, I'm out here making sure our students feel known and cared for.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Guerrero!" },
+        ],
+      },
+      eld: {
+        paragraphs: [
+          "(Sample text) Give them lots of chances to talk. Sentence frames, partner talk and clear academic vocabulary go a long way. And keep expectations high: our English learners can do rigorous work with the right support.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Guerrero!" },
+        ],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO];
