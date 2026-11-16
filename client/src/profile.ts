@@ -55,6 +55,8 @@ export interface CharacterProfile {
   noHomeroom: boolean;
   /** NPCs: job title shown under the name */
   title: string;
+  /** NPCs only: exact colors for named model materials (e.g. { Tie: "#9b1b30" }), applied last */
+  partColors?: Record<string, string>;
 }
 
 export const HOMEROOM_INFO: Record<Homeroom, { label: string; shirtColor: string; textHex: string }> = {
@@ -169,6 +171,9 @@ export function sanitizeProfile(raw: unknown): CharacterProfile {
     outfitColor: isHex(p.outfitColor) ? p.outfitColor : npc ? "" : HOMEROOM_INFO[homeroom].shirtColor,
     noHomeroom: npc,
     title: npc && typeof p.title === "string" ? p.title.slice(0, 40) : "",
+    ...(npc && p.partColors && typeof p.partColors === "object"
+      ? { partColors: Object.fromEntries(Object.entries(p.partColors as Record<string, unknown>).filter(([, v]) => isHex(v))) as Record<string, string> }
+      : {}),
   };
 }
 

@@ -6,6 +6,7 @@ import { CharacterProfile, getDefaultProfile } from "./profile";
 import type { DialogTree } from "./dialog";
 import vanDiestPortrait from "./assets/vandiest_portrait.png";
 import perryPortrait from "./assets/perry_portrait.png";
+import kurisuPortrait from "./assets/kurisu_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -25,6 +26,8 @@ export interface NpcDef {
   portrait?: string;
   /** A glowing "!" floats above the NPC until this objective is complete (see saveManager.ts) */
   talkObjective?: string;
+  /** How close a player must be to talk (default 3.8); smaller next to a door so E still opens the door */
+  talkRange?: number;
 }
 
 const BLACK = "#1f1f24";
@@ -153,4 +156,50 @@ export const NPC_PRINCIPAL: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL];
+/**
+ * Mr. Kurisu, the 8th grade UCLA math teacher, standing outside his classroom beside the door.
+ * Matches his portrait: short neat black hair, tan skin, clean-shaven, blue-gray button-down shirt and a red tie
+ * (the suit model with the jacket and shirt both tinted the shirt's blue-gray, so it reads as a shirt and tie).
+ */
+const KURISU_SHIRT = "#6a7d9c";
+export const NPC_KURISU: NpcDef = {
+  id: "npc-kurisu",
+  room: "campus",
+  x: 16.4, // just west of the 8th UCLA door (x = 18, wall at z = -2), clear of the doorway and the walkway post
+  z: -0.4,
+  rotY: 0.25, // facing out toward the courtyard, turned a little toward the door
+  talkRange: 1.3, // short, so pressing E at the door still opens the classroom
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mr. Kurisu",
+    title: "8th Grade Math Teacher",
+    noHomeroom: true,
+    gender: "masculine",
+    look: "masc-suit",
+    outfitColor: KURISU_SHIRT,
+    hairStyle: "m-suit", // short, neat, swept back
+    hairColor: "#16120f", // black
+    skinTone: "#D49A6A", // warm tan
+    facialHair: "none",
+    glasses: "none",
+    shoes: "dress",
+    shoeColor: BLACK,
+    partColors: { White: KURISU_SHIRT, Tie: "#9b1b30", Black: "#2a2d33" },
+  },
+  portrait: kurisuPortrait,
+  // SAMPLE TEXT: replace with Mr. Kurisu's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi! I'm Mr. Kurisu, I teach 8th grade math here in UCLA.",
+          "Come on in when you're ready, your assignment is on the whiteboard.",
+        ],
+        options: [{ label: "Thanks, Mr. Kurisu!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU];

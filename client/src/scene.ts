@@ -7087,7 +7087,7 @@ export function startPlaceholderScene(
     for (const n of npcList) {
       if (!n.def.dialog || n.def.room !== here) continue;
       const d = Math.hypot(player.position.x - n.def.x, player.position.z - n.def.z);
-      if (d <= bestD) {
+      if (d <= bestD && d <= (n.def.talkRange ?? NPC_TALK_RANGE)) {
         bestD = d;
         best = n;
       }

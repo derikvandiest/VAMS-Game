@@ -433,7 +433,9 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
         const std = (m as THREE.MeshStandardMaterial).clone();
         const name = std.name || "";
         const key = name.toLowerCase();
-        if (SKIN_MAT_NAMES.has(key)) {
+        if (p.partColors?.[name]) {
+          std.color.set(p.partColors[name]);
+        } else if (SKIN_MAT_NAMES.has(key)) {
           std.color.copy(key === "skin" ? skin : skinDark);
         } else if (matchesEntry(look.shirt, meshName, name)) {
           std.color.copy(shirt);
