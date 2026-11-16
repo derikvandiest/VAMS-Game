@@ -167,6 +167,8 @@ function load(): void {
       }
       // saves from before the folder and the bottle: they come with the backpack now
       if (state.backpack && (d.kit ?? 0) < 4) giveKit();
+      // the Chromebook is borrowed from a classroom's laptop cart now: one carried from before goes back
+      for (const list of [state.quick, state.bag, state.pouch]) list.forEach((s, i) => s?.id === "chromebook" && (list[i] = null));
     }
   } catch {
     /* start fresh */
@@ -351,6 +353,31 @@ function renderOptional(): void {
   el.innerHTML = `<span class="opt-tag">OPTIONAL</span><span class="opt-text">${
     done ? "Pencil pouch filled ✓" : "Find 5 sharpened pencils hidden in the classrooms for your pencil pouch"
   }</span><span class="opt-count">${n}/${PENCILS_NEEDED}</span>`;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Chromebooks: borrowed from a classroom's laptop cart, only usable in that classroom
+// ---------------------------------------------------------------------------------------------------------------
+/** Take a Chromebook from the laptop cart (one at a time) */
+export function borrowChromebook(): "ok" | "no-backpack" | "has" | "full" {
+  if (!state.backpack) return "no-backpack";
+  if (countItem("chromebook") > 0) return "has";
+  const k = state.bag.indexOf(null);
+  if (k < 0) return "full";
+  state.bag[k] = { id: "chromebook", qty: 1 };
+  save();
+  render();
+  toast("💻 You took a Chromebook from the laptop cart. Click it in your backpack to use it.");
+  return "ok";
+}
+
+/** Put the Chromebook back on the cart (pressing E at it, or leaving the classroom). Returns true if one was carried. */
+export function returnChromebook(): boolean {
+  if (countItem("chromebook") === 0) return false;
+  closeChromebook();
+  removeItem("chromebook", 1);
+  toast("💻 You returned the Chromebook to the laptop cart.");
+  return true;
 }
 
 /** Is the backpack drawn on the character? */

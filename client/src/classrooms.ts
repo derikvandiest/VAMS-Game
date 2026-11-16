@@ -32,6 +32,8 @@ export interface ClassroomInstance {
   exitDoorZ: number;
   /** The front whiteboard (where the assignment is read): centre x, wall z and width */
   whiteboard: { x: number; z: number; w: number };
+  /** The black laptop cart (Chromebooks to borrow while in this room): where to stand to use it */
+  laptopCart: { x: number; z: number };
   campusDoor: {
     id: string;
     x: number;
@@ -1606,6 +1608,64 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     yTop: 1.2,
   });
 
+  // Black laptop cart along the West wall (south of the bookcase): Chromebooks standing in its slots
+  const lcX = minX + 0.42;
+  const lcZ = worldZ + 1.8;
+  {
+    const black = new THREE.MeshStandardMaterial({ color: 0x17181b, roughness: 0.55, metalness: 0.3 });
+    const steel = new THREE.MeshStandardMaterial({ color: 0x9aa1aa, roughness: 0.35, metalness: 0.8 });
+    const shell = new THREE.MeshStandardMaterial({ color: 0x3a3d43, roughness: 0.5, metalness: 0.4 });
+    const cartBody = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.78, 1.25), black);
+    cartBody.position.set(lcX, 0.5, lcZ);
+    cartBody.castShadow = true;
+    const top = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.04, 1.3), black);
+    top.position.set(lcX, 0.91, lcZ);
+    // front doors: two panels with vents, a latch
+    const doorL = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.62, 0.58), new THREE.MeshStandardMaterial({ color: 0x222428, roughness: 0.5 }));
+    doorL.position.set(lcX + 0.32, 0.5, lcZ - 0.3);
+    const doorR = doorL.clone();
+    doorR.position.z = lcZ + 0.3;
+    const latch = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.12, 0.05), steel);
+    latch.position.set(lcX + 0.34, 0.6, lcZ);
+    group.add(cartBody, top, doorL, doorR, latch);
+    for (let v = 0; v < 6; v++) {
+      for (const dz of [-0.3, 0.3]) {
+        const vent = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.015, 0.4), new THREE.MeshStandardMaterial({ color: 0x0c0d0f }));
+        vent.position.set(lcX + 0.332, 0.35 + v * 0.06, lcZ + dz);
+        group.add(vent);
+      }
+    }
+    // the Chromebooks standing on top, in a rack
+    for (let k = 0; k < 8; k++) {
+      const book = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.2, 0.025), shell);
+      book.position.set(lcX, 1.03, lcZ - 0.5 + k * 0.142);
+      book.castShadow = true;
+      const logo = new THREE.Mesh(new THREE.CircleGeometry(0.018, 12), new THREE.MeshBasicMaterial({ color: 0xd8dde3 }));
+      logo.rotation.y = Math.PI / 2;
+      logo.position.set(lcX + 0.131, 1.04, lcZ - 0.5 + k * 0.142);
+      group.add(book, logo);
+    }
+    for (const dz of [-0.63, 0.63]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.14, 0.02), steel);
+      rail.position.set(lcX, 1.0, lcZ + dz);
+      group.add(rail);
+    }
+    // push handle and casters
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.5, 8), steel);
+    handle.rotation.x = Math.PI / 2;
+    handle.position.set(lcX + 0.36, 0.86, lcZ);
+    group.add(handle);
+    for (const dx of [-0.24, 0.24]) {
+      for (const dz of [-0.55, 0.55]) {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.035, 12), black);
+        wheel.rotation.x = Math.PI / 2;
+        wheel.position.set(lcX + dx, 0.05, lcZ + dz);
+        group.add(wheel);
+      }
+    }
+    solids.push({ x: lcX, z: lcZ, w: 0.7, d: 1.35, yBase: 0, yTop: 1.2 });
+  }
+
   // Trash & Recycle Bins near door
   const trashBin = new THREE.Mesh(
     new THREE.CylinderGeometry(0.18, 0.15, 0.45, 12),
@@ -1663,6 +1723,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     exitDoorX,
     exitDoorZ,
     whiteboard: { x: worldX - 0.3, z: minZ + 0.11, w: wbWidth },
+    laptopCart: { x: lcX + 0.95, z: lcZ },
     campusDoor,
   };
 

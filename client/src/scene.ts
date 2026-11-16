@@ -42,7 +42,7 @@ import {
 } from "./classrooms";
 import { createAvatarRig, GAME_AVATAR_SCALE, AvatarRig } from "./avatar";
 import { openMap } from "./map";
-import { equipBackpack, backpackColor, fillWaterBottle, countItem, takePencilPouch, pencilQuest, collectPencil } from "./inventory";
+import { equipBackpack, backpackColor, fillWaterBottle, countItem, takePencilPouch, pencilQuest, collectPencil, borrowChromebook, returnChromebook } from "./inventory";
 import { loadCharacterProfile, onProfileChange } from "./profile";
 import { initSettingsModal } from "./settings";
 
@@ -7436,6 +7436,23 @@ export function startPlaceholderScene(
       (m.g.children[1] as THREE.Sprite).position.y = 0.2 + Math.sin(t + m.x) * 0.04;
     }
   }
+  /** Standing at the classroom's laptop cart? */
+  const nearLaptopCart = (): boolean =>
+    !!currentClassroom && !seatedChair && Math.hypot(player.position.x - currentClassroom.laptopCart.x, player.position.z - currentClassroom.laptopCart.z) <= 1.5;
+  /** E at the laptop cart: borrow a Chromebook, or put it back */
+  function useLaptopCart(): void {
+    if (returnChromebook()) return;
+    const r = borrowChromebook();
+    if (r === "no-backpack") showDialog({ name: "Laptop Cart", title: "Classroom Chromebooks" }, {
+      start: "root",
+      nodes: { root: { paragraphs: ["You'll need a backpack to carry a Chromebook. Grab one from the hooks in the MPR, by the doors to the courtyard."], options: [{ label: "OK" }] } },
+    });
+    if (r === "full") showDialog({ name: "Laptop Cart", title: "Classroom Chromebooks" }, {
+      start: "root",
+      nodes: { root: { paragraphs: ["Your backpack is full. Make some room first."], options: [{ label: "OK" }] } },
+    });
+  }
+
   /** The hidden pencil the player is standing next to, if any */
   function nearbyPencil(): string | null {
     const q = pencilQuest();
@@ -7819,6 +7836,7 @@ export function startPlaceholderScene(
   }
 
   function exitClassroom(): void {
+    returnChromebook(); // Chromebooks stay in their classroom: it goes back on the laptop cart
     if (!currentClassroom) return;
     if (seatedChair) standUp();
     const roomToExit = currentClassroom;
@@ -8269,6 +8287,10 @@ export function startPlaceholderScene(
       }
       if (nearStorageDoor()) {
         openStorage();
+        return;
+      }
+      if (nearLaptopCart()) {
+        useLaptopCart();
         return;
       }
       if (inMprRoom) {
@@ -9858,6 +9880,8 @@ export function startPlaceholderScene(
         hintText = "Press E or Click to reset cars 🚗";
       } else if (nearbyPencil()) {
         hintText = "Press E to pick up the sharpened pencil ✏️";
+      } else if (nearLaptopCart()) {
+        hintText = countItem("chromebook") > 0 ? "Press E to return the Chromebook to the cart 💻" : "Press E to take a Chromebook from the laptop cart 💻";
       } else if (nearFountain()) {
         hintText = countItem("water-bottle-empty") > 0 ? "Press E to drink and fill your Stanley cup 💧" : "Press E to take a drink 💧";
       } else if (nearBallCart() && !bballHeld) {

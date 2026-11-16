@@ -52,9 +52,8 @@
       "id": "chromebook",
       "name": "Chromebook",
       "icon": "svg:chromebook",
-      "description": "Your school Chromebook laptop. Click it to open it and log in.",
-      "stack": 1,
-      "starter": true
+      "description": "A school Chromebook borrowed from this classroom's laptop cart. Click it to open it and log in. It stays in this classroom: it goes back to the cart when you leave.",
+      "stack": 1
     }
   ]
 }
