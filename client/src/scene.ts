@@ -7290,9 +7290,10 @@ export function startPlaceholderScene(
     });
     mprSolids.push({ x: BACKPACK_WALL_X + 0.2, z: z0 + (STEP * (BACKPACK_COLORS.length - 1)) / 2, w: 0.4, d: STEP * BACKPACK_COLORS.length, yBase: 0, yTop: 2 });
   }
-  // --- The MPR storage room: a door on the back wall (the north wall, across from the projection screen) that
+  // --- The MPR storage room: a door at the left end of the back wall (the north wall, across from the projection
+  // screen), next to the doors out to the courtyard. It
   // can't be entered; pressing E at it offers a pencil pouch (the start of the optional pencil objective).
-  const STORAGE_DOOR = { x: 400, z: 388.12 };
+  const STORAGE_DOOR = { x: 391.6, z: 388.12 }; // the left end of the back wall, next to the doors to the courtyard
   {
     const doorMat = new THREE.MeshStandardMaterial({ color: 0x5b6470, roughness: 0.6, metalness: 0.2 });
     const frameMat = new THREE.MeshStandardMaterial({ color: 0x2f343b, roughness: 0.5, metalness: 0.4 });

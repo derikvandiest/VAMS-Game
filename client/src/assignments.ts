@@ -49,6 +49,11 @@ const ASSIGNMENTS: Record<string, AssignmentContent> = {
   },
 };
 
+/** The teacher of a classroom, if one has been set up (for the student agenda) */
+export function teacherFor(roomId: string): string | undefined {
+  return ASSIGNMENTS[roomId]?.teacher.name;
+}
+
 function contentFor(roomId: string): AssignmentContent {
   const known = ASSIGNMENTS[roomId];
   if (known) return known;

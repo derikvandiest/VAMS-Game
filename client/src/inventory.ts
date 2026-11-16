@@ -12,6 +12,7 @@ import itemsData from "../../content/items.json";
 import { getActiveSlotId, loadSlot } from "./saveManager";
 import { ROOMS } from "./rooms";
 import { openChromebook, isChromebookOpen, closeChromebook } from "./chromebook";
+import { openAgenda, isAgendaOpen, closeAgenda } from "./agenda";
 import { loadCharacterProfile, saveCharacterProfile } from "./profile";
 
 export interface ItemDef {
@@ -445,6 +446,7 @@ export function startInventory(): void {
 /** Hide everything (leaving the game). */
 export function stopInventory(): void {
   closeChromebook();
+  closeAgenda();
   closeBackpack();
   bar?.remove();
   bar = null;
@@ -580,7 +582,7 @@ export function closeBackpack(): void {
 
 function onGlobalKey(e: KeyboardEvent): void {
   if (!bar) return; // not in a game
-  if (isChromebookOpen()) return; // the laptop has the keyboard
+  if (isChromebookOpen() || isAgendaOpen()) return; // the laptop / agenda has the keyboard
   const t = e.target as HTMLElement | null;
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
   if (document.querySelector(".dialog-overlay, #map-overlay, #settings-modal-overlay[style*='flex']")) return;
@@ -669,6 +671,7 @@ function onPointerUp(e: PointerEvent): void {
     const clicked = listOf(from.area)[from.index]?.id;
     if (clicked === "water-bottle-full") drinkWaterBottle();
     if (clicked === "chromebook") openChromebook(loadCharacterProfile().name); // open the laptop at its login screen
+    if (clicked === "student-agenda") openAgenda(loadCharacterProfile().name); // every objective, in detail
     return;
   }
   const target = e.type === "pointerup" ? targetSlot(e) : null;

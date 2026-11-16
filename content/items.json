@@ -44,7 +44,7 @@
       "id": "student-agenda",
       "name": "Student Agenda",
       "icon": "📒",
-      "description": "Your student agenda planner: the day's schedule, homework and reminders.",
+      "description": "Your student agenda planner. Click it to see every objective in detail: what's done and what's left.",
       "stack": 1,
       "starter": true
     },
