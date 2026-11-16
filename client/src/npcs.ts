@@ -217,4 +217,38 @@ export const NPC_KURISU: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU];
+/**
+ * Ms. Blessing, the 5th grade CSUN humanities teacher, standing in front of the whiteboard in her classroom
+ * (talk to her for the assignment). Matches her portrait: long curly brown hair with a center part, round
+ * reddish-brown glasses, fair skin, an open red cardigan over a white blouse with a light blue diamond print.
+ */
+export const NPC_BLESSING: NpcDef = {
+  id: "npc-blessing",
+  room: "classroom",
+  classroomId: "5th-csun-humanities",
+  x: 0, // set from the classroom's whiteboard
+  z: 0,
+  rotY: 0, // facing the class
+  talkRange: 2.2,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Ms. Blessing",
+    title: "5th Grade Humanities Teacher",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-suit", // the jacket is her cardigan, the shirt her blouse
+    outfitColor: "#b8312f", // red cardigan
+    hairStyle: "f-long", // shoulder-length base: the crown and center part; the curls fall from it
+    extraHair: "curls",
+    hairColor: "#8a5530", // warm brown
+    glasses: "round",
+    glassesColor: "#8a3a2a", // reddish-brown frames
+    skinTone: "#F2CCB0",
+    shoes: "dress",
+    shoeColor: BLACK,
+    partColors: { "Legs:Black": "#2b3245" },
+    polkaDots: { parts: ["Body:White"], base: "#f4f6f8", dot: "#9cc3d5", accent: "#c0392b", shape: "diamonds" },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING];

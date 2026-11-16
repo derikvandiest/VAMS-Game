@@ -58,9 +58,10 @@ export interface CharacterProfile {
   /** NPCs only: exact colors for named model materials (e.g. { Tie: "#9b1b30" }), applied last */
   partColors?: Record<string, string>;
   /** NPCs only: extra procedural hair on top of the hairstyle (e.g. "locs") */
-  extraHair?: "locs";
+  extraHair?: "locs" | "curls";
   /** NPCs only: polka-dot pattern on the named model materials */
-  polkaDots?: { parts: string[]; base: string; dot: string };
+  /** NPCs only: a printed pattern on the named model materials: dots, or diamonds (dot = diamond fill, accent = small squares) */
+  polkaDots?: { parts: string[]; base: string; dot: string; accent?: string; shape?: "dots" | "diamonds" };
 }
 
 export const HOMEROOM_INFO: Record<Homeroom, { label: string; shirtColor: string; textHex: string }> = {
@@ -178,7 +179,7 @@ export function sanitizeProfile(raw: unknown): CharacterProfile {
     ...(npc && p.partColors && typeof p.partColors === "object"
       ? { partColors: Object.fromEntries(Object.entries(p.partColors as Record<string, unknown>).filter(([, v]) => isHex(v))) as Record<string, string> }
       : {}),
-    ...(npc && p.extraHair === "locs" ? { extraHair: "locs" as const } : {}),
+    ...(npc && (p.extraHair === "locs" || p.extraHair === "curls") ? { extraHair: p.extraHair as "locs" | "curls" } : {}),
     ...(npc && p.polkaDots && typeof p.polkaDots === "object" ? { polkaDots: p.polkaDots as CharacterProfile["polkaDots"] } : {}),
   };
 }

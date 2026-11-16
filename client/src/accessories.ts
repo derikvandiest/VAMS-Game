@@ -82,7 +82,7 @@ export function recolor(objs: THREE.Object3D[], colors: RoleColors): void {
 // Procedural accessories
 // ---------------------------------------------------------------------------
 
-export type ProceduralKind = "round" | "locs";
+export type ProceduralKind = "round" | "locs" | "curls";
 
 /** Where the eyes are (model space): vertical center, front surface and outer-corner span. */
 export interface EyeInfo {
@@ -119,6 +119,7 @@ export function buildProcedural(kind: ProceduralKind, head: THREE.Box3, bulk = 1
   const top = head.max.y;
   const g = new THREE.Group();
   if (kind === "locs") return buildLocs(head, g);
+  if (kind === "curls") return buildCurls(head, g);
 
   // Round glasses: fitted to the measured eye position, the frame sits right against the face.
   const e = eye ?? { y: top - 0.58 * w, z: head.max.z - 0.06 * d, span: 0.55 * w };
@@ -176,6 +177,48 @@ function buildLocs(head: THREE.Box3, g: THREE.Group): THREE.Group {
     const tip = new THREE.SphereGeometry(r * (0.85 + 0.3 * jit), 6, 5);
     const end = pts[pts.length - 1];
     g.add(withGeo(std("hair"), tip, end.x, end.y, end.z));
+  }
+  return g;
+}
+
+/**
+ * Long curly hair: wavy ringlets falling from around the head (not in front of the face) past the shoulders,
+ * fanning out a little as they go down. Goes over a long base hairstyle; colored as hair.
+ */
+function buildCurls(head: THREE.Box3, g: THREE.Group): THREE.Group {
+  const size = head.getSize(new THREE.Vector3());
+  const c = head.getCenter(new THREE.Vector3());
+  const w = size.x;
+  const d = size.z;
+  const top = head.max.y;
+  const N = 22;
+  for (let i = 0; i < N; i++) {
+    // around the head from one temple, behind, to the other temple (the face stays clear)
+    const theta = -2.55 + (5.1 * i) / (N - 1);
+    const jit = Math.sin(i * 12.9898 + 4.1) * 0.5 + 0.5;
+    const front = Math.cos(theta) < -0.3; // strands framing the face (theta = 0 is the back of the head)
+    const len = w * (front ? 1.45 : 1.75) + w * 0.25 * jit;
+    const pts: THREE.Vector3[] = [];
+    const S = 28;
+    for (let s = 0; s <= S; s++) {
+      const u = s / S;
+      // fans out toward the ends, with tight waves in and out and side to side (curls)
+      const spread = 0.58 + 0.24 * u + 0.07 * Math.sin(u * Math.PI * 7 + i * 1.7) * Math.min(1, u * 3);
+      const wave = Math.sin(u * Math.PI * 7 + i) * 0.16 * Math.min(1, u * 3);
+      const ang = theta + wave;
+      pts.push(
+        new THREE.Vector3(
+          c.x + Math.sin(ang) * w * spread,
+          top - w * 0.22 - len * u,
+          c.z - Math.cos(ang) * d * spread * 0.95
+        )
+      );
+    }
+    const curve = new THREE.CatmullRomCurve3(pts);
+    const r = w * (0.08 + 0.035 * jit);
+    g.add(withGeo(std(i % 4 === 0 ? "hairDark" : "hair"), new THREE.TubeGeometry(curve, 72, r, 6, false)));
+    const end = pts[pts.length - 1];
+    g.add(withGeo(std("hair"), new THREE.SphereGeometry(r, 6, 5), end.x, end.y, end.z));
   }
   return g;
 }

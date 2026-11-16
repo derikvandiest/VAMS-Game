@@ -407,23 +407,29 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     return colors[mat];
   }
 
-  /** Polka dots drawn in the shader from the model-space position (the outfit models have no texture UVs) */
-  function addPolkaDots(std: THREE.MeshStandardMaterial, base: string, dot: string): void {
+  /** Printed patterns drawn in the shader from the model-space position (the outfit models have no texture UVs) */
+  function addPolkaDots(std: THREE.MeshStandardMaterial, base: string, dot: string, accent = dot, shape: "dots" | "diamonds" = "dots"): void {
     std.color.set(base);
     const dotColor = new THREE.Color(dot);
+    const accentColor = new THREE.Color(accent);
+    const body =
+      shape === "diamonds"
+        ? "vec2 cell = uv * 22.0; vec2 q = fract(cell) - 0.5; float dd = abs(q.x) + abs(q.y); float fill = 1.0 - smoothstep(0.36, 0.40, dd); vec2 k = fract(cell + 0.5) - 0.5; float sq = 1.0 - smoothstep(0.08, 0.11, max(abs(k.x), abs(k.y))); diffuseColor.rgb = mix(mix(diffuseColor.rgb, polkaColor, fill), polkaAccent, sq);"
+        : "vec2 cell = uv * 30.0; cell.x += 0.5 * step(1.0, mod(floor(cell.y), 2.0)); vec2 q = fract(cell) - 0.5; float m = 1.0 - smoothstep(0.2, 0.26, length(q)); diffuseColor.rgb = mix(diffuseColor.rgb, polkaColor, m);";
     std.onBeforeCompile = (sh) => {
       sh.uniforms.polkaColor = { value: dotColor };
+      sh.uniforms.polkaAccent = { value: accentColor };
       sh.vertexShader = sh.vertexShader
         .replace("#include <common>", "#include <common>\nvarying vec3 vPolkaPos;\nvarying vec3 vPolkaN;")
         .replace("#include <skinning_vertex>", "#include <skinning_vertex>\nvPolkaPos = transformed;\nvPolkaN = objectNormal;");
       sh.fragmentShader = sh.fragmentShader
-        .replace("#include <common>", "#include <common>\nvarying vec3 vPolkaPos;\nvarying vec3 vPolkaN;\nuniform vec3 polkaColor;")
+        .replace("#include <common>", "#include <common>\nvarying vec3 vPolkaPos;\nvarying vec3 vPolkaN;\nuniform vec3 polkaColor;\nuniform vec3 polkaAccent;")
         .replace(
           "#include <color_fragment>",
-          "#include <color_fragment>\n{ vec3 an = abs(normalize(vPolkaN)); vec2 uv = an.x > an.z ? vPolkaPos.zy : vPolkaPos.xy; vec2 cell = uv * 30.0; cell.x += 0.5 * step(1.0, mod(floor(cell.y), 2.0)); vec2 q = fract(cell) - 0.5; float m = 1.0 - smoothstep(0.2, 0.26, length(q)); diffuseColor.rgb = mix(diffuseColor.rgb, polkaColor, m); }"
+          "#include <color_fragment>\n{ vec3 an = abs(normalize(vPolkaN)); vec2 uv = an.x > an.z ? vPolkaPos.zy : vPolkaPos.xy; " + body + " }"
         );
     };
-    std.customProgramCacheKey = () => "polka-dots";
+    std.customProgramCacheKey = () => "pattern-" + shape;
   }
 
   function applyMaterials(p: CharacterProfile): void {
@@ -471,7 +477,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
         } else if (matchesEntry(look.brows, meshName, name)) {
           std.color.copy(brows);
         }
-        if (p.polkaDots && p.polkaDots.parts.some((e) => (e.includes(":") ? matchesEntry([e], meshName, name) : e === name))) addPolkaDots(std, p.polkaDots.base, p.polkaDots.dot);
+        if (p.polkaDots && p.polkaDots.parts.some((e) => (e.includes(":") ? matchesEntry([e], meshName, name) : e === name))) addPolkaDots(std, p.polkaDots.base, p.polkaDots.dot, p.polkaDots.accent, p.polkaDots.shape);
         return std;
       };
       mesh.material = Array.isArray(mesh.material) ? mesh.material.map(tint) : tint(mesh.material);

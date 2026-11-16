@@ -6,6 +6,7 @@
 import type { DialogTree, DialogSpeaker } from "./dialog";
 import { roomById } from "./rooms";
 import kurisuPortrait from "./assets/kurisu_portrait.png";
+import blessingPortrait from "./assets/blessing_portrait.png";
 
 interface AssignmentContent {
   teacher: DialogSpeaker;
@@ -18,6 +19,15 @@ interface AssignmentContent {
 }
 
 const ASSIGNMENTS: Record<string, AssignmentContent> = {
+  "5th-csun-humanities": {
+    teacher: { name: "Ms. Blessing", title: "5th Grade Humanities Teacher", portrait: blessingPortrait },
+    intro: ["(Sample text) Hi, welcome to 5th Grade CSUN Humanities! I'm Ms. Blessing. I'm so glad you're here."],
+    task: [
+      "(Sample assignment) Today's assignment: read the short passage on the board with a partner, then share one thing you noticed and one question you still have.",
+      "When you have finished, come back and let me know.",
+    ],
+    finished: ["(Sample text) Wonderful job! I'm marking your assignment as complete. Thank you!"],
+  },
   "8th-ucla-math": {
     teacher: { name: "Mr. Kurisu", title: "8th Grade Math Teacher", portrait: kurisuPortrait },
     intro: ["(Sample text) Welcome to 8th Grade UCLA Math! I'm Mr. Kurisu. Glad you could stop by."],
