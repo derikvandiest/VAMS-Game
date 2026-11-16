@@ -11,19 +11,19 @@
     },
     {
       "id": "water-bottle-empty",
-      "name": "Water Bottle (empty)",
-      "icon": "🧴",
-      "description": "An empty water bottle. Fill it up at the drinking fountain by the 7th grade LMU classroom (press E at the fountain).",
+      "name": "Stanley Cup 40 oz (empty)",
+      "icon": "svg:stanley",
+      "description": "Your 40 oz Stanley tumbler, empty. Fill it up at the drinking fountain by the 7th grade LMU classroom (press E at the fountain).",
       "stack": 1,
       "starter": true,
       "dim": true
     },
     {
       "id": "water-bottle-full",
-      "name": "Water Bottle (full)",
-      "icon": "🧴",
+      "name": "Stanley Cup 40 oz (full)",
+      "icon": "svg:stanley",
       "badge": "💧",
-      "description": "A full bottle of cold water. Drink it any time; refill it at the drinking fountain.",
+      "description": "Your 40 oz Stanley tumbler, full of cold water. Drink it any time; refill it at the drinking fountain.",
       "stack": 1
     }
   ]

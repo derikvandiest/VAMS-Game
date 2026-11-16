@@ -9544,7 +9544,7 @@ export function startPlaceholderScene(
       } else if (distToCarResetBtn <= 2.2) {
         hintText = "Press E or Click to reset cars 🚗";
       } else if (nearFountain()) {
-        hintText = countItem("water-bottle-empty") > 0 ? "Press E to drink and fill your water bottle 💧" : "Press E to take a drink 💧";
+        hintText = countItem("water-bottle-empty") > 0 ? "Press E to drink and fill your Stanley cup 💧" : "Press E to take a drink 💧";
       } else if (nearBallCart() && !bballHeld) {
         hintText = mp && !ballSync.basket.own && ballSync.basket.held ? "Someone is using the basketball right now 🏀" : "Press E to grab a basketball 🏀";
       } else if (nearestChairDist <= 1.8) {

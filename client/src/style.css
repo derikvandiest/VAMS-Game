@@ -2654,3 +2654,7 @@ body {
   .chat-widget { bottom: 96px; }
   .chat-window { max-height: calc(100vh - 220px); }
 }
+.inv-svg { width: 34px; height: 34px; display: block; }
+.inv-detail-icon .inv-svg { width: 40px; height: 40px; }
+.inv-detail-icon.dim { opacity: 0.5; filter: grayscale(0.6); }
+.inv-ghost .inv-svg { width: 34px; height: 34px; }

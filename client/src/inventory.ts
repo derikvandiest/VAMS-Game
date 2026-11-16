@@ -35,6 +35,29 @@ type Area = "quick" | "bag";
 export const ITEMS: ItemDef[] = (itemsData as { items: ItemDef[] }).items;
 const itemById = (id: string): ItemDef | undefined => ITEMS.find((i) => i.id === id);
 
+/**
+ * Drawn icons for items that no emoji fits ("icon": "svg:<name>" in items.json).
+ * stanley: a 40 oz Stanley Quencher tumbler: tapered body, stainless band, lid with a straw, big side handle.
+ */
+const SVG_ICONS: Record<string, string> = {
+  stanley: `<svg viewBox="0 0 64 64" class="inv-svg" aria-hidden="true">
+    <path d="M40 22 C52 22 54 26 54 34 C54 42 52 46 44 46" fill="none" stroke="#5f8f86" stroke-width="5" stroke-linecap="round"/>
+    <path d="M40 22 C52 22 54 26 54 34 C54 42 52 46 44 46" fill="none" stroke="#86b8ad" stroke-width="2" stroke-linecap="round"/>
+    <path d="M17 18 L45 18 L41 58 Q31 61 21 58 Z" fill="#7fb3a7"/>
+    <path d="M17 18 L23 18 L24 58 Q22 58.5 21 58 Z" fill="#9cc9bf" opacity="0.8"/>
+    <path d="M38 18 L45 18 L41 58 Q39.5 58.5 38 58.6 Z" fill="#5f8f86" opacity="0.7"/>
+    <rect x="18.5" y="26" width="25.5" height="5" fill="#d7dde2"/>
+    <text x="31" y="45" font-family="Arial, sans-serif" font-size="5.5" font-weight="700" fill="#e8f3f0" text-anchor="middle">STANLEY</text>
+    <rect x="14.5" y="13" width="33" height="6.5" rx="2.5" fill="#cfd6db"/>
+    <rect x="16" y="10" width="30" height="4.5" rx="2" fill="#e6ebee"/>
+    <rect x="34" y="2" width="3.4" height="11" rx="1.5" fill="#6aa196" transform="rotate(12 35.7 8)"/>
+  </svg>`,
+};
+/** An item's icon as HTML: an emoji, or a drawn SVG icon */
+function iconHtml(icon: string): string {
+  return icon.startsWith("svg:") ? SVG_ICONS[icon.slice(4)] ?? "❔" : icon;
+}
+
 const QUICK_SLOTS = 5;
 const BAG_SLOTS = 20;
 
@@ -135,14 +158,14 @@ function transform(fromId: string, toId: string): boolean {
 export function fillWaterBottle(): boolean {
   if (!state.backpack) return false;
   const filled = transform("water-bottle-empty", "water-bottle-full");
-  if (filled) toast("💧 Water bottle filled!");
+  if (filled) toast("💧 Stanley cup filled!");
   return filled;
 }
 
 /** Drink the water bottle (it becomes empty again; refill it at the fountain) */
 export function drinkWaterBottle(): boolean {
   const ok = transform("water-bottle-full", "water-bottle-empty");
-  if (ok) toast("Ahh, refreshing! 🧴 Refill it at the drinking fountain.");
+  if (ok) toast("Ahh, refreshing! Refill your Stanley at the drinking fountain.");
   return ok;
 }
 
@@ -310,7 +333,7 @@ function slotHtml(area: Area, i: number, s: Slot): string {
   const key = area === "quick" ? `<span class="inv-key">${i + 1}</span>` : "";
   const folder = def?.id === "assignment-folder" ? `<span class="inv-qty">${completedAssignments().length}/${TOTAL_ASSIGNMENTS}</span>` : "";
   const body = def
-    ? `<span class="inv-icon${def.dim ? " dim" : ""}">${def.icon}</span>${def.badge ? `<span class="inv-badge">${def.badge}</span>` : ""}${
+    ? `<span class="inv-icon${def.dim ? " dim" : ""}">${iconHtml(def.icon)}</span>${def.badge ? `<span class="inv-badge">${def.badge}</span>` : ""}${
         folder || (s!.qty > 1 ? `<span class="inv-qty">${s!.qty}</span>` : "")
       }`
     : "";
@@ -372,7 +395,7 @@ function showDetail(area: Area, i: number): void {
     extra = `<button type="button" class="inv-use" data-use="drink">💧 Drink</button>`;
   }
   box.innerHTML = def
-    ? `<div class="inv-detail-icon">${def.icon}</div><div class="inv-detail-main"><div class="inv-detail-name">${esc(def.name)}${s!.qty > 1 ? ` <span>×${s!.qty}</span>` : ""}</div><div class="inv-detail-desc">${esc(def.description)}</div>${extra}</div>`
+    ? `<div class="inv-detail-icon${def.dim ? " dim" : ""}">${iconHtml(def.icon)}</div><div class="inv-detail-main"><div class="inv-detail-name">${esc(def.name)}${s!.qty > 1 ? ` <span>×${s!.qty}</span>` : ""}</div><div class="inv-detail-desc">${esc(def.description)}</div>${extra}</div>`
     : `<div class="inv-detail-desc">Drag items onto the quick bar at the bottom of the screen to keep them handy. Keys <b>1–5</b> pick a quick slot.</div>`;
   box.querySelector<HTMLButtonElement>("[data-use='drink']")?.addEventListener("click", () => {
     drinkWaterBottle();
