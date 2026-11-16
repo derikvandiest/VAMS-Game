@@ -8,6 +8,7 @@ import vanDiestPortrait from "./assets/vandiest_portrait.png";
 import perryPortrait from "./assets/perry_portrait.png";
 import kurisuPortrait from "./assets/kurisu_portrait.png";
 import morrisPortrait from "./assets/morris_portrait.png";
+import ashiPortrait from "./assets/ashi_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -297,4 +298,65 @@ export const NPC_MORRIS: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS];
+/**
+ * Mr. Ashi, on the soccer field's south-east corner by the ball reset grate (toward the vehicle gate). Matches his
+ * portrait: warm brown skin, a short black fade, a mustache and chin beard, a black zip-up track jacket (the suit
+ * model all in black), black track pants and sneakers.
+ */
+const ASHI_BLACK = "#18191d";
+export const NPC_ASHI: NpcDef = {
+  id: "npc-ashi",
+  room: "campus",
+  x: 47.6,
+  z: 40.6,
+  rotY: -2.35, // looking out over the field
+  talkRange: 2.4,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mr. Ashi",
+    title: "Coach",
+    noHomeroom: true,
+    gender: "masculine",
+    look: "masc-suit",
+    outfitColor: ASHI_BLACK,
+    noHair: true,
+    extraHair: "buzz", // a short fade
+    hairColor: "#141110",
+    facialHair: "goatee",
+    skinTone: "#9A5F3C",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: ASHI_BLACK,
+    partColors: { White: ASHI_BLACK, Tie: ASHI_BLACK, "Legs:Suit": "#1d1f24" },
+  },
+  portrait: ashiPortrait,
+  // SAMPLE TEXT: replace with Mr. Ashi's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hey! I'm Mr. Ashi. I keep an eye on the field.",
+          "Ball rolled away or stuck somewhere? Step on the drain grate right here in the corner and it sends the soccer ball and the basketball back to their starting spots. Or I can reset them for you.",
+        ],
+        options: [
+          { label: "Please reset the balls", action: "reset-balls" },
+          { label: "How does the reset work?", next: "how" },
+          { label: "Thanks, Mr. Ashi!" },
+        ],
+      },
+      how: {
+        paragraphs: [
+          "(Sample text) The metal grate in the corner of the field is the reset. Walk onto it and say yes when it asks.",
+          "The soccer ball goes back to the center spot and the basketball goes back to the courts, for everyone playing.",
+        ],
+        options: [
+          { label: "Please reset the balls", action: "reset-balls" },
+          { label: "Got it, thanks!" },
+        ],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI];

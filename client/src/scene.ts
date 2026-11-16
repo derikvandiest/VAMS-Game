@@ -7210,6 +7210,8 @@ export function startPlaceholderScene(
       (event) => {
         // Reaching the feedback survey step completes the survey objective (removes the NPC's "!")
         if (event === "survey" && n.def.talkObjective) (window as any).__completeObjective?.(n.def.talkObjective);
+        // Mr. Ashi resets the soccer ball and the basketball (for everyone)
+        if (event === "reset-balls") doBallReset();
       },
       (objectiveId) => !!loadSlot(getActiveSlotId())?.objectives.completedIds.includes(objectiveId)
     );

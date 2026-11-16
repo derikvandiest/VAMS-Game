@@ -82,7 +82,7 @@ export function recolor(objs: THREE.Object3D[], colors: RoleColors): void {
 // Procedural accessories
 // ---------------------------------------------------------------------------
 
-export type ProceduralKind = "round" | "locs" | "curls" | "braid";
+export type ProceduralKind = "round" | "locs" | "curls" | "braid" | "buzz";
 
 /** Where the eyes are (model space): vertical center, front surface and outer-corner span. */
 export interface EyeInfo {
@@ -121,6 +121,7 @@ export function buildProcedural(kind: ProceduralKind, head: THREE.Box3, bulk = 1
   if (kind === "locs") return buildLocs(head, g);
   if (kind === "curls") return buildCurls(head, g);
   if (kind === "braid") return buildBraid(head, g);
+  if (kind === "buzz") return buildBuzz(head, g);
 
   // Round glasses: fitted to the measured eye position, the frame sits right against the face.
   const e = eye ?? { y: top - 0.58 * w, z: head.max.z - 0.06 * d, span: 0.55 * w };
@@ -264,5 +265,24 @@ function buildBraid(head: THREE.Box3, g: THREE.Group): THREE.Group {
   const tip = withGeo(std("hair"), new THREE.ConeGeometry(w * 0.07, w * 0.22, 8), end.x, end.y - w * 0.1, end.z);
   tip.rotation.x = Math.PI;
   g.add(tip);
+  return g;
+}
+
+/**
+ * A very short fade / buzz cut: a thin dome of hair over the crown, with a crisp hairline high on the forehead and
+ * lower at the back. Colored as hair. Use with noHair (no other hairstyle).
+ */
+function buildBuzz(head: THREE.Box3, g: THREE.Group): THREE.Group {
+  const size = head.getSize(new THREE.Vector3());
+  const c = head.getCenter(new THREE.Vector3());
+  const w = size.x;
+  const d = size.z;
+  const top = head.max.y;
+  const dome = new THREE.SphereGeometry(0.5, 28, 14, 0, Math.PI * 2, 0, Math.PI * 0.5);
+  // (the head's skin stops at the hairline: the skull above it is the model's own hair, hidden here)
+  const m = withGeo(std("hair"), dome, c.x, top - w * 0.6, c.z + d * 0.06);
+  m.scale.set(w * 1.14, w * 1.1, d * 1.32);
+  m.rotation.x = -0.12; // hairline a little higher at the front than at the nape
+  g.add(m);
   return g;
 }

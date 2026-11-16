@@ -763,10 +763,10 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     const L = (id: string) => `${activeOutfitUrl}|${id}`;
 
     const hair = getHairStyle(p.hairStyle);
-    const hairObjs = setSlot("hair", hair.donor ? L(hair.id) : "", () =>
+    const hairObjs = setSlot("hair", hair.donor && !p.noHair ? L(hair.id) : "", () =>
       cutRegion(borrow(hair.donor!, hair.parts ?? [], (i) => (i === 0 ? "hair" : "hairDark")), hair.cut)
     );
-    hideBakedHair = hairObjs.length > 0;
+    hideBakedHair = hairObjs.length > 0 || !!p.noHair;
     setSlot("extraHair", p.extraHair ? L(p.extraHair) : "", () => buildOnHead(p.extraHair!));
 
     const fh = getFacialHair(p.facialHair);
