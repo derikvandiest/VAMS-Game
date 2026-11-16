@@ -518,7 +518,7 @@ export const NPC_DANI: NpcDef = {
 };
 
 /**
- * Mr. Ipena, Operations Assistant, sitting on the blue bench closest to the entrance gate (the west building's
+ * Mr. Ipina, Operations Assistant, sitting on the blue bench closest to the entrance gate (the west building's
  * end wall in the breezeway). Matches his portrait: warm tan skin, short neat dark brown hair, dark gray
  * rectangular glasses, clean-shaven, a cream long-sleeve henley (the suit model all in cream), dark pants.
  */
@@ -533,7 +533,7 @@ export const NPC_IPENA: NpcDef = {
   talkRange: 2.4,
   profile: {
     ...getDefaultProfile(),
-    name: "Mr. Ipena",
+    name: "Mr. Ipina",
     title: "Operations Assistant",
     noHomeroom: true,
     gender: "masculine",
@@ -550,20 +550,20 @@ export const NPC_IPENA: NpcDef = {
     partColors: { White: IPENA_SHIRT, Tie: IPENA_SHIRT, "Legs:Suit": "#323844" },
   },
   portrait: ipenaPortrait,
-  // SAMPLE TEXT: replace with Mr. Ipena's real dialogue
+  // SAMPLE TEXT: replace with Mr. Ipina's real dialogue
   dialog: {
     start: "root",
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Hey there! I'm Mr. Ipena, the Operations Assistant. Just taking a quick break before the next thing.",
+          "(Sample text) Hey there! I'm Mr. Ipina, the Operations Assistant. Just taking a quick break before the next thing.",
           "I help keep the campus running behind the scenes: facilities, supplies, events setup, and whatever else comes up during the day.",
         ],
         options: [
           { label: "Can you help me find my way around? (the map)", next: "map" },
           { label: "What does an Operations Assistant do?", next: "ops" },
           { label: "Who do I ask if something is broken?", next: "broken" },
-          { label: "Thanks, Mr. Ipena!" },
+          { label: "Thanks, Mr. Ipina!" },
         ],
       },
       map: {
@@ -618,7 +618,7 @@ export const NPC_IPENA: NpcDef = {
         options: [
           { label: "Open the map for me", action: "open-map" },
           { label: "Start over", next: "map" },
-          { label: "Thanks, Mr. Ipena!" },
+          { label: "Thanks, Mr. Ipina!" },
         ],
       },
       ops: {
@@ -627,7 +627,7 @@ export const NPC_IPENA: NpcDef = {
         ],
         options: [
           { label: "I have another question", next: "root" },
-          { label: "Thanks, Mr. Ipena!" },
+          { label: "Thanks, Mr. Ipina!" },
         ],
       },
       broken: {

@@ -7298,7 +7298,7 @@ export function startPlaceholderScene(
         if (event === "survey" && n.def.talkObjective) (window as any).__completeObjective?.(n.def.talkObjective);
         // Mr. Ashi resets the soccer ball and the basketball (for everyone)
         if (event === "reset-balls") doBallReset();
-        // Mr. Ipena opens the campus map for you
+        // Mr. Ipina opens the campus map for you
         if (event === "open-map") setTimeout(() => openMap(), 0);
         // Ms. Castaneda runs the front entrance gate (the only way to open or close it)
         if (event === "gate-open" && !gateOpen) {
