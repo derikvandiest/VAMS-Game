@@ -569,8 +569,9 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
    * A buzz cut: the scalp part of the head's own skin mesh (above a hairline that is high at the front and low at
    * the back), pushed out a hair's width and colored as hair. It is skinned to the same bones, so it hugs the skull.
    */
-  const BUZZ_FRONT = 0.66; // hairline height at the forehead (fraction of the head skin's height)
-  const BUZZ_BACK = 0.42; // ... and at the nape
+  const BUZZ_FRONT = 0.72; // hairline height at the forehead (fraction of the head skin's height)
+  const BUZZ_BACK = 0.5; // ... and at the nape
+  const BUZZ_FADE = 0.16; // height of the fade at the sides and back
   function buildBuzzCut(): THREE.Object3D[] | null {
     const root = armatureScene;
     const m = measureNow();
@@ -603,9 +604,15 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     // hairline: high on the forehead at the front, lower at the sides, down to the nape at the back
     const frontCut = yMin + h * BUZZ_FRONT;
     const backCut = yMin + h * BUZZ_BACK;
-    const keepVert = pts.map((p) => {
-      const f = Math.min(1, Math.max(0, (p.z - (zMin + 0.3 * d)) / (0.55 * d)));
-      return p.y > backCut + (frontCut - backCut) * f;
+    const front = (p: THREE.Vector3): number => Math.min(1, Math.max(0, (p.z - (zMin + 0.3 * d)) / (0.55 * d)));
+    const cutAt = (p: THREE.Vector3): number => backCut + (frontCut - backCut) * front(p);
+    const keepVert = pts.map((p) => p.y > cutAt(p));
+    // fade: the sides and back thin out toward the skin over a band above the cut; the front hairline stays crisp
+    const fadeBand = h * BUZZ_FADE;
+    const alpha = pts.map((p) => {
+      const band = fadeBand * (1 - 0.85 * front(p));
+      const a = Math.min(1, Math.max(0, (p.y - cutAt(p)) / band));
+      return a * a * (3 - 2 * a);
     });
     const index = geo.getIndex();
     const tris: number[] = [];
@@ -619,8 +626,20 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     if (tris.length === 0) return null;
     const cap = geo.clone();
     cap.setIndex(tris);
+    const colors = new Float32Array(pos.count * 4);
+    for (let i = 0; i < pos.count; i++) colors.set([1, 1, 1, alpha[i]], i * 4);
+    cap.setAttribute("color", new THREE.BufferAttribute(colors, 4));
     // drawn just in front of the skin it copies (no gaps between its flat-shaded faces)
-    const mat = new THREE.MeshStandardMaterial({ color: 0x141110, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x141110,
+      roughness: 0.95,
+      vertexColors: true, // alpha in the vertex colors = the fade
+      transparent: true,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -4,
+    });
     const mesh = new THREE.SkinnedMesh(cap, mat);
     mesh.name = "BuzzCut";
     mesh.userData.role = "hair";
