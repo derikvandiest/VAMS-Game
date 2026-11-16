@@ -136,7 +136,7 @@ export function getDefaultProfile(): CharacterProfile {
     glassesColor: ACCENT_COLORS[0].hex,
     shoes: "sneakers",
     shoeColor: ACCENT_COLORS[0].hex,
-    skinTone: SKIN_TONES[1].hex,
+    skinTone: "#F1C27D", // "Light" (the default since the start)
     hairColor: HAIR_COLORS[1].hex,
     outfitColor: HOMEROOM_INFO.UCLA.shirtColor,
     noHomeroom: false,

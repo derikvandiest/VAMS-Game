@@ -433,7 +433,7 @@ export function initSettingsModal(onSave?: SaveCb): void {
       );
       body += section("Look", itemGrid("look", "look", looksForGender(g), draft.look));
       body += section("Outfit color", colorControl("outfitColor", OUTFIT_COLORS, draft.outfitColor));
-      body += section("Skin tone", swatches("skinTone", SKIN_TONES.map((s) => ({ name: s.label, hex: s.hex })), draft.skinTone));
+      body += section("Skin tone", colorControl("skinTone", SKIN_TONES.map((s) => ({ name: s.label, hex: s.hex })), draft.skinTone));
     } else if (tab === "hair") {
       body += section("Hairstyle", itemGrid("hair", "hairStyle", hairStylesFor(g), draft.hairStyle));
       if (g === "masculine") body += section("Facial hair", itemGrid("facial", "facialHair", facialHairFor(g), draft.facialHair));

@@ -164,38 +164,73 @@
   "skinTones": [
     {
       "id": "skin-1",
-      "name": "Tone 1",
-      "hex": "#FFE0C4"
+      "name": "Porcelain",
+      "hex": "#FBE5D6"
     },
     {
       "id": "skin-2",
-      "name": "Tone 2",
-      "hex": "#F1C27D"
+      "name": "Ivory",
+      "hex": "#FFE0C4"
     },
     {
       "id": "skin-3",
-      "name": "Tone 3",
-      "hex": "#E0AC69"
+      "name": "Fair",
+      "hex": "#F5CFAE"
     },
     {
       "id": "skin-4",
-      "name": "Tone 4",
-      "hex": "#C68642"
+      "name": "Light",
+      "hex": "#F1C27D"
     },
     {
       "id": "skin-5",
-      "name": "Tone 5",
-      "hex": "#A76B36"
+      "name": "Warm Beige",
+      "hex": "#EAC08E"
     },
     {
       "id": "skin-6",
-      "name": "Tone 6",
-      "hex": "#8D5524"
+      "name": "Honey",
+      "hex": "#E0AC69"
     },
     {
       "id": "skin-7",
-      "name": "Tone 7",
+      "name": "Golden",
+      "hex": "#D49A6A"
+    },
+    {
+      "id": "skin-8",
+      "name": "Tan",
+      "hex": "#C68642"
+    },
+    {
+      "id": "skin-9",
+      "name": "Caramel",
+      "hex": "#B57A4A"
+    },
+    {
+      "id": "skin-10",
+      "name": "Bronze",
+      "hex": "#A76B36"
+    },
+    {
+      "id": "skin-11",
+      "name": "Chestnut",
+      "hex": "#8D5524"
+    },
+    {
+      "id": "skin-12",
+      "name": "Mocha",
+      "hex": "#7A4A2E"
+    },
+    {
+      "id": "skin-13",
+      "name": "Espresso",
       "hex": "#5C3317"
+    },
+    {
+      "id": "skin-14",
+      "name": "Deep",
+      "hex": "#4A2A14"
     }
   ],
   "genders": [
