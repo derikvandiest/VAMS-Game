@@ -2608,3 +2608,41 @@ body {
 }
 .inv-visible:hover { background: rgba(56, 189, 248, 0.24); }
 .inv-visible.off { border-color: rgba(148, 163, 184, 0.5); background: rgba(148, 163, 184, 0.12); color: #cbd5e1; }
+.inv-icon.dim { opacity: 0.45; filter: grayscale(0.6); }
+.inv-badge { position: absolute; right: 2px; top: 1px; font-size: 13px; pointer-events: none; }
+.inv-detail-main { flex: 1; min-width: 0; }
+.inv-folder { margin-top: 8px; }
+.inv-folder-count { font-weight: 800; color: #fbbf24; font-size: 12.5px; margin-bottom: 4px; }
+.inv-folder ul { margin: 0; padding: 0; list-style: none; max-height: 140px; overflow-y: auto; }
+.inv-folder li { font-size: 12px; color: #e2e8f0; padding: 2px 0; }
+.inv-use {
+  margin-top: 8px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  background: rgba(56, 189, 248, 0.18);
+  color: #e0f2fe;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.inv-use:hover { background: rgba(56, 189, 248, 0.3); }
+#inv-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 196px;
+  transform: translateX(-50%) translateY(8px);
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  z-index: 70;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  white-space: nowrap;
+}
+#inv-toast.show { opacity: 1; transform: translateX(-50%); }

@@ -9,7 +9,8 @@
  * something up); window.__giveItem(id, qty) does the same from the console.
  */
 import itemsData from "../../content/items.json";
-import { getActiveSlotId } from "./saveManager";
+import { getActiveSlotId, loadSlot } from "./saveManager";
+import { ROOMS } from "./rooms";
 import { loadCharacterProfile, saveCharacterProfile } from "./profile";
 
 export interface ItemDef {
@@ -19,6 +20,10 @@ export interface ItemDef {
   description: string;
   stack: number;
   starter?: boolean;
+  /** drawn faded (an empty bottle) */
+  dim?: boolean;
+  /** a small emoji in the slot's corner */
+  badge?: string;
 }
 interface Stack {
   id: string;
@@ -78,6 +83,8 @@ function load(): void {
       state.backpack = typeof d.backpack === "string" && /^#[0-9a-fA-F]{6}$/.test(d.backpack) ? d.backpack : null;
       state.starterGiven = d.starterGiven === true || state.quick.some(Boolean) || state.bag.some(Boolean);
       state.showBackpack = d.showBackpack !== false;
+      // saves from before the folder and the bottle: they come with the backpack now
+      if (state.backpack && d.kit !== 2) giveKit();
     }
   } catch {
     /* start fresh */
@@ -89,6 +96,69 @@ function load(): void {
 function wearBackpack(color: string | null): void {
   const p = loadCharacterProfile();
   if ((p.backpack || "") !== (color || "")) saveCharacterProfile({ ...p, backpack: color || "" });
+}
+
+/** The backpack's starting kit: the assignment folder and an empty water bottle (whatever is not already carried) */
+function giveKit(): void {
+  for (const i of ITEMS.filter((x) => x.starter)) {
+    const has = (id: string): boolean => [...state.quick, ...state.bag].some((s) => s?.id === id);
+    if (has(i.id) || (i.id === "water-bottle-empty" && has("water-bottle-full"))) continue;
+    const k = state.bag.indexOf(null);
+    if (k >= 0) state.bag[k] = { id: i.id, qty: 1 };
+  }
+  kitGiven = true;
+}
+let kitGiven = false;
+
+/** The classroom assignments the player has completed so far (they are what fills the folder) */
+export function completedAssignments(): Array<{ id: string; label: string }> {
+  const done = new Set(loadSlot(getActiveSlotId())?.objectives.completedIds ?? []);
+  return ROOMS.filter((r) => r.type === "stamp" && r.objectiveId && done.has(r.objectiveId)).map((r) => ({ id: r.id, label: r.label }));
+}
+const TOTAL_ASSIGNMENTS = 16;
+
+/** Swap one item for another in the same slot (e.g. an empty bottle becoming a full one). Returns false if not carried. */
+function transform(fromId: string, toId: string): boolean {
+  for (const list of [state.quick, state.bag]) {
+    const k = list.findIndex((s) => s?.id === fromId);
+    if (k >= 0) {
+      list[k] = { id: toId, qty: 1 };
+      save();
+      render();
+      return true;
+    }
+  }
+  return false;
+}
+
+/** At the drinking fountain: fill an empty water bottle if the player carries one. Returns true if one was filled. */
+export function fillWaterBottle(): boolean {
+  if (!state.backpack) return false;
+  const filled = transform("water-bottle-empty", "water-bottle-full");
+  if (filled) toast("💧 Water bottle filled!");
+  return filled;
+}
+
+/** Drink the water bottle (it becomes empty again; refill it at the fountain) */
+export function drinkWaterBottle(): boolean {
+  const ok = transform("water-bottle-full", "water-bottle-empty");
+  if (ok) toast("Ahh, refreshing! 🧴 Refill it at the drinking fountain.");
+  return ok;
+}
+
+/** A short message above the quick bar */
+let toastTimer = 0;
+function toast(text: string): void {
+  let el = document.getElementById("inv-toast");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "inv-toast";
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  el.classList.add("show");
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => el!.classList.remove("show"), 2600);
 }
 
 /** Is the backpack drawn on the character? */
@@ -121,10 +191,7 @@ export function equipBackpack(color: string): void {
   state.showBackpack = true; // picking one up puts it on
   if (!state.starterGiven) {
     state.starterGiven = true;
-    ITEMS.filter((i) => i.starter).forEach((i) => {
-      const k = state.bag.indexOf(null);
-      if (k >= 0) state.bag[k] = { id: i.id, qty: 1 };
-    });
+    giveKit();
   }
   save();
   wearBackpack(color);
@@ -133,7 +200,7 @@ export function equipBackpack(color: string): void {
 
 function save(): void {
   try {
-    localStorage.setItem(storageKey(), JSON.stringify(state));
+    localStorage.setItem(storageKey(), JSON.stringify({ ...state, kit: kitGiven || state.starterGiven ? 2 : 0 }));
   } catch {
     /* storage unavailable: keep it for this session */
   }
@@ -212,6 +279,13 @@ export function startInventory(): void {
     document.getElementById("backpack-btn")?.addEventListener("click", () => (panel ? closeBackpack() : openBackpack()));
     window.addEventListener("keydown", onGlobalKey, true); // before the Esc = leave-game handler
     (window as unknown as { __giveItem: typeof addItem }).__giveItem = addItem;
+    // a completed classroom assignment goes into the folder
+    window.addEventListener("eld-objective-complete", (e) => {
+      const id = (e as CustomEvent<{ id?: string }>).detail?.id;
+      if (!id || !ROOMS.some((r) => r.objectiveId === id)) return;
+      render();
+      if (state.backpack && countItem("assignment-folder") > 0) toast(`📁 Assignment added to your folder (${completedAssignments().length}/${TOTAL_ASSIGNMENTS})`);
+    });
   }
   buildBar();
   render();
@@ -234,8 +308,11 @@ function slotHtml(area: Area, i: number, s: Slot): string {
   const def = s ? itemById(s.id) : undefined;
   const sel = area === "quick" && i === state.selected ? " selected" : "";
   const key = area === "quick" ? `<span class="inv-key">${i + 1}</span>` : "";
+  const folder = def?.id === "assignment-folder" ? `<span class="inv-qty">${completedAssignments().length}/${TOTAL_ASSIGNMENTS}</span>` : "";
   const body = def
-    ? `<span class="inv-icon">${def.icon}</span>${s!.qty > 1 ? `<span class="inv-qty">${s!.qty}</span>` : ""}`
+    ? `<span class="inv-icon${def.dim ? " dim" : ""}">${def.icon}</span>${def.badge ? `<span class="inv-badge">${def.badge}</span>` : ""}${
+        folder || (s!.qty > 1 ? `<span class="inv-qty">${s!.qty}</span>` : "")
+      }`
     : "";
   const title = def ? ` title="${esc(def.name)}"` : "";
   return `<div class="inv-slot${def ? " filled" : ""}${sel}" data-area="${area}" data-index="${i}"${title}>${key}${body}</div>`;
@@ -282,9 +359,25 @@ function showDetail(area: Area, i: number): void {
   const s = listOf(area)[i];
   const def = s ? itemById(s.id) : undefined;
   const box = panel.querySelector<HTMLElement>(".inv-detail")!;
+  let extra = "";
+  if (def?.id === "assignment-folder") {
+    const done = completedAssignments();
+    extra =
+      `<div class="inv-folder"><div class="inv-folder-count">${done.length} of ${TOTAL_ASSIGNMENTS} assignments</div>` +
+      (done.length
+        ? `<ul>${done.map((a) => `<li>📝 ${esc(a.label)}</li>`).join("")}</ul>`
+        : `<div class="inv-detail-desc">Empty for now. Complete a classroom's assignment and it goes in here.</div>`) +
+      `</div>`;
+  } else if (def?.id === "water-bottle-full") {
+    extra = `<button type="button" class="inv-use" data-use="drink">💧 Drink</button>`;
+  }
   box.innerHTML = def
-    ? `<div class="inv-detail-icon">${def.icon}</div><div><div class="inv-detail-name">${esc(def.name)}${s!.qty > 1 ? ` <span>×${s!.qty}</span>` : ""}</div><div class="inv-detail-desc">${esc(def.description)}</div></div>`
+    ? `<div class="inv-detail-icon">${def.icon}</div><div class="inv-detail-main"><div class="inv-detail-name">${esc(def.name)}${s!.qty > 1 ? ` <span>×${s!.qty}</span>` : ""}</div><div class="inv-detail-desc">${esc(def.description)}</div>${extra}</div>`
     : `<div class="inv-detail-desc">Drag items onto the quick bar at the bottom of the screen to keep them handy. Keys <b>1–5</b> pick a quick slot.</div>`;
+  box.querySelector<HTMLButtonElement>("[data-use='drink']")?.addEventListener("click", () => {
+    drinkWaterBottle();
+    showDetail(area, i);
+  });
 }
 
 export function openBackpack(): void {

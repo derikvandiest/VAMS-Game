@@ -41,7 +41,7 @@ import {
 } from "./classrooms";
 import { createAvatarRig, GAME_AVATAR_SCALE, AvatarRig } from "./avatar";
 import { openMap } from "./map";
-import { equipBackpack, backpackColor } from "./inventory";
+import { equipBackpack, backpackColor, fillWaterBottle, countItem } from "./inventory";
 import { loadCharacterProfile, onProfileChange } from "./profile";
 import { initSettingsModal } from "./settings";
 
@@ -8023,6 +8023,7 @@ export function startPlaceholderScene(
       }
       if (nearFountain()) {
         startDrinking();
+        fillWaterBottle(); // an empty water bottle gets filled up too
         return;
       }
       if (nearBallCart() && grabBallFromCart()) return;
@@ -9543,7 +9544,7 @@ export function startPlaceholderScene(
       } else if (distToCarResetBtn <= 2.2) {
         hintText = "Press E or Click to reset cars 🚗";
       } else if (nearFountain()) {
-        hintText = "Press E to take a drink 💧";
+        hintText = countItem("water-bottle-empty") > 0 ? "Press E to drink and fill your water bottle 💧" : "Press E to take a drink 💧";
       } else if (nearBallCart() && !bballHeld) {
         hintText = mp && !ballSync.basket.own && ballSync.basket.held ? "Someone is using the basketball right now 🏀" : "Press E to grab a basketball 🏀";
       } else if (nearestChairDist <= 1.8) {

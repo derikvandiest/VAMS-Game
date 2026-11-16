@@ -1,15 +1,30 @@
 {
-  "_note": "Items a player can carry (inventory.ts). icon = an emoji shown in the slot. stack = how many fit in one slot. starter = given to a new player (in this order, into the backpack).",
+  "_note": "Items a player can carry (inventory.ts). icon = an emoji shown in the slot. stack = how many fit in one slot. starter = given with the first backpack (in this order). dim = drawn faded (e.g. an empty bottle). badge = a small emoji in the slot's corner.",
   "items": [
-    { "id": "pd-agenda", "name": "PD Agenda", "icon": "📋", "description": "Today's ELD PD schedule: take a seat in the MPR, complete the 16 classroom assignments, then turn your work in at the ELD classroom.", "stack": 1, "starter": true },
-    { "id": "notebook", "name": "Notebook", "icon": "📓", "description": "For notes from each classroom you visit.", "stack": 1, "starter": true },
-    { "id": "pencil", "name": "Pencil", "icon": "✏️", "description": "A sharpened No. 2 pencil.", "stack": 10, "starter": true },
-    { "id": "water-bottle", "name": "Water Bottle", "icon": "🧴", "description": "Stay hydrated! You can refill it at the drinking fountain.", "stack": 1, "starter": true },
-    { "id": "staff-badge", "name": "Staff Badge", "icon": "🪪", "description": "Your Valor Academy staff ID badge.", "stack": 1, "starter": true },
-    { "id": "basketball", "name": "Basketball", "icon": "🏀", "description": "From the cart by the courts.", "stack": 1 },
-    { "id": "soccer-ball", "name": "Soccer Ball", "icon": "⚽", "description": "For the field.", "stack": 1 },
-    { "id": "assignment", "name": "Completed Assignment", "icon": "📝", "description": "A finished classroom assignment.", "stack": 16 },
-    { "id": "coffee", "name": "Coffee", "icon": "☕", "description": "A warm cup of coffee.", "stack": 3 },
-    { "id": "snack", "name": "Snack", "icon": "🍎", "description": "A quick snack between classrooms.", "stack": 5 }
+    {
+      "id": "assignment-folder",
+      "name": "Assignment Folder",
+      "icon": "📁",
+      "description": "Holds the 16 classroom assignments you need to turn in to Mr. Van Diest at the ELD classroom. Every assignment you complete goes in here.",
+      "stack": 1,
+      "starter": true
+    },
+    {
+      "id": "water-bottle-empty",
+      "name": "Water Bottle (empty)",
+      "icon": "🧴",
+      "description": "An empty water bottle. Fill it up at the drinking fountain by the 7th grade LMU classroom (press E at the fountain).",
+      "stack": 1,
+      "starter": true,
+      "dim": true
+    },
+    {
+      "id": "water-bottle-full",
+      "name": "Water Bottle (full)",
+      "icon": "🧴",
+      "badge": "💧",
+      "description": "A full bottle of cold water. Drink it any time; refill it at the drinking fountain.",
+      "stack": 1
+    }
   ]
 }
