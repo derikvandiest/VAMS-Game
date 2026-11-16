@@ -169,7 +169,8 @@ export function sanitizeProfile(raw: unknown): CharacterProfile {
     homeroom,
     gender,
     look: look.id,
-    hairStyle: byId(hairStylesFor(gender), p.hairStyle, hairStylesFor(gender)[0]).id,
+    // NPCs may wear any modelled hairstyle (e.g. a man with the shoulder-length "Bob"); players pick from their gender's
+    hairStyle: (npc ? byId(HAIR_STYLES, p.hairStyle, hairStylesFor(gender)[0]) : byId(hairStylesFor(gender), p.hairStyle, hairStylesFor(gender)[0])).id,
     facialHair: byId(facialHairFor(gender, npc), p.facialHair, FACIAL_HAIR[0]).id,
     hat: byId(hatsFor(gender, npc), p.hat, HATS[0]).id,
     hatColor: isHex(p.hatColor) ? p.hatColor : "",

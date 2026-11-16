@@ -815,8 +815,7 @@ export const NPC_STAUFFER: NpcDef = {
     gender: "masculine",
     look: "masc-tee",
     outfitColor: "#748a3c", // olive green tee
-    hairStyle: "m-king", // the crown, center part
-    extraHair: "shoulder", // straight brown hair falling to the shoulders
+    hairStyle: "f-long", // the modelled shoulder-length hair with a center part (borrowed from the feminine models)
     hairColor: "#7a4a24",
     facialHair: "beard",
     skinTone: "#F0C3A0",
