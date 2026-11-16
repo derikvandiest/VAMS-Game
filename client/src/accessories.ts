@@ -82,7 +82,7 @@ export function recolor(objs: THREE.Object3D[], colors: RoleColors): void {
 // Procedural accessories
 // ---------------------------------------------------------------------------
 
-export type ProceduralKind = "round" | "rect" | "locs" | "curls" | "braid" | "buzz" | "curlyTop";
+export type ProceduralKind = "round" | "rect" | "locs" | "curls" | "braid" | "buzz" | "curlyTop" | "locsWrap";
 
 /** Where the eyes are (model space): vertical center, front surface and outer-corner span. */
 export interface EyeInfo {
@@ -119,6 +119,7 @@ export function buildProcedural(kind: ProceduralKind, head: THREE.Box3, bulk = 1
   const top = head.max.y;
   const g = new THREE.Group();
   if (kind === "locs") return buildLocs(head, g);
+  if (kind === "locsWrap") return buildLocsWrap(head, g);
   if (kind === "curls") return buildCurls(head, g);
   if (kind === "braid") return buildBraid(head, g);
   if (kind === "buzz") return buildBuzz(head, g);
@@ -339,5 +340,81 @@ function buildCurlyTop(head: THREE.Box3, g: THREE.Group): THREE.Group {
       g.add(curl);
     }
   }
+  return g;
+}
+
+/** A patterned head wrap texture: yellow, gold, black and white zigzag bands (kente-like print) */
+let wrapTexture: THREE.CanvasTexture | null = null;
+function headWrapTexture(): THREE.CanvasTexture {
+  if (wrapTexture) return wrapTexture;
+  const c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 64;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#f2c230";
+  g.fillRect(0, 0, 256, 64);
+  const zig = (y: number, h: number, color: string): void => {
+    g.fillStyle = color;
+    g.beginPath();
+    g.moveTo(0, y + h);
+    for (let x = 0; x <= 256; x += 16) g.lineTo(x, (x / 16) % 2 ? y : y + h);
+    g.lineTo(256, y + h + 6);
+    g.lineTo(0, y + h + 6);
+    g.closePath();
+    g.fill();
+  };
+  zig(6, 10, "#1b1b1b");
+  zig(28, 8, "#ffffff");
+  zig(44, 10, "#c26a1a");
+  g.fillStyle = "#1b1b1b";
+  for (let x = 4; x < 256; x += 22) g.fillRect(x, 22, 6, 4);
+  wrapTexture = new THREE.CanvasTexture(c);
+  wrapTexture.colorSpace = THREE.SRGBColorSpace;
+  wrapTexture.wrapS = THREE.RepeatWrapping;
+  wrapTexture.repeat.set(3, 1);
+  return wrapTexture;
+}
+
+/**
+ * Locs gathered up and falling to one side, with a patterned head wrap tied around the hairline: the locs come
+ * from the crown and sweep over to the character's right, hanging past the shoulder.
+ */
+function buildLocsWrap(head: THREE.Box3, g: THREE.Group): THREE.Group {
+  const size = head.getSize(new THREE.Vector3());
+  const c = head.getCenter(new THREE.Vector3());
+  const w = size.x;
+  const d = size.z;
+  const top = head.max.y;
+  const r = w * 0.07;
+  const side = -1; // the character's right (the model faces +z)
+  const N = 16;
+  for (let i = 0; i < N; i++) {
+    const t = i / (N - 1);
+    const jit = Math.sin(i * 12.9898 + 1.3) * 0.5 + 0.5;
+    const spread = (t - 0.5) * 2; // -1 .. 1 front to back of the bunch
+    const pts = [
+      new THREE.Vector3(c.x + w * 0.05 * spread, top + w * 0.02, c.z - d * 0.1 + d * 0.18 * spread), // gathered on the crown
+      new THREE.Vector3(c.x + side * w * 0.3, top + w * (0.08 - 0.03 * jit), c.z + d * 0.22 * spread),
+      new THREE.Vector3(c.x + side * w * 0.62, top - w * (0.25 + 0.1 * jit), c.z + d * 0.28 * spread),
+      new THREE.Vector3(c.x + side * w * (0.7 + 0.08 * jit), top - w * (0.8 + 0.25 * jit), c.z + d * (0.2 * spread - 0.05)),
+      new THREE.Vector3(c.x + side * w * (0.68 + 0.1 * jit), top - w * (1.3 + 0.35 * jit), c.z + d * (0.15 * spread - 0.08)),
+    ];
+    const curve = new THREE.CatmullRomCurve3(pts);
+    const rr = r * (0.85 + 0.35 * jit);
+    g.add(withGeo(std(i % 3 === 0 ? "hairDark" : "hair"), new THREE.TubeGeometry(curve, 28, rr, 6, false)));
+    const end = pts[pts.length - 1];
+    g.add(withGeo(std("hair"), new THREE.SphereGeometry(rr, 6, 5), end.x, end.y, end.z));
+  }
+  // the head wrap: a wide band around the head just above the hairline, a little higher at the back
+  const band = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.5, 0.52, 1, 28, 1, true),
+    new THREE.MeshStandardMaterial({ map: headWrapTexture(), roughness: 0.8, side: THREE.DoubleSide })
+  );
+  band.userData.role = "fixed";
+  band.castShadow = true;
+  band.position.set(c.x, top - w * 0.2, c.z - d * 0.04);
+  band.scale.set(w * 1.2, w * 0.34, d * 1.24);
+  band.rotation.x = -0.42; // up at the back, down over the forehead
+  g.add(band);
   return g;
 }

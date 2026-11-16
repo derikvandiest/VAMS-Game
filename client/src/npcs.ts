@@ -12,6 +12,7 @@ import ashiPortrait from "./assets/ashi_portrait.png";
 import navarroPortrait from "./assets/navarro_portrait.png";
 import ipenaPortrait from "./assets/ipena_portrait.png";
 import castanedaPortrait from "./assets/castaneda_portrait.png";
+import tunsonPortrait from "./assets/tunson_portrait.png";
 import daniPortrait from "./assets/dani_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
@@ -713,4 +714,83 @@ export const NPC_CASTANEDA: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA];
+/**
+ * Mrs. Tunson, Dean of Restorative Practices, just outside the MPR's courtyard doors (on the left as you face the
+ * doors). She reminds players to grab a backpack from the MPR. Matches her portrait: brown skin, locs gathered up
+ * and falling to one side under a yellow patterned head wrap, a gray cardigan over a black V-neck, dark pants.
+ */
+export const NPC_TUNSON: NpcDef = {
+  id: "npc-tunson",
+  room: "campus",
+  x: -12.5, // outside the MPR doors (x = -14, z 50.5 .. 52.5), on their left as you face them from the courtyard
+  z: 54.7,
+  rotY: Math.PI / 2 - 0.4, // facing the courtyard, turned a little toward people coming to the doors
+  talkRange: 1.8, // short, so E at the doors still opens them
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mrs. Tunson",
+    title: "Dean of Restorative Practices",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-suit", // the jacket is her cardigan, the shirt her black top
+    outfitColor: "#a7aaaf", // heather gray cardigan
+    hairStyle: "f-wavy", // pulled back under the wrap
+    extraHair: "locsWrap",
+    hairColor: "#2a1d14",
+    skinTone: "#8A5A3B",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#1f1f24",
+    partColors: { "Body:White": "#1d1e22", "Legs:Black": "#2a2d35" },
+  },
+  portrait: tunsonPortrait,
+  // SAMPLE TEXT: replace with Mrs. Tunson's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi there, welcome! I'm Mrs. Tunson, the Dean of Restorative Practices. So glad you're here today.",
+          "Before you head out to the classrooms, don't forget to grab a backpack from the MPR! They're hanging on the wall just inside these doors. Without one you can't carry anything, and your supplies need somewhere to go.",
+        ],
+        options: [
+          { label: "How do I get a backpack?", next: "backpack" },
+          { label: "What does a Dean of Restorative Practices do?", next: "rp" },
+          { label: "Thanks, Mrs. Tunson!" },
+        ],
+      },
+      backpack: {
+        paragraphs: [
+          "(Sample text) Go through the MPR doors right here. As you walk in, look to your right along the wall the doors are in: black, gray, white, blue and red backpacks are hanging on the hooks. Walk up to the one you like and press E to put it on.",
+          "Your first backpack comes with your PD supplies. Then press I or click the Backpack button (under the Map button) to see everything, and drag your favorite items onto the quick bar at the bottom of the screen. Keys 1 to 5 pick a quick slot.",
+        ],
+        options: [
+          { label: "Can I change the color later?", next: "color" },
+          { label: "I have another question", next: "root" },
+          { label: "Got it, thanks!" },
+        ],
+      },
+      color: {
+        paragraphs: [
+          "(Sample text) Of course! Just go back to the hooks and press E at a different color. Everything you're carrying moves over to the new backpack.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mrs. Tunson!" },
+        ],
+      },
+      rp: {
+        paragraphs: [
+          "(Sample text) I lead our restorative practices: building a school community where everyone belongs, and when harm happens, bringing people together to understand it and make things right.",
+          "I work with Ms. Castaneda and our teachers on circles, restorative conversations and classroom practices that keep relationships at the center of learning.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mrs. Tunson!" },
+        ],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON];
