@@ -912,7 +912,7 @@ export const NPC_ROLDAN: NpcDef = {
 
 /**
  * Mr. Guerrero, Assistant Principal for the upper school, standing between the 8th UCLA classroom and the field,
- * looking out at the field with a 40 oz Stanley tumbler in his hand. Matches his portrait: warm tan skin, short neat black
+ * looking out at the field. Matches his portrait: warm tan skin, short neat black
  * hair, a mustache and goatee, a crisp white button-up shirt.
  */
 const GUERRERO_SHIRT = "#eef2f6";
@@ -922,7 +922,6 @@ export const NPC_GUERRERO: NpcDef = {
   x: 18.6, // in front of the 8th UCLA door (x = 18, wall z = -2), halfway to the field (its edge is at z = 10.5)
   z: 5.2,
   rotY: 0.08, // looking out at the field
-  holding: "coffee",
   profile: {
     ...getDefaultProfile(),
     name: "Mr. Guerrero",
