@@ -7003,10 +7003,20 @@ export function startPlaceholderScene(
   for (const def of NPCS) {
     const npcRig = createAvatarRig({ nameTag: true, scale: GAME_AVATAR_SCALE });
     npcRig.apply(def.profile);
+    const inst = def.room === "classroom" && def.classroomId ? getClassroom(def.classroomId) : null;
+    if (inst) {
+      // in front of the whiteboard, facing the class
+      def.x = inst.whiteboard.x;
+      def.z = inst.whiteboard.z + 1.3;
+    }
     npcRig.player.position.set(def.x, 0, def.z);
     npcRig.player.rotation.y = def.rotY;
     const solid = { x: def.x, z: def.z, w: 0.7, d: 0.7, yBase: 0, yTop: 2.6 };
-    if (def.room === "mpr") {
+    if (def.room === "classroom") {
+      if (!inst) continue;
+      inst.group.add(npcRig.player); // shows and hides with the classroom
+      inst.solids.push(solid);
+    } else if (def.room === "mpr") {
       mprRoomGroup.add(npcRig.player);
       mprSolids.push(solid);
     } else {
@@ -7079,13 +7089,15 @@ export function startPlaceholderScene(
   /** The NPC the player is close enough to talk to (in the same place: the MPR, or outdoors on the ground floor) */
   const NPC_TALK_RANGE = 3.8;
   function nearbyNpc(): { def: NpcDef; rig: AvatarRig } | null {
-    if (seatedChair || drivingCar || currentClassroom) return null;
-    const here: "mpr" | "campus" = inMprRoom ? "mpr" : "campus";
+    if (seatedChair || drivingCar) return null;
+    const here: NpcDef["room"] = currentClassroom ? "classroom" : inMprRoom ? "mpr" : "campus";
     if (here === "campus" && player.position.y > 1.5) return null; // not from the upper walkway
     let best: { def: NpcDef; rig: AvatarRig } | null = null;
     let bestD = NPC_TALK_RANGE;
     for (const n of npcList) {
-      if (!n.def.dialog || n.def.room !== here) continue;
+      if (n.def.room !== here) continue;
+      // a classroom teacher only in their own room (they give the assignment); everyone else needs something to say
+      if (here === "classroom" ? n.def.classroomId !== currentClassroom?.id : !n.def.dialog) continue;
       const d = Math.hypot(player.position.x - n.def.x, player.position.z - n.def.z);
       if (d <= bestD && d <= (n.def.talkRange ?? NPC_TALK_RANGE)) {
         bestD = d;
@@ -7166,6 +7178,7 @@ export function startPlaceholderScene(
     if (!currentClassroom || seatedChair || drivingCar) return false;
     const room = roomById(currentClassroom.id);
     if (!room || room.type !== "stamp") return false; // only the 16 homeroom classrooms have an assignment
+    if (classroomTeacher(currentClassroom.id)) return false; // rooms with a teacher: talk to the teacher instead
     const wb = currentClassroom.whiteboard;
     const dx = Math.max(0, Math.abs(player.position.x - wb.x) - wb.w / 2);
     const dz = Math.abs(player.position.z - wb.z);
@@ -7194,7 +7207,12 @@ export function startPlaceholderScene(
     });
   }
 
-  // --- Gold "!" on the whiteboard of every classroom whose assignment is still to do -------------------
+  /** The teacher NPC standing in a classroom, if it has one */
+  function classroomTeacher(roomId: string): NpcDef | undefined {
+    return npcList.find((n) => n.def.room === "classroom" && n.def.classroomId === roomId)?.def;
+  }
+
+  // --- Gold "!" on the whiteboard (or above the teacher) of every classroom whose assignment is still to do ---
   const boardMarkers = new Map<string, { sprite: THREE.Group; baseY: number }>();
   function ensureBoardMarker(): void {
     const inst = currentClassroom;
@@ -7203,8 +7221,10 @@ export function startPlaceholderScene(
     if (!room || room.type !== "stamp" || boardMarkers.has(inst.id)) return;
     const group = new THREE.Group();
     const wb = inst.whiteboard;
-    const baseY = 2.2;
-    group.position.set(wb.x, baseY, wb.z + 0.45); // hovering on the board
+    const teacher = classroomTeacher(inst.id);
+    const baseY = teacher ? 3.2 : 2.2;
+    if (teacher) group.position.set(teacher.x, baseY, teacher.z); // above the teacher's head
+    else group.position.set(wb.x, baseY, wb.z + 0.45); // hovering on the board
     const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: npcGlowTexture, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
     glow.scale.set(2.6, 2.6, 1);
     const mark = new THREE.Sprite(new THREE.SpriteMaterial({ map: npcMarkTexture, transparent: true, depthWrite: false }));
@@ -7748,7 +7768,8 @@ export function startPlaceholderScene(
       if (!inMprRoom && !currentClassroom && elevator.press(player.position.x, player.position.y, player.position.z)) return;
       const talkNpc = nearbyNpc();
       if (talkNpc) {
-        talkToNpc(talkNpc);
+        if (talkNpc.def.room === "classroom") openAssignment(); // the teacher hands out the assignment
+        else talkToNpc(talkNpc);
         return;
       }
       if (inMprRoom) {
@@ -8622,7 +8643,9 @@ export function startPlaceholderScene(
     // NPCs animate only where the player can see them
     for (let i = 0; i < npcList.length; i++) {
       const room = npcList[i].def.room;
-      if (room === "mpr" ? inMprRoom : !inMprRoom && !currentClassroom) npcRigs[i].syncSkeleton?.();
+      const visible =
+        room === "classroom" ? currentClassroom?.id === npcList[i].def.classroomId : room === "mpr" ? inMprRoom : !inMprRoom && !currentClassroom;
+      if (visible) npcRigs[i].syncSkeleton?.();
     }
 
     // --- Vehicle gate: slide the leaves toward their open/closed position ----------
@@ -9290,7 +9313,10 @@ export function startPlaceholderScene(
       const hintNpc = nearbyNpc();
       const hintElev = !inMprRoom && !currentClassroom ? elevator.hint(player.position.x, player.position.y, player.position.z) : "";
       if (hintNpc) {
-        hintText = `Press E to talk to ${hintNpc.def.profile.name} 💬`;
+        hintText =
+          hintNpc.def.room === "classroom"
+            ? `Press E to talk to ${hintNpc.def.profile.name} about the assignment 📋`
+            : `Press E to talk to ${hintNpc.def.profile.name} 💬`;
       } else if (hintElev) {
         hintText = hintElev;
       } else if (distToCarResetBtn <= 2.2) {

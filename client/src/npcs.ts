@@ -13,8 +13,13 @@ export const SURVEY_QR_IMAGE = "";
 
 export interface NpcDef {
   id: string;
-  /** Where the NPC is placed: "mpr" = inside the Multi-Purpose Room, "campus" = outdoors */
-  room: "mpr" | "campus";
+  /**
+   * Where the NPC is placed: "mpr" = inside the Multi-Purpose Room, "campus" = outdoors, "classroom" = inside
+   * `classroomId`, standing in front of the whiteboard (x/z are then filled in from the room). A classroom teacher
+   * gives out the room's assignment when a player presses E next to them (instead of the whiteboard).
+   */
+  room: "mpr" | "campus" | "classroom";
+  classroomId?: string;
   x: number;
   z: number;
   /** Rotation about Y in radians (0 faces +z, PI faces -z) */
@@ -157,18 +162,20 @@ export const NPC_PRINCIPAL: NpcDef = {
 };
 
 /**
- * Mr. Kurisu, the 8th grade UCLA math teacher, standing outside his classroom beside the door.
+ * Mr. Kurisu, the 8th grade UCLA math teacher, standing in front of the whiteboard in his classroom (talk to him
+ * for the assignment).
  * Matches his portrait: short neat black hair, tan skin, clean-shaven, blue-gray button-down shirt and a red tie
  * (the suit model with the jacket and shirt both tinted the shirt's blue-gray, so it reads as a shirt and tie).
  */
 const KURISU_SHIRT = "#6a7d9c";
 export const NPC_KURISU: NpcDef = {
   id: "npc-kurisu",
-  room: "campus",
-  x: 16.4, // just west of the 8th UCLA door (x = 18, wall at z = -2), clear of the doorway and the walkway post
-  z: -0.4,
-  rotY: 0.25, // facing out toward the courtyard, turned a little toward the door
-  talkRange: 1.3, // short, so pressing E at the door still opens the classroom
+  room: "classroom",
+  classroomId: "8th-ucla-math",
+  x: 0, // set from the classroom's whiteboard
+  z: 0,
+  rotY: 0, // facing the class
+  talkRange: 2.2,
   profile: {
     ...getDefaultProfile(),
     name: "Mr. Kurisu",
