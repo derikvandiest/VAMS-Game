@@ -6918,6 +6918,27 @@ export function startPlaceholderScene(
   awning.castShadow = true;
   awning.receiveShadow = true;
   scene.add(awning);
+  // Balls and a frisbee that ended up on top of the lunch cover (decoration: out of reach up there)
+  {
+    const roofTop = cover.height + 0.15;
+    const soccer = new THREE.Mesh(new THREE.SphereGeometry(BALL_RADIUS, 24, 16), ballMaterial);
+    soccer.position.set(cover.center.x - 2.6, roofTop + BALL_RADIUS, cover.center.z - 6.5);
+    soccer.rotation.set(0.6, 1.1, 0.3);
+    const basket = new THREE.Mesh(new THREE.SphereGeometry(BASKETBALL_RADIUS, 24, 16), bballMat);
+    basket.position.set(cover.center.x + 2.9, roofTop + BASKETBALL_RADIUS, cover.center.z + 4.2);
+    basket.rotation.set(1.2, 0.4, 0.8);
+    const frisbee = new THREE.Group();
+    const discMat = new THREE.MeshStandardMaterial({ color: 0xff6b1a, roughness: 0.45 });
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.135, 0.12, 0.025, 28), discMat);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.128, 0.012, 8, 28), discMat);
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = -0.006;
+    frisbee.add(disc, rim);
+    frisbee.position.set(cover.center.x + 0.6, roofTop + 0.02, cover.center.z - 0.8);
+    frisbee.rotation.set(0.04, 0.7, -0.03); // lying a little crooked
+    for (const m of [soccer, basket, disc, rim]) m.castShadow = true;
+    scene.add(soccer, basket, frisbee);
+  }
   const awningPostGeometry = new THREE.BoxGeometry(0.3, cover.height, 0.3);
   const awningPostPositions: Array<[number, number]> = [];
   const postRows = Math.max(2, Math.round(cover.depth / 8) + 1);
