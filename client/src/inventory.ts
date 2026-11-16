@@ -11,6 +11,7 @@
 import itemsData from "../../content/items.json";
 import { getActiveSlotId, loadSlot } from "./saveManager";
 import { ROOMS } from "./rooms";
+import { openChromebook, isChromebookOpen, closeChromebook } from "./chromebook";
 import { loadCharacterProfile, saveCharacterProfile } from "./profile";
 
 export interface ItemDef {
@@ -360,6 +361,7 @@ export function startInventory(): void {
 
 /** Hide everything (leaving the game). */
 export function stopInventory(): void {
+  closeChromebook();
   closeBackpack();
   bar?.remove();
   bar = null;
@@ -493,6 +495,7 @@ export function closeBackpack(): void {
 
 function onGlobalKey(e: KeyboardEvent): void {
   if (!bar) return; // not in a game
+  if (isChromebookOpen()) return; // the laptop has the keyboard
   const t = e.target as HTMLElement | null;
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
   if (document.querySelector(".dialog-overlay, #map-overlay, #settings-modal-overlay[style*='flex']")) return;
@@ -578,7 +581,9 @@ function onPointerUp(e: PointerEvent): void {
     // a click: pick the quick slot, or show the item's details; clicking a full Stanley cup drinks from it
     if (from.area === "quick") selectQuick(from.index);
     else showDetail(from.area, from.index);
-    if (listOf(from.area)[from.index]?.id === "water-bottle-full") drinkWaterBottle();
+    const clicked = listOf(from.area)[from.index]?.id;
+    if (clicked === "water-bottle-full") drinkWaterBottle();
+    if (clicked === "chromebook") openChromebook(loadCharacterProfile().name); // open the laptop at its login screen
     return;
   }
   const target = e.type === "pointerup" ? targetSlot(e) : null;

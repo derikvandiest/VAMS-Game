@@ -53,7 +53,7 @@
       "id": "chromebook",
       "name": "Chromebook",
       "icon": "svg:chromebook",
-      "description": "Your school Chromebook laptop.",
+      "description": "Your school Chromebook laptop. Click it to open it and log in.",
       "stack": 1,
       "starter": true
     }
