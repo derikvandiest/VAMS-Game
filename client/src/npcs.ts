@@ -14,6 +14,7 @@ import ipenaPortrait from "./assets/ipena_portrait.png";
 import castanedaPortrait from "./assets/castaneda_portrait.png";
 import tunsonPortrait from "./assets/tunson_portrait.png";
 import staufferPortrait from "./assets/stauffer_portrait.png";
+import roldanPortrait from "./assets/roldan_portrait.png";
 import daniPortrait from "./assets/dani_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
@@ -826,4 +827,84 @@ export const NPC_STAUFFER: NpcDef = {
   portrait: staufferPortrait,
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER];
+/**
+ * Ms. Roldan, 5th grade IET and the creator of the co-teaching program, standing outside the Learning Center, to
+ * the right of its door (as you face it). Matches her portrait: warm tan skin, short full curly black hair, a pink
+ * ribbed mock-neck sweater with a hint of purple.
+ */
+export const NPC_ROLDAN: NpcDef = {
+  id: "npc-roldan",
+  room: "campus",
+  x: -1.9, // the Learning Center door is at x = -4 (north building, wall z = -2): she is a little to its right
+  z: 0.4, // just in front of the benches
+  rotY: -0.35, // facing the courtyard, turned a little toward the door
+  talkRange: 1.7, // short, so E at the Learning Center door still reaches the door
+  profile: {
+    ...getDefaultProfile(),
+    name: "Ms. Roldan",
+    title: "5th Grade IET",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-casual",
+    outfitColor: "#f272b8", // pink sweater
+    hairStyle: "f-long", // chin length
+    extraHair: "curlyBob", // full curls all over, down to the chin
+    hairColor: "#1b1512",
+    skinTone: "#C98B63",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#f1f1f1",
+    partColors: { "Legs:Orange": "#2f3546" },
+    polkaDots: { parts: ["Body:White"], base: "#f272b8", dot: "#d24f98", accent: "#a970d8", shape: "ribs" },
+  },
+  portrait: roldanPortrait,
+  // SAMPLE TEXT: replace with Ms. Roldan's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi! I'm Ms. Roldan, the 5th grade IET. I'm also the creator of our co-teaching program here at Valor!",
+          "Co-teaching means two teachers sharing one classroom, planning, teaching and assessing together so every student gets what they need.",
+        ],
+        options: [
+          { label: "How did the co-teaching program start?", next: "start" },
+          { label: "What does co-teaching look like in a classroom?", next: "models" },
+          { label: "What does a 5th grade IET do?", next: "iet" },
+          { label: "Thanks, Ms. Roldan!" },
+        ],
+      },
+      start: {
+        paragraphs: [
+          "(Sample text) I saw how much our students grew when two teachers brought their strengths into the same room. So I built a program that pairs teachers, gives them common planning time, and helps them grow as a team.",
+          "Now co-teaching is part of how we make sure all of our learners, including our English learners and students with IEPs, are supported in the general education classroom.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Roldan!" },
+        ],
+      },
+      models: {
+        paragraphs: [
+          "(Sample text) There are a few models we use: station teaching, where students rotate through small groups; parallel teaching, where each teacher teaches half the class the same lesson; alternative teaching for a small group that needs something different; and team teaching, where both teachers lead together.",
+          "The key is planning together and both teachers owning every student in the room.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Roldan!" },
+        ],
+      },
+      iet: {
+        paragraphs: [
+          "(Sample text) I work alongside our 5th grade teachers to support students who need extra help, co-planning lessons, adapting materials and teaching small groups so everyone can access grade-level learning.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Roldan!" },
+        ],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN];

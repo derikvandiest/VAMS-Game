@@ -82,7 +82,7 @@ export function recolor(objs: THREE.Object3D[], colors: RoleColors): void {
 // Procedural accessories
 // ---------------------------------------------------------------------------
 
-export type ProceduralKind = "round" | "rect" | "locs" | "curls" | "braid" | "buzz" | "curlyTop" | "locsWrap" | "shoulder";
+export type ProceduralKind = "round" | "rect" | "locs" | "curls" | "braid" | "buzz" | "curlyTop" | "locsWrap" | "shoulder" | "curlyBob";
 
 /** Where the eyes are (model space): vertical center, front surface and outer-corner span. */
 export interface EyeInfo {
@@ -125,6 +125,8 @@ export function buildProcedural(kind: ProceduralKind, head: THREE.Box3, bulk = 1
   if (kind === "braid") return buildBraid(head, g);
   if (kind === "buzz") return buildBuzz(head, g);
   if (kind === "curlyTop") return buildCurlyTop(head, g);
+  // chin-length curls all over, sitting on top of a bob
+  if (kind === "curlyBob") return buildCurlyTop(head, g, { out: 1.2, size: 1.2, maxPolar: 2.2, sideStop: 2.2 });
 
   // Round glasses: fitted to the measured eye position, the frame sits right against the face.
   const e = eye ?? { y: top - 0.58 * w, z: head.max.z - 0.06 * d, span: 0.55 * w };
@@ -307,7 +309,15 @@ function buildBuzz(head: THREE.Box3, g: THREE.Group): THREE.Group {
  * Short, full curly hair: a mop of tight curls over the crown, the sides down to the ears and the back of the head,
  * with a few curls falling onto the forehead. Each curl is a small ball; colored as hair (some a shade darker).
  */
-function buildCurlyTop(head: THREE.Box3, g: THREE.Group): THREE.Group {
+function buildCurlyTop(
+  head: THREE.Box3,
+  g: THREE.Group,
+  opt: { out?: number; size?: number; maxPolar?: number; sideStop?: number } = {}
+): THREE.Group {
+  const outMul = opt.out ?? 1;
+  const sizeMul = opt.size ?? 1;
+  const maxPolar = opt.maxPolar ?? 1.85;
+  const sideStop = opt.sideStop ?? 1.45;
   const size = head.getSize(new THREE.Vector3());
   const c = head.getCenter(new THREE.Vector3());
   const w = size.x;
@@ -317,7 +327,7 @@ function buildCurlyTop(head: THREE.Box3, g: THREE.Group): THREE.Group {
   const ball = new THREE.IcosahedronGeometry(1, 1);
   let k = 0;
   for (let ring = 0; ring <= 7; ring++) {
-    const polar = (ring / 7) * 1.85; // from the crown down past the ears (radians from straight up)
+    const polar = (ring / 7) * maxPolar; // from the crown down past the ears (radians from straight up)
     const count = ring === 0 ? 1 : Math.round(6 + ring * 3.2);
     for (let j = 0; j < count; j++) {
       k++;
@@ -329,10 +339,10 @@ function buildCurlyTop(head: THREE.Box3, g: THREE.Group): THREE.Group {
       const frontness = sz;
       const loose = k % 9 === 0;
       if (frontness > 0.35 && polar > (loose ? 1.05 : 0.85)) continue;
-      if (frontness > -0.2 && polar > 1.45) continue; // sides: stop at the top of the ears
+      if (frontness > -0.2 && polar > sideStop) continue; // sides: stop at the top of the ears (or lower for longer hair)
       const jit = Math.sin(k * 12.9898) * 0.5 + 0.5;
-      const r = w * (0.1 + 0.04 * jit);
-      const out = 1.02 + 0.06 * jit; // a little volume
+      const r = w * (0.1 + 0.04 * jit) * sizeMul;
+      const out = (1.02 + 0.06 * jit) * outMul; // a little volume
       const curl = withGeo(
         std(k % 4 === 0 ? "hairDark" : "hair"),
         ball,

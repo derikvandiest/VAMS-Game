@@ -408,12 +408,14 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
   }
 
   /** Printed patterns drawn in the shader from the model-space position (the outfit models have no texture UVs) */
-  function addPolkaDots(std: THREE.MeshStandardMaterial, base: string, dot: string, accent = dot, shape: "dots" | "diamonds" = "dots"): void {
+  function addPolkaDots(std: THREE.MeshStandardMaterial, base: string, dot: string, accent = dot, shape: "dots" | "diamonds" | "ribs" = "dots"): void {
     std.color.set(base);
     const dotColor = new THREE.Color(dot);
     const accentColor = new THREE.Color(accent);
     const body =
-      shape === "diamonds"
+      shape === "ribs"
+        ? "float rib = abs(fract(uv.x * 46.0) - 0.5) * 2.0; float m = smoothstep(0.55, 0.95, rib); float tint = 0.5 + 0.5 * sin(vPolkaPos.y * 9.0 + vPolkaPos.x * 5.0); diffuseColor.rgb = mix(mix(diffuseColor.rgb, polkaAccent, 0.25 * tint), polkaColor, m * 0.55);"
+        : shape === "diamonds"
         ? "vec2 cell = uv * 22.0; vec2 q = fract(cell) - 0.5; float dd = abs(q.x) + abs(q.y); float fill = 1.0 - smoothstep(0.36, 0.40, dd); vec2 k = fract(cell + 0.5) - 0.5; float sq = 1.0 - smoothstep(0.08, 0.11, max(abs(k.x), abs(k.y))); diffuseColor.rgb = mix(mix(diffuseColor.rgb, polkaColor, fill), polkaAccent, sq);"
         : "vec2 cell = uv * 30.0; cell.x += 0.5 * step(1.0, mod(floor(cell.y), 2.0)); vec2 q = fract(cell) - 0.5; float m = 1.0 - smoothstep(0.2, 0.26, length(q)); diffuseColor.rgb = mix(diffuseColor.rgb, polkaColor, m);";
     std.onBeforeCompile = (sh) => {
