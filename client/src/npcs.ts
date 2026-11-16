@@ -46,7 +46,7 @@ export interface NpcDef {
   /** Sitting (on a bench or chair) with the seat at this height; x/z/rotY are then the seated position */
   seatY?: number;
   /** Something held in the right hand */
-  holding?: "coffee";
+  holding?: "coffee"; // drawn as a 40 oz Stanley tumbler
 }
 
 const BLACK = "#1f1f24";
@@ -912,7 +912,7 @@ export const NPC_ROLDAN: NpcDef = {
 
 /**
  * Mr. Guerrero, Assistant Principal for the upper school, standing between the 8th UCLA classroom and the field,
- * looking out at the field with a coffee cup in his hand. Matches his portrait: warm tan skin, short neat black
+ * looking out at the field with a 40 oz Stanley tumbler in his hand. Matches his portrait: warm tan skin, short neat black
  * hair, a mustache and goatee, a crisp white button-up shirt.
  */
 const GUERRERO_SHIRT = "#eef2f6";
@@ -948,12 +948,12 @@ export const NPC_GUERRERO: NpcDef = {
       root: {
         paragraphs: [
           "(Sample text) Good morning! I'm Mr. Guerrero, the Assistant Principal for our upper school, grades 6 through 8.",
-          "Just grabbing a quick coffee and watching the field. Best seat in the house! How's the PD going?",
+          "How's the PD going? Make sure you stop by every classroom, our teachers have some great things to share.",
         ],
         options: [
           { label: "What does an Assistant Principal do?", next: "ap" },
           { label: "Any advice for our English learners in the upper grades?", next: "eld" },
-          { label: "Enjoy your coffee, Mr. Guerrero!" },
+          { label: "Thanks, Mr. Guerrero!" },
         ],
       },
       ap: {

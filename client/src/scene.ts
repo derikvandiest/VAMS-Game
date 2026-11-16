@@ -7517,18 +7517,53 @@ export function startPlaceholderScene(
       }
     }
     if (def.holding === "coffee") {
-      // a paper coffee cup with a lid and sleeve, held in the right hand (placed every frame, see below)
+      // a 40 oz Stanley tumbler held in the right hand (placed every frame, see below)
       const cup = new THREE.Group();
-      const paper = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.034, 0.14, 16), new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.8 }));
-      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.0435, 0.039, 0.055, 16), new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.9 }));
-      sleeve.position.y = 0.005;
-      const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.047, 0.018, 16), new THREE.MeshStandardMaterial({ color: 0x1f1f1f, roughness: 0.6 }));
-      lid.position.y = 0.078;
-      cup.add(paper, sleeve, lid);
-      for (const m of [paper, sleeve, lid]) m.castShadow = true;
+      const sage = new THREE.MeshStandardMaterial({ color: 0x7fb3a7, roughness: 0.45, metalness: 0.25 });
+      const steel = new THREE.MeshStandardMaterial({ color: 0xd7dde2, roughness: 0.3, metalness: 0.8 });
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.036, 0.25, 18), sage);
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.0515, 0.05, 0.028, 18), steel);
+      band.position.y = 0.07;
+      const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.056, 0.054, 0.032, 18), steel);
+      lid.position.y = 0.14;
+      const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.11, 8), sage);
+      straw.position.set(0.018, 0.2, 0);
+      straw.rotation.z = -0.2;
+      const handle = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.011, 8, 16, Math.PI), sage);
+      handle.position.set(0.053, 0.0, 0);
+      handle.rotation.z = -Math.PI / 2;
+      cup.add(body, band, lid, straw, handle);
+      for (const m of [body, band, lid, straw, handle]) m.castShadow = true;
       scene.add(cup);
       outdoorObjects.add(cup);
       npcCups.set(def.id, cup);
+      // after every animation update: right upper arm down at the side, forearm raised forward, the cup in the hand
+      const aim = (bone: THREE.Object3D, child: THREE.Object3D, dirW: THREE.Vector3): void => {
+        bone.updateWorldMatrix(true, true);
+        const from = child.getWorldPosition(new THREE.Vector3()).sub(bone.getWorldPosition(new THREE.Vector3())).normalize();
+        const delta = new THREE.Quaternion().setFromUnitVectors(from, dirW.clone().normalize());
+        const world = delta.multiply(bone.getWorldQuaternion(new THREE.Quaternion()));
+        const parentQ = bone.parent!.getWorldQuaternion(new THREE.Quaternion()).invert();
+        bone.quaternion.copy(parentQ.multiply(world));
+        bone.updateMatrixWorld(true);
+      };
+      npcRig.postPose = () => {
+        const p = npcRig.player;
+        const up = p.getObjectByName("UpperArmR");
+        const lo = p.getObjectByName("LowerArmR");
+        const wr = p.getObjectByName("WristR");
+        if (!up || !lo || !wr) return;
+        const yaw = p.rotation.y;
+        const fwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+        const side = new THREE.Vector3(-Math.cos(yaw), 0, Math.sin(yaw)); // the character's right
+        aim(up, lo, new THREE.Vector3(0, -1, 0).addScaledVector(fwd, 0.18).addScaledVector(side, 0.12));
+        aim(lo, wr, fwd.clone().multiplyScalar(0.85).add(new THREE.Vector3(0, 0.38, 0)).addScaledVector(side, -0.18));
+        const w = wr.getWorldPosition(new THREE.Vector3());
+        // gripped around the middle, just past the wrist, upright
+        cup.position.copy(w).addScaledVector(fwd, 0.05).addScaledVector(side, -0.02).add(new THREE.Vector3(0, -0.04, 0));
+        cup.rotation.set(0, yaw + Math.PI / 2, 0);
+        cup.visible = true;
+      };
     }
     npcRigs.push(npcRig);
     npcList.push({ def, rig: npcRig });
@@ -9210,33 +9245,7 @@ export function startPlaceholderScene(
         r.rightElbowPivot.rotation.set(-0.62, -0.12, 0);
         r.setLocomotion?.(0);
       }
-      const cup = npcCups.get(npcList[i].def.id);
-      if (cup) {
-        // right forearm raised, holding the cup in front of the chest; the cup rides on the hand bone
-        const r = npcRigs[i];
-        r.rightArmPivot.rotation.set(-0.35, -0.2, -0.12);
-        r.rightElbowPivot.rotation.set(-1.45, 0, 0);
-        r.setLocomotion?.(0);
-        // the cup sits in the hand: from the wrist toward the fingers, upright (positioned after the pose below)
-        cup.userData.rig = r;
-      }
       npcRigs[i].syncSkeleton?.();
-      if (cup) {
-        const r = npcRigs[i];
-        const wrist = r.player.getObjectByName("WristR") ?? r.player.getObjectByName("Wrist.R");
-        const elbow = r.player.getObjectByName("LowerArmR") ?? r.player.getObjectByName("LowerArm.R");
-        if (wrist && elbow) {
-          r.player.updateMatrixWorld(true);
-          const w = wrist.getWorldPosition(new THREE.Vector3());
-          const e = elbow.getWorldPosition(new THREE.Vector3());
-          const along = w.clone().sub(e).normalize(); // forearm direction: on to the palm
-          const fwd = new THREE.Vector3(Math.sin(r.player.rotation.y), 0, Math.cos(r.player.rotation.y));
-          cup.position.copy(w).addScaledVector(along, 0.13).addScaledVector(fwd, 0.06); // held in the curled fingers
-          cup.position.y -= 0.07;
-          cup.rotation.set(0, r.player.rotation.y, 0);
-          cup.visible = true;
-        }
-      }
     }
 
     // --- Vehicle gate: slide the leaves toward their open/closed position ----------

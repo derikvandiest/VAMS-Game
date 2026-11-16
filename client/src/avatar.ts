@@ -57,6 +57,8 @@ export interface AvatarRig {
   setLocomotion?: (speed: number) => void;
   /** World-space targets for the left/right hand (ball handling). null releases that arm back to the animation. */
   setHands?: (left: THREE.Vector3 | null, right: THREE.Vector3 | null) => void;
+  /** Called at the end of every skeleton update (after the animation): adjust bones by hand here */
+  postPose?: (() => void) | null;
 }
 
 
@@ -1389,6 +1391,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     }
 
     glueFeet();
+    rigApi.postPose?.();
 
     // Sync bodyGroup height to torsoGroup for scene.ts bob (keeps feet on ground)
     // (apply only the change, so a seat drop set by scene.ts is kept)
@@ -1433,7 +1436,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     // via the pivot groups that syncSkeleton reads — no extra bone work needed.
   }
 
-  return {
+  const rigApi: AvatarRig = {
     player,
     bodyGroup,
     torsoGroup,
@@ -1459,7 +1462,9 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
       locoStamp = typeof performance !== "undefined" ? performance.now() : 0;
     },
     seatDrop: (seatY: number) => (seatY + 0.01 + 0.095 * modelScale - legPivotHeight) / scaleContainer.scale.y,
+    postPose: null,
   };
+  return rigApi;
 }
 
 // ---------------------------------------------------------------------------
