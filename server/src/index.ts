@@ -557,9 +557,12 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("world:ball:state", { ball: key, ...st });
   });
 
-  socket.on("world:balls:reset", () => {
-    for (const key of ["soccer", "basket"] as const) world.balls[key] = { owner: null, state: null };
-    socket.broadcast.emit("world:balls:reset");
+  // which: "soccer" (the field's reset grate) or anything else = both balls
+  socket.on("world:balls:reset", (d?: { which?: unknown }) => {
+    const which = d?.which === "soccer" ? "soccer" : "all";
+    const keys = which === "soccer" ? (["soccer"] as const) : (["soccer", "basket"] as const);
+    for (const key of keys) world.balls[key] = { owner: null, state: null };
+    socket.broadcast.emit("world:balls:reset", { which });
   });
 
   socket.on("world:event", (d: { type?: unknown; text?: unknown }) => {

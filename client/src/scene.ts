@@ -4049,7 +4049,7 @@ export function startPlaceholderScene(
 
   const plateHint = document.getElementById("plate-hint");
   if (plateHint) {
-    plateHint.textContent = "Step here to reset all balls ⚽ 🏀";
+    plateHint.textContent = "Step here to reset the soccer ball ⚽";
     plateHint.style.cssText =
       "position:fixed;bottom:78px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.92);color:#38bdf8;font-family:system-ui,-apple-system,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.4px;padding:9px 22px;border-radius:20px;border:1.5px solid rgba(56,189,248,0.7);box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:none;z-index:900;opacity:0;transition:opacity 0.25s, transform 0.25s;display:none;";
   }
@@ -8214,17 +8214,22 @@ export function startPlaceholderScene(
   }
 
   // Resetting the balls (stepping on the vent or pressing B) asks for confirmation first
-  function doBallReset(fromNetwork = false): void {
-    if (mp && !fromNetwork) mp.emit("world:balls:reset");
+  /** Put the balls back: "soccer" = only the soccer ball (the field's reset grate), "all" = the basketball too */
+  function doBallReset(fromNetwork = false, which: "soccer" | "all" = "all"): void {
+    if (mp && !fromNetwork) mp.emit("world:balls:reset", { which });
     ballSync.soccer.own = !mp;
     ballSync.soccer.ownerId = null;
     ballSync.soccer.hasState = false;
-    ballSync.basket.own = !mp;
-    ballSync.basket.ownerId = null;
-    ballSync.basket.hasState = false;
-    ballSync.basket.held = false;
     resetBall();
-    resetBasketball();
+    resetBanner.textContent = which === "soccer" ? "⚽ The soccer ball was reset!" : "⚽ All balls were reset! 🏀";
+    if (which === "all") {
+      ballSync.basket.own = !mp;
+      ballSync.basket.ownerId = null;
+      ballSync.basket.hasState = false;
+      ballSync.basket.held = false;
+      bballHeld = false;
+      resetBasketball();
+    }
     resetBannerTimer = 2.0;
     resetBanner.style.transform = "translateX(-50%) scale(1)";
     resetBanner.style.opacity = "1";
@@ -8233,10 +8238,12 @@ export function startPlaceholderScene(
     padTopMat.emissive.setHex(0x0284c7);
     padTopMat.emissiveIntensity = 0.9;
   }
-  function requestBallReset(): void {
+  function requestBallReset(which: "soccer" | "all" = "all"): void {
     confirmAction(
-      { title: "Reset the balls?", message: "The soccer ball and basketball will go back to their starting spots.", confirmLabel: "Yes, reset them", cancelLabel: "Cancel" },
-      () => doBallReset()
+      which === "soccer"
+        ? { title: "Reset the soccer ball?", message: "The soccer ball will go back to the center of the field.", confirmLabel: "Yes, reset it", cancelLabel: "Cancel" }
+        : { title: "Reset the balls?", message: "The soccer ball and basketball will go back to their starting spots.", confirmLabel: "Yes, reset them", cancelLabel: "Cancel" },
+      () => doBallReset(false, which)
     );
   }
 
@@ -8355,7 +8362,7 @@ export function startPlaceholderScene(
     if (!ballSync[d.ball] || ballSync[d.ball].own) return;
     applyBallState(d.ball, d, false);
   });
-  mpOn("world:balls:reset", () => doBallReset(true));
+  mpOn("world:balls:reset", (d?: { which?: string }) => doBallReset(true, d?.which === "soccer" ? "soccer" : "all"));
   mpOn("world:event", (d: { type: "goal" | "bucket"; text: string }) => {
     if (d.type === "goal") triggerGoal(d.text);
     else triggerBucket(d.text);
@@ -9313,7 +9320,7 @@ export function startPlaceholderScene(
 
     if (onPlate && !plateIsPressed) {
       plateIsPressed = true; // only asks once per visit to the plate
-      requestBallReset();
+      requestBallReset("soccer"); // the field's grate only brings back the soccer ball
     } else if (!onPlate && plateIsPressed) {
       plateIsPressed = false;
     }

@@ -337,21 +337,22 @@ export const NPC_ASHI: NpcDef = {
       root: {
         paragraphs: [
           "(Sample text) Hey! I'm Mr. Ashi. I keep an eye on the field.",
-          "Ball rolled away or stuck somewhere? Step on the drain grate right here in the corner and it sends the soccer ball and the basketball back to their starting spots. Or I can reset them for you.",
+          "Soccer ball rolled away or stuck somewhere? Step on the drain grate right here in the corner and it sends the soccer ball back to the center of the field.",
+          "If the basketball gets lost too, I can reset both balls for you.",
         ],
         options: [
-          { label: "Please reset the balls", action: "reset-balls" },
+          { label: "Please reset both balls", action: "reset-balls" },
           { label: "How does the reset work?", next: "how" },
           { label: "Thanks, Mr. Ashi!" },
         ],
       },
       how: {
         paragraphs: [
-          "(Sample text) The metal grate in the corner of the field is the reset. Walk onto it and say yes when it asks.",
-          "The soccer ball goes back to the center spot and the basketball goes back to the courts, for everyone playing.",
+          "(Sample text) The metal grate in the corner of the field resets the soccer ball. Walk onto it and say yes when it asks, and the ball goes back to the center spot for everyone playing.",
+          "The grate doesn't touch the basketball. For that, grab a ball from the cart by the courts, or ask me to reset both.",
         ],
         options: [
-          { label: "Please reset the balls", action: "reset-balls" },
+          { label: "Please reset both balls", action: "reset-balls" },
           { label: "Got it, thanks!" },
         ],
       },

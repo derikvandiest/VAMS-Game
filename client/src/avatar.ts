@@ -565,6 +565,76 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     return headBox;
   }
 
+  /**
+   * A buzz cut: the scalp part of the head's own skin mesh (above a hairline that is high at the front and low at
+   * the back), pushed out a hair's width and colored as hair. It is skinned to the same bones, so it hugs the skull.
+   */
+  const BUZZ_FRONT = 0.66; // hairline height at the forehead (fraction of the head skin's height)
+  const BUZZ_BACK = 0.42; // ... and at the nape
+  function buildBuzzCut(): THREE.Object3D[] | null {
+    const root = armatureScene;
+    const m = measureNow();
+    if (!root || !m) return null;
+    let head: THREE.SkinnedMesh | null = null;
+    root.traverse((o) => {
+      const s = o as THREE.SkinnedMesh;
+      if (head || !s.isSkinnedMesh || s.userData.role || !/_Head/.test(partName(s))) return;
+      const name = (Array.isArray(s.material) ? s.material[0] : s.material)?.name ?? "";
+      if (/^skin$/i.test(name)) head = s;
+    });
+    if (!head) return null;
+    const src = head as THREE.SkinnedMesh;
+    root.updateMatrixWorld(true);
+    const toModel = root.matrixWorld.clone().invert().multiply(src.matrixWorld).multiply(src.bindMatrix);
+    const geo = src.geometry;
+    const pos = geo.getAttribute("position");
+    // the head skin's own extent (same space as the test below): chin/neck at the bottom, crown at the top
+    const v = new THREE.Vector3();
+    const pts: THREE.Vector3[] = [];
+    let yMin = Infinity, yMax = -Infinity, zMin = Infinity, zMax = -Infinity;
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(toModel);
+      pts.push(v.clone());
+      yMin = Math.min(yMin, v.y); yMax = Math.max(yMax, v.y);
+      zMin = Math.min(zMin, v.z); zMax = Math.max(zMax, v.z);
+    }
+    const h = yMax - yMin;
+    const d = zMax - zMin;
+    // hairline: high on the forehead at the front, lower at the sides, down to the nape at the back
+    const frontCut = yMin + h * BUZZ_FRONT;
+    const backCut = yMin + h * BUZZ_BACK;
+    const keepVert = pts.map((p) => {
+      const f = Math.min(1, Math.max(0, (p.z - (zMin + 0.3 * d)) / (0.55 * d)));
+      return p.y > backCut + (frontCut - backCut) * f;
+    });
+    const index = geo.getIndex();
+    const tris: number[] = [];
+    const triCount = index ? index.count / 3 : pos.count / 3;
+    for (let t = 0; t < triCount; t++) {
+      const a = index ? index.getX(t * 3) : t * 3;
+      const b = index ? index.getX(t * 3 + 1) : t * 3 + 1;
+      const c = index ? index.getX(t * 3 + 2) : t * 3 + 2;
+      if (keepVert[a] && keepVert[b] && keepVert[c]) tris.push(a, b, c);
+    }
+    if (tris.length === 0) return null;
+    const cap = geo.clone();
+    cap.setIndex(tris);
+    // drawn just in front of the skin it copies (no gaps between its flat-shaded faces)
+    const mat = new THREE.MeshStandardMaterial({ color: 0x141110, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+    const mesh = new THREE.SkinnedMesh(cap, mat);
+    mesh.name = "BuzzCut";
+    mesh.userData.role = "hair";
+    mesh.frustumCulled = false;
+    mesh.castShadow = true;
+    src.parent?.add(mesh);
+    mesh.position.copy(src.position);
+    mesh.quaternion.copy(src.quaternion);
+    mesh.scale.copy(src.scale);
+    mesh.updateMatrixWorld(true);
+    mesh.bind(src.skeleton, src.bindMatrix);
+    return [mesh];
+  }
+
   /** Skin box of the head and the eye position, measured in the current pose (model space). */
   function measureNow(): { box: THREE.Box3; eye?: EyeInfo } | null {
     const root = armatureScene;
@@ -767,7 +837,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
       cutRegion(borrow(hair.donor!, hair.parts ?? [], (i) => (i === 0 ? "hair" : "hairDark")), hair.cut)
     );
     hideBakedHair = hairObjs.length > 0 || !!p.noHair;
-    setSlot("extraHair", p.extraHair ? L(p.extraHair) : "", () => buildOnHead(p.extraHair!));
+    setSlot("extraHair", p.extraHair ? L(p.extraHair) : "", () => (p.extraHair === "buzz" ? buildBuzzCut() : buildOnHead(p.extraHair!)));
 
     const fh = getFacialHair(p.facialHair);
     setSlot("facial", fh.donor ? L(fh.id) : "", () => cutRegion(borrow(fh.donor!, fh.parts ?? [], () => (fh.cut ? "hair" : "hairDark")), fh.cut));
