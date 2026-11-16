@@ -125,16 +125,15 @@ export const NPC_PRINCIPAL: NpcDef = {
     noHomeroom: true,
     gender: "masculine",
     look: "masc-suit",
-    // Matches his portrait: locs swept back over the crown and hanging behind, short beard, round wire glasses,
+    // From his portrait: ponytail, clean-shaven, round black glasses,
     // warm brown skin, a white button-down with navy polka dots (the suit model: jacket, shirt and tie all dotted
     // white so it reads as one shirt), dark trousers
     outfitColor: "#f1f1ef",
-    hairStyle: "m-suit", // short base under the locs
-    extraHair: "locs",
-    hairColor: "#2a1c13",
-    facialHair: "beard",
+    hairStyle: "m-ponytail",
+    hairColor: "#1a1410",
+    facialHair: "none", // clean-shaven
     glasses: "round",
-    glassesColor: "#c2b48e", // thin gold-silver wire
+    glassesColor: BLACK, // black frames
     skinTone: "#6E4428",
     shoes: "dress",
     shoeColor: BLACK,
