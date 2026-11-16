@@ -7236,6 +7236,15 @@ export function startPlaceholderScene(
         if (event === "reset-balls") doBallReset();
         // Mr. Ipena opens the campus map for you
         if (event === "open-map") setTimeout(() => openMap(), 0);
+        // Ms. Castaneda runs the front entrance gate (the only way to open or close it)
+        if (event === "gate-open" && !gateOpen) {
+          gateOpen = true;
+          mp?.emit("world:gate", gateOpen);
+        }
+        if (event === "gate-close" && gateOpen) {
+          gateOpen = false;
+          mp?.emit("world:gate", gateOpen);
+        }
         // Mr. Navarro runs the car gate (the only way to open or close it)
         if (event === "vgate-open" && !vehicleGateOpen) toggleVehicleGate();
         if (event === "vgate-close" && vehicleGateOpen) toggleVehicleGate();
@@ -7938,11 +7947,6 @@ export function startPlaceholderScene(
             }
           }
         }
-      }
-      if (gateDistance(player.position.x, player.position.z) <= GATE_INTERACT_RANGE) {
-        gateOpen = !gateOpen;
-        mp?.emit("world:gate", gateOpen);
-        return;
       }
       if (drinkTimer > 0) {
         stopDrinking();
@@ -8809,10 +8813,8 @@ export function startPlaceholderScene(
       const nearGate =
         gateDistance(player.position.x, player.position.z) <= GATE_INTERACT_RANGE;
       const nearVehicleGate = !inMprRoom && !currentClassroom && !drivingCar && player.position.y < 1.5 && vehicleGateDistance(player.position.x, player.position.z) <= 3.5;
-      const wanted = nearGate
-        ? gateOpen
-          ? "Press E to close the gate"
-          : "Press E to open the gate"
+      const wanted = nearGate && !nearbyNpc()
+        ? "Ms. Castaneda opens and closes the entrance gate: ask her 🚪"
         : nearVehicleGate && !nearbyNpc()
           ? "Mr. Navarro opens and closes the car gate: ask him 🚗"
           : "";

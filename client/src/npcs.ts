@@ -11,6 +11,7 @@ import morrisPortrait from "./assets/morris_portrait.png";
 import ashiPortrait from "./assets/ashi_portrait.png";
 import navarroPortrait from "./assets/navarro_portrait.png";
 import ipenaPortrait from "./assets/ipena_portrait.png";
+import castanedaPortrait from "./assets/castaneda_portrait.png";
 import daniPortrait from "./assets/dani_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
@@ -440,15 +441,16 @@ export const NPC_NAVARRO: NpcDef = {
 
 /**
  * Ms. Dani, instructional assistant (lower school) who runs student drop-off and pick-up at the car line. She stands
- * on the parking-lot sidewalk centred in front of the entrance gate. Matches her portrait: fair skin, dark
+ * in the parking lot at the gate to the street (north fence, opening x -45.4 .. -38.6), on its right-hand side as
+ * you face the gate from the lot. Matches her portrait: fair skin, dark
  * shoulder-length hair with a center part, a tan chore jacket with a brown collar over a dark top, dark jeans.
  */
 export const NPC_DANI: NpcDef = {
   id: "npc-dani",
   room: "campus",
-  x: -31.5, // the sidewalk along the parking lot (x -33 .. -30), centred on the entrance gate (z = -6.25)
-  z: -6.25,
-  rotY: -Math.PI / 2, // facing the car line in the parking lot
+  x: -37.3, // just east of the gate's catch post (x = -38.6), inside the lot
+  z: -21.3,
+  rotY: -0.5, // facing the cars coming in, turned a little toward the gate
   profile: {
     ...getDefaultProfile(),
     name: "Ms. Dani",
@@ -473,7 +475,7 @@ export const NPC_DANI: NpcDef = {
       root: {
         paragraphs: [
           "(Sample text) Hi, welcome to Valor! I'm Ms. Dani. I'm an instructional assistant in the lower school, and every morning and afternoon you'll find me out here running the car line for drop-off and pick-up.",
-          "Heading onto campus? The entrance gate is right behind me. Ms. Castaneda opens and closes it, so just let her know.",
+          "Heading onto campus? Walk over to the entrance gate by the office. Ms. Castaneda opens and closes it, so just let her know.",
         ],
         options: [
           { label: "How do I get through the gate?", next: "gate" },
@@ -640,4 +642,75 @@ export const NPC_IPENA: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA];
+/**
+ * Ms. Castaneda, Assistant Dean of Restorative Practices, standing outside the front entrance gate (on the
+ * parking-lot side). She opens and closes the entrance gate: asking her is the only way. Matches her portrait:
+ * warm light-medium skin, shoulder-length wavy honey-brown hair with a center part, a gray knit cardigan over a
+ * black top, dark pants.
+ */
+export const NPC_CASTANEDA: NpcDef = {
+  id: "npc-castaneda",
+  room: "campus",
+  x: -30.3, // right in front of the gate (x = -28, opening z -10.5 .. -2), on the sidewalk outside
+  z: -6.25,
+  rotY: -Math.PI / 2, // facing the parking lot and the people arriving
+  talkRange: 4.2, // reachable from both sides of the closed gate
+  profile: {
+    ...getDefaultProfile(),
+    name: "Ms. Castaneda",
+    title: "Assistant Dean of Restorative Practices",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-suit", // the jacket is her cardigan, the shirt her black top
+    outfitColor: "#9fa3a9", // gray knit cardigan
+    hairStyle: "f-long", // shoulder length, center part
+    extraHair: "curls", // soft waves
+    hairColor: "#9a6a3c",
+    glasses: "none",
+    skinTone: "#E3AE88",
+    shoes: "dress",
+    shoeColor: "#1f1f24",
+    partColors: { "Body:White": "#1f2023", "Legs:Black": "#2b2e36" },
+  },
+  portrait: castanedaPortrait,
+  // SAMPLE TEXT: replace with Ms. Castaneda's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi, welcome! I'm Ms. Castaneda, the Assistant Dean of Restorative Practices.",
+          "I also look after the front entrance gate. Want me to open it or close it for you?",
+        ],
+        options: [
+          { label: "Can you open the gate?", action: "gate-open" },
+          { label: "Can you close the gate?", action: "gate-close" },
+          { label: "What are restorative practices?", next: "rp" },
+          { label: "Thanks, Ms. Castaneda!" },
+        ],
+      },
+      rp: {
+        paragraphs: [
+          "(Sample text) Restorative practices are about building strong relationships and repairing harm when something goes wrong. Instead of only giving consequences, we bring people together to talk about what happened, who was affected, and how to make it right.",
+          "Things like community circles and restorative conversations help students feel heard and take responsibility, and they make our whole school community stronger.",
+        ],
+        options: [
+          { label: "How can teachers use it?", next: "rpClass" },
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Castaneda!" },
+        ],
+      },
+      rpClass: {
+        paragraphs: [
+          "(Sample text) Start small: morning check-in circles, affective statements like \"I felt frustrated when...\", and asking restorative questions instead of \"Why did you do that?\". When students know they belong, behavior and learning both improve.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Castaneda!" },
+        ],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA];
