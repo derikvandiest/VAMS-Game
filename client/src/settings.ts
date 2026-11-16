@@ -10,6 +10,7 @@
  * Public API (unchanged for callers): initSettingsModal(), openSettingsModal().
  */
 
+import { hasBackpack, backpackColor, setBackpackVisible } from "./inventory";
 import * as THREE from "three";
 import { setLocalPlayerName } from "./chat";
 import { createAvatarRig, AvatarRig, preloadAvatarAssets } from "./avatar";
@@ -445,6 +446,19 @@ export function initSettingsModal(onSave?: SaveCb): void {
       if (draft.glasses !== "none") body += section("Frame color", colorControl("glassesColor", ACCENT_COLORS, draft.glassesColor));
       body += section("Shoes", itemGrid("shoes", "shoes", shoesFor(g), draft.shoes));
       body += section("Shoe color", colorControl("shoeColor", ACCENT_COLORS, draft.shoeColor));
+      // only once the player has picked up a backpack in the MPR
+      if (hasBackpack()) {
+        const shown = !!draft.backpack;
+        body += section(
+          "Backpack",
+          `<div class="cc-seg" role="radiogroup">${radioBtn('data-backpack="show"', shown, "cc-seg-btn", "Show")}${radioBtn(
+            'data-backpack="hide"',
+            !shown,
+            "cc-seg-btn",
+            "Hide"
+          )}</div>`
+        );
+      }
     }
     const bodyEl = $("cc-body");
     const scrollTop = bodyEl.scrollTop;
@@ -529,6 +543,11 @@ export function initSettingsModal(onSave?: SaveCb): void {
       setDraft({ [key]: rest.join(":") } as Partial<CharacterProfile>);
     } else if (d.homeroom) {
       setDraft({ homeroom: d.homeroom as Homeroom });
+    } else if (d.backpack) {
+      // show / hide the backpack on the character right away (and in the preview)
+      const show = d.backpack === "show";
+      setBackpackVisible(show);
+      setDraft({ backpack: show ? backpackColor() ?? "" : "" });
     }
   });
 

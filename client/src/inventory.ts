@@ -33,12 +33,13 @@ const itemById = (id: string): ItemDef | undefined => ITEMS.find((i) => i.id ===
 const QUICK_SLOTS = 5;
 const BAG_SLOTS = 20;
 
-const state: { quick: Slot[]; bag: Slot[]; selected: number; backpack: string | null; starterGiven: boolean } = {
+const state: { quick: Slot[]; bag: Slot[]; selected: number; backpack: string | null; starterGiven: boolean; showBackpack: boolean } = {
   quick: new Array(QUICK_SLOTS).fill(null),
   bag: new Array(BAG_SLOTS).fill(null),
   selected: 0,
   backpack: null, // the color of the backpack the player picked up (null = none yet: no inventory)
   starterGiven: false,
+  showBackpack: true, // drawn on the character (it can be hidden: the inventory works either way)
 };
 let started = false;
 let panel: HTMLElement | null = null;
@@ -66,6 +67,7 @@ function load(): void {
   state.selected = 0;
   state.backpack = null;
   state.starterGiven = false;
+  state.showBackpack = true;
   try {
     const raw = localStorage.getItem(storageKey());
     if (raw) {
@@ -75,17 +77,32 @@ function load(): void {
       state.selected = Math.max(0, Math.min(QUICK_SLOTS - 1, Number(d.selected) || 0));
       state.backpack = typeof d.backpack === "string" && /^#[0-9a-fA-F]{6}$/.test(d.backpack) ? d.backpack : null;
       state.starterGiven = d.starterGiven === true || state.quick.some(Boolean) || state.bag.some(Boolean);
+      state.showBackpack = d.showBackpack !== false;
     }
   } catch {
     /* start fresh */
   }
-  wearBackpack(state.backpack);
+  wearBackpack(state.backpack && state.showBackpack ? state.backpack : null);
 }
 
 /** Show the backpack on the character (the profile carries it, so other players see it too) */
 function wearBackpack(color: string | null): void {
   const p = loadCharacterProfile();
   if ((p.backpack || "") !== (color || "")) saveCharacterProfile({ ...p, backpack: color || "" });
+}
+
+/** Is the backpack drawn on the character? */
+export function backpackVisible(): boolean {
+  return state.showBackpack;
+}
+
+/** Show or hide the backpack on the character (only once the player has one; the inventory keeps working) */
+export function setBackpackVisible(show: boolean): void {
+  if (!state.backpack) return;
+  state.showBackpack = show;
+  save();
+  wearBackpack(show ? state.backpack : null);
+  render();
 }
 
 /** Does the player have a backpack (and so an inventory)? */
@@ -101,6 +118,7 @@ export function backpackColor(): string | null {
 /** Pick up (or swap to) a backpack of this color: the inventory opens up; the first one comes with the PD supplies. */
 export function equipBackpack(color: string): void {
   state.backpack = color;
+  state.showBackpack = true; // picking one up puts it on
   if (!state.starterGiven) {
     state.starterGiven = true;
     ITEMS.filter((i) => i.starter).forEach((i) => {
@@ -249,6 +267,13 @@ function render(): void {
     panel.querySelector(".inv-grid")!.innerHTML = state.bag.map((s, i) => slotHtml("bag", i, s)).join("");
     const used = state.bag.filter(Boolean).length;
     panel.querySelector(".inv-count")!.textContent = `${used} / ${BAG_SLOTS}`;
+    const vis = panel.querySelector<HTMLButtonElement>(".inv-visible");
+    if (vis) {
+      vis.classList.toggle("off", !state.showBackpack);
+      vis.setAttribute("aria-pressed", String(state.showBackpack));
+      vis.textContent = state.showBackpack ? "👁 Shown on character" : "🚫 Hidden on character";
+      vis.title = state.showBackpack ? "Hide the backpack on your character" : "Show the backpack on your character";
+    }
   }
 }
 
@@ -273,11 +298,13 @@ export function openBackpack(): void {
       <div class="inv-title"><span class="inv-swatch" style="background:${state.backpack}"></span>Backpack <span class="inv-count"></span></div>
       <button type="button" class="inv-close" aria-label="Close backpack">✕</button>
     </div>
+    <button type="button" class="inv-visible" aria-pressed="true"></button>
     <div class="inv-grid"></div>
     <div class="inv-detail"></div>
     <div class="inv-foot">Drag items to and from the quick bar · <kbd>I</kbd> or <kbd>Esc</kbd> to close</div>`;
   document.body.appendChild(panel);
   panel.querySelector(".inv-close")!.addEventListener("click", closeBackpack);
+  panel.querySelector(".inv-visible")!.addEventListener("click", () => setBackpackVisible(!state.showBackpack));
   panel.addEventListener("pointerdown", onPointerDown);
   panel.addEventListener("pointerover", (e) => {
     const slot = (e.target as HTMLElement).closest<HTMLElement>(".inv-slot");

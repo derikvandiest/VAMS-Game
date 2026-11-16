@@ -2592,3 +2592,19 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.5);
   vertical-align: -1px;
 }
+.inv-visible {
+  display: block;
+  width: 100%;
+  margin: 0 0 10px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  background: rgba(56, 189, 248, 0.14);
+  color: #e0f2fe;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.inv-visible:hover { background: rgba(56, 189, 248, 0.24); }
+.inv-visible.off { border-color: rgba(148, 163, 184, 0.5); background: rgba(148, 163, 184, 0.12); color: #cbd5e1; }
