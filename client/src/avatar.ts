@@ -401,6 +401,31 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
   // ---------------------------------------------------------------------------
   // applyMaterials — tint Skin / outfit materials from profile colors
   // ---------------------------------------------------------------------------
+  /** NPC part color: a "Part:Material" key (e.g. "Legs:Suit") wins over a plain material name */
+  function partColorFor(colors: Record<string, string>, meshName: string, mat: string): string | undefined {
+    for (const [k, v] of Object.entries(colors)) if (k.includes(":") && matchesEntry([k], meshName, mat)) return v;
+    return colors[mat];
+  }
+
+  /** Polka dots drawn in the shader from the model-space position (the outfit models have no texture UVs) */
+  function addPolkaDots(std: THREE.MeshStandardMaterial, base: string, dot: string): void {
+    std.color.set(base);
+    const dotColor = new THREE.Color(dot);
+    std.onBeforeCompile = (sh) => {
+      sh.uniforms.polkaColor = { value: dotColor };
+      sh.vertexShader = sh.vertexShader
+        .replace("#include <common>", "#include <common>\nvarying vec3 vPolkaPos;\nvarying vec3 vPolkaN;")
+        .replace("#include <skinning_vertex>", "#include <skinning_vertex>\nvPolkaPos = transformed;\nvPolkaN = objectNormal;");
+      sh.fragmentShader = sh.fragmentShader
+        .replace("#include <common>", "#include <common>\nvarying vec3 vPolkaPos;\nvarying vec3 vPolkaN;\nuniform vec3 polkaColor;")
+        .replace(
+          "#include <color_fragment>",
+          "#include <color_fragment>\n{ vec3 an = abs(normalize(vPolkaN)); vec2 uv = an.x > an.z ? vPolkaPos.zy : vPolkaPos.xy; vec2 cell = uv * 30.0; cell.x += 0.5 * step(1.0, mod(floor(cell.y), 2.0)); vec2 q = fract(cell) - 0.5; float m = 1.0 - smoothstep(0.2, 0.26, length(q)); diffuseColor.rgb = mix(diffuseColor.rgb, polkaColor, m); }"
+        );
+    };
+    std.customProgramCacheKey = () => "polka-dots";
+  }
+
   function applyMaterials(p: CharacterProfile): void {
     if (!armatureScene) return;
     const look = getLook(p.look);
@@ -433,8 +458,9 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
         const std = (m as THREE.MeshStandardMaterial).clone();
         const name = std.name || "";
         const key = name.toLowerCase();
-        if (p.partColors?.[name]) {
-          std.color.set(p.partColors[name]);
+        const partColor = p.partColors ? partColorFor(p.partColors, meshName, name) : undefined;
+        if (partColor) {
+          std.color.set(partColor);
         } else if (SKIN_MAT_NAMES.has(key)) {
           std.color.copy(key === "skin" ? skin : skinDark);
         } else if (matchesEntry(look.shirt, meshName, name)) {
@@ -445,6 +471,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
         } else if (matchesEntry(look.brows, meshName, name)) {
           std.color.copy(brows);
         }
+        if (p.polkaDots && p.polkaDots.parts.some((e) => (e.includes(":") ? matchesEntry([e], meshName, name) : e === name))) addPolkaDots(std, p.polkaDots.base, p.polkaDots.dot);
         return std;
       };
       mesh.material = Array.isArray(mesh.material) ? mesh.material.map(tint) : tint(mesh.material);
@@ -734,6 +761,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
       cutRegion(borrow(hair.donor!, hair.parts ?? [], (i) => (i === 0 ? "hair" : "hairDark")), hair.cut)
     );
     hideBakedHair = hairObjs.length > 0;
+    setSlot("extraHair", p.extraHair ? L(p.extraHair) : "", () => buildOnHead(p.extraHair!));
 
     const fh = getFacialHair(p.facialHair);
     setSlot("facial", fh.donor ? L(fh.id) : "", () => cutRegion(borrow(fh.donor!, fh.parts ?? [], () => (fh.cut ? "hair" : "hairDark")), fh.cut));
@@ -788,7 +816,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
       skinDark: skin.clone().multiplyScalar(0.85),
     };
     const objs = (n: string) => slots.get(n)?.objs ?? [];
-    recolor([...objs("hair"), ...objs("facial")], base);
+    recolor([...objs("hair"), ...objs("facial"), ...objs("extraHair")], base);
     recolor(objs("legfill"), { skin: base.skin ?? skin });
     recolor(objs("shoes"), { ...base, ...(p.shoeColor ? { shoe: new THREE.Color(p.shoeColor) } : {}) });
     recolor(objs("hat"), { accent: new THREE.Color(p.hatColor || shirtColorFor(p.homeroom)) });

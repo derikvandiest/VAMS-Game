@@ -82,7 +82,7 @@ export function recolor(objs: THREE.Object3D[], colors: RoleColors): void {
 // Procedural accessories
 // ---------------------------------------------------------------------------
 
-export type ProceduralKind = "round";
+export type ProceduralKind = "round" | "locs";
 
 /** Where the eyes are (model space): vertical center, front surface and outer-corner span. */
 export interface EyeInfo {
@@ -118,6 +118,7 @@ export function buildProcedural(kind: ProceduralKind, head: THREE.Box3, bulk = 1
   const d = size.z;
   const top = head.max.y;
   const g = new THREE.Group();
+  if (kind === "locs") return buildLocs(head, g);
 
   // Round glasses: fitted to the measured eye position, the frame sits right against the face.
   const e = eye ?? { y: top - 0.58 * w, z: head.max.z - 0.06 * d, span: 0.55 * w };
@@ -139,5 +140,42 @@ export function buildProcedural(kind: ProceduralKind, head: THREE.Box3, bulk = 1
   }
   // bridge
   g.add(withGeo(std("accent"), new THREE.BoxGeometry(Math.max(gap * 2 - lensR * 2 - t, t), t * 1.6, t * 1.6), c.x, e.y + lensR * 0.25, zf));
+  return g;
+}
+
+/**
+ * Locs (dreadlocks): twisted ropes starting at the hairline, swept back over the crown and hanging down the back
+ * of the head to below the jaw. Built in the model's space from the head's skin bounding box; colored as hair.
+ */
+function buildLocs(head: THREE.Box3, g: THREE.Group): THREE.Group {
+  const size = head.getSize(new THREE.Vector3());
+  const c = head.getCenter(new THREE.Vector3());
+  const w = size.x;
+  const top = head.max.y;
+  const front = head.max.z;
+  const back = head.min.z;
+  const r = w * 0.055;
+  const N = 11;
+  for (let i = 0; i < N; i++) {
+    const t = i / (N - 1) - 0.5; // -0.5 .. 0.5 across the head
+    const jit = Math.sin(i * 12.9898) * 0.5 + 0.5; // stable per-loc variation
+    const xTop = c.x + t * w * 0.72;
+    const xHang = c.x + t * w * 1.0;
+    const edge = Math.abs(t) * 2; // 0 in the middle, 1 at the sides
+    const pts = [
+      new THREE.Vector3(xTop, top - w * (0.28 + 0.12 * edge), front - w * (0.16 + 0.06 * edge)), // hairline
+      new THREE.Vector3(xTop, top + w * (0.06 - 0.08 * edge), c.z + w * 0.12),
+      new THREE.Vector3(xHang * 0.5 + xTop * 0.5, top - w * (0.06 + 0.1 * edge), back + w * 0.1),
+      new THREE.Vector3(xHang, top - w * (0.45 + 0.05 * jit), back - w * 0.04),
+      new THREE.Vector3(xHang + t * w * 0.1, top - w * (0.85 + 0.2 * jit), back + w * (0.02 + 0.08 * edge)),
+    ];
+    const curve = new THREE.CatmullRomCurve3(pts);
+    const tube = new THREE.TubeGeometry(curve, 24, r * (0.85 + 0.3 * jit), 6, false);
+    g.add(withGeo(std(i % 3 === 0 ? "hairDark" : "hair"), tube));
+    // rounded tip
+    const tip = new THREE.SphereGeometry(r * (0.85 + 0.3 * jit), 6, 5);
+    const end = pts[pts.length - 1];
+    g.add(withGeo(std("hair"), tip, end.x, end.y, end.z));
+  }
   return g;
 }

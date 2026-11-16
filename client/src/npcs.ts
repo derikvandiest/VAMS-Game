@@ -111,7 +111,7 @@ export const NPC_VAN_DIEST: NpcDef = {
   },
 };
 
-/** The school principal, standing where the elevator, the soccer field and the lunch tables meet. */
+/** The school principal (Mr. Perry), standing where the elevator, the soccer field and the lunch tables meet. */
 export const NPC_PRINCIPAL: NpcDef = {
   id: "npc-principal",
   room: "campus",
@@ -125,12 +125,21 @@ export const NPC_PRINCIPAL: NpcDef = {
     noHomeroom: true,
     gender: "masculine",
     look: "masc-suit",
-    outfitColor: "#1e293b",
-    hairStyle: "m-ponytail",
-    hairColor: "#1a1410",
-    skinTone: "#5C3317", // the darkest skin tone
+    // Matches his portrait: locs swept back over the crown and hanging behind, short beard, round wire glasses,
+    // warm brown skin, a white button-down with navy polka dots (the suit model: jacket, shirt and tie all dotted
+    // white so it reads as one shirt), dark trousers
+    outfitColor: "#f1f1ef",
+    hairStyle: "m-suit", // short base under the locs
+    extraHair: "locs",
+    hairColor: "#2a1c13",
+    facialHair: "beard",
+    glasses: "round",
+    glassesColor: "#c2b48e", // thin gold-silver wire
+    skinTone: "#6E4428",
     shoes: "dress",
     shoeColor: BLACK,
+    partColors: { "Legs:Suit": "#2c313b" },
+    polkaDots: { parts: ["Body:Suit", "Body:White", "Body:Tie"], base: "#f1f1ef", dot: "#26365e" },
   },
   portrait: perryPortrait,
   // SAMPLE TEXT: replace with the principal's real dialogue
