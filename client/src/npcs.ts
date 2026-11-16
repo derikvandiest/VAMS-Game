@@ -16,6 +16,7 @@ import tunsonPortrait from "./assets/tunson_portrait.png";
 import staufferPortrait from "./assets/stauffer_portrait.png";
 import roldanPortrait from "./assets/roldan_portrait.png";
 import guerreroPortrait from "./assets/guerrero_portrait.png";
+import nayfeldPortrait from "./assets/nayfeld_portrait.png";
 import daniPortrait from "./assets/dani_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
@@ -978,4 +979,71 @@ export const NPC_GUERRERO: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO];
+/**
+ * Mrs. Nayfeld, outside the MPR's courtyard doors on the side toward the stairs up to the west building's walkway
+ * (Mrs. Tunson is on the other side). Matches her portrait: warm light-medium skin, long wavy brown hair with a
+ * center part, a beige button-up utility shirt, dark pants.
+ */
+const NAYFELD_SHIRT = "#d8c8ad";
+export const NPC_NAYFELD: NpcDef = {
+  id: "npc-nayfeld",
+  room: "campus",
+  x: -12.5, // the MPR doors are at x = -14, z 50.5 .. 52.5; the stairs start at z = 46.5
+  z: 48.4,
+  rotY: Math.PI / 2 + 0.4, // facing the courtyard, turned a little toward the doors
+  talkRange: 1.8, // short, so E at the MPR doors still opens them
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mrs. Nayfeld",
+    title: "",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-suit", // jacket and shirt both her beige utility shirt
+    outfitColor: NAYFELD_SHIRT,
+    hairStyle: "f-witch", // long, center part
+    hairColor: "#6b3f22",
+    skinTone: "#E8B48C",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#f1f1f1",
+    partColors: { "Body:White": NAYFELD_SHIRT, "Legs:Black": "#2e3442" },
+  },
+  portrait: nayfeldPortrait,
+  // SAMPLE TEXT: replace with Mrs. Nayfeld's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi there! I'm Mrs. Nayfeld. Welcome to our PD day!",
+          "Heading upstairs? These stairs take you up to the 6th grade classrooms on the walkway.",
+        ],
+        options: [
+          { label: "Where should I go first?", next: "first" },
+          { label: "Any tips for today?", next: "tips" },
+          { label: "Thanks, Mrs. Nayfeld!" },
+        ],
+      },
+      first: {
+        paragraphs: [
+          "(Sample text) Start in the MPR and take a seat for the welcome. After that, visit the classrooms in any order you like. Your map (press M) shows which ones still have an assignment.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mrs. Nayfeld!" },
+        ],
+      },
+      tips: {
+        paragraphs: [
+          "(Sample text) Grab a backpack in the MPR so you can carry your things, and keep an eye on your student agenda to see what's left. And take your time: every classroom has something great to share!",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mrs. Nayfeld!" },
+        ],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD];
