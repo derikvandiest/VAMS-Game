@@ -272,7 +272,7 @@ export const NPC_MORRIS: NpcDef = {
     gender: "feminine",
     look: "fem-suit",
     outfitColor: "#1b1c20", // black hoodie
-    hairStyle: "f-explorer", // short base, slicked back under the braid
+    hairStyle: "f-wavy", // pulled straight back from the face (no bangs over the brows); the braid hangs from it
     extraHair: "braid",
     hairColor: "#1a1412",
     skinTone: "#7A4A2E",

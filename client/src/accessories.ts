@@ -225,8 +225,8 @@ function buildCurls(head: THREE.Box3, g: THREE.Group): THREE.Group {
 }
 
 /**
- * Hair slicked straight back into one long braid: a smooth cap over the scalp, then a plaited rope from the nape
- * that comes forward over the right shoulder and down the chest. Colored as hair.
+ * One long braid: a plaited rope from the nape that comes forward over the right shoulder and down the chest
+ * (goes with a slicked-back hairstyle). Colored as hair.
  */
 function buildBraid(head: THREE.Box3, g: THREE.Group): THREE.Group {
   const size = head.getSize(new THREE.Vector3());
@@ -234,11 +234,6 @@ function buildBraid(head: THREE.Box3, g: THREE.Group): THREE.Group {
   const w = size.x;
   const d = size.z;
   const top = head.max.y;
-  // slicked-back cap (a flattened half sphere hugging the crown and the back of the head)
-  const cap = new THREE.SphereGeometry(0.5, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.55);
-  const capMesh = withGeo(std("hair"), cap, c.x, top - w * 0.42, c.z - d * 0.04);
-  capMesh.scale.set(w * 1.06, w * 0.98, d * 1.08);
-  g.add(capMesh);
   // the braid: nape -> behind the right ear -> over the right shoulder -> down the front
   const side = -1; // the character's right (the model faces +z)
   const curve = new THREE.CatmullRomCurve3([
