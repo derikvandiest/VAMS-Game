@@ -680,8 +680,8 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
   }
 
   /**
-   * A backpack on the character's back: sized from the torso (so every outfit and both genders fit), with two
-   * shoulder straps coming over to the front, attached to the Chest bone so it moves with the upper body.
+   * A backpack on the character's back: sized from the torso (so every outfit and both genders fit), attached to
+   * the Chest bone so it moves with the upper body (no straps).
    */
   function buildBackpack(color: string): THREE.Object3D[] | null {
     const root = armatureScene;
@@ -747,21 +747,6 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     const handle = add(new THREE.TorusGeometry(0.035, 0.008, 6, 12, Math.PI), trim, c.x, cy + H * 0.41, cz);
     handle.rotation.y = Math.PI / 2;
     // shoulder straps: over each shoulder and down the front of the chest
-    // shoulder height from the shoulder bones (so the straps rest on the shoulders, not above them)
-    const sh = (["Shoulder.L", "Shoulder.R", "ShoulderL", "ShoulderR"] as const)
-      .map((n) => root.getObjectByName(n))
-      .filter((o): o is THREE.Object3D => !!o)
-      .map((o) => o.getWorldPosition(new THREE.Vector3()).applyMatrix4(inv).y);
-    const yTop = sh.length ? Math.max(...sh) + 0.015 : c.y + 0.06;
-    const sw = 0.04;
-    for (const sx of [-1, 1]) {
-      const x = c.x + sx * 0.1;
-      const over = front - back;
-      add(new THREE.BoxGeometry(sw, 0.012, over), trim, x, yTop, (front + back) / 2);
-      // down the front, lying on the chest (a touch inside the surface so it never floats)
-      const f = add(new THREE.BoxGeometry(sw, 0.2, 0.01), trim, x, yTop - 0.1, front - 0.004);
-      f.rotation.x = -0.12;
-    }
     root.add(g);
     root.updateMatrixWorld(true);
     chest.attach(g); // keeps the placement and follows the upper body from now on
