@@ -4371,6 +4371,95 @@ export function startPlaceholderScene(
   const bballAngVel = new THREE.Vector3(0, 0, 0);
   let bballHeld = false;
   let bballShootAnimTimer = 0;
+
+  // --- Basketball cart, just south of the courts: press E next to it to grab the basketball --------------
+  const BALL_CART_X = 23.8;
+  const BALL_CART_Z = 62.4;
+  {
+    const cart = new THREE.Group();
+    cart.position.set(BALL_CART_X, 0, BALL_CART_Z);
+    const steel = new THREE.MeshStandardMaterial({ color: 0x9aa3ad, roughness: 0.35, metalness: 0.8 });
+    const rubber = new THREE.MeshStandardMaterial({ color: 0x1f2328, roughness: 0.8 });
+    const W = 1.5; // along x
+    const D = 0.6;
+    // two wire shelves and the frame
+    for (const y of [0.35, 0.82]) {
+      for (const zz of [-D / 2, D / 2]) {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(W, 0.03, 0.03), steel);
+        rail.position.set(0, y, zz);
+        cart.add(rail);
+      }
+      for (const xx of [-W / 2, W / 2]) {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, D), steel);
+        rail.position.set(xx, y, 0);
+        cart.add(rail);
+      }
+      for (let k = 1; k < 6; k++) {
+        const wire = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.015, D), steel);
+        wire.position.set(-W / 2 + (W * k) / 6, y - 0.01, 0);
+        cart.add(wire);
+      }
+      // a low rail around each shelf so the balls stay on
+      for (const zz of [-D / 2, D / 2]) {
+        const lip = new THREE.Mesh(new THREE.BoxGeometry(W, 0.02, 0.02), steel);
+        lip.position.set(0, y + 0.12, zz);
+        cart.add(lip);
+      }
+    }
+    for (const xx of [-W / 2, W / 2]) {
+      for (const zz of [-D / 2, D / 2]) {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.85, 0.035), steel);
+        post.position.set(xx, 0.53, zz);
+        cart.add(post);
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.04, 12), rubber);
+        wheel.rotation.x = Math.PI / 2;
+        wheel.position.set(xx, 0.06, zz);
+        cart.add(wheel);
+      }
+    }
+    // push handle at one end
+    const handle = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, D), steel);
+    handle.position.set(-W / 2 - 0.12, 1.05, 0);
+    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.03), steel);
+    hl.position.set(-W / 2 - 0.06, 1.05, -D / 2);
+    const hr = hl.clone();
+    hr.position.z = D / 2;
+    cart.add(handle, hl, hr);
+    // the balls: two rows of three on each shelf (the same ball texture)
+    const ballGeo = new THREE.SphereGeometry(BASKETBALL_RADIUS, 20, 14);
+    for (const y of [0.35, 0.82]) {
+      for (let k = 0; k < 3; k++) {
+        for (const zz of [-0.14, 0.14]) {
+          const b = new THREE.Mesh(ballGeo, bballMat);
+          b.position.set(-0.47 + k * 0.47 + (zz > 0 ? 0.05 : -0.05), y + BASKETBALL_RADIUS + 0.01, zz);
+          b.rotation.set(k * 1.3 + y, zz * 9, k);
+          b.castShadow = true;
+          cart.add(b);
+        }
+      }
+    }
+    scene.add(cart);
+    buildingSolids.push({ x: BALL_CART_X - 0.06, z: BALL_CART_Z, w: W + 0.2, d: D + 0.1, yBase: 0, yTop: 1.15 });
+  }
+  /** Close enough to the cart to take a ball (on the ground, not driving or sitting) */
+  function nearBallCart(): boolean {
+    return (
+      !inMprRoom && !currentClassroom && !drivingCar && !seatedChair && player.position.y < 1.5 &&
+      Math.hypot(player.position.x - BALL_CART_X, player.position.z - BALL_CART_Z) <= 2.0
+    );
+  }
+  /** Take the basketball from the cart (the one ball everyone shares comes to your hands) */
+  function grabBallFromCart(): boolean {
+    if (bballHeld) return false;
+    if (mp && !ballSync.basket.own && ballSync.basket.held) return false; // someone is playing with it right now
+    claimBall("basket");
+    bballHeld = true;
+    bballShootAnimTimer = 0;
+    bballPos.set(player.position.x, player.position.y + 1.0, player.position.z);
+    bballVel.set(0, 0, 0);
+    bballAngVel.set(0, 0, 0);
+    return true;
+  }
   let bballDribblePhase = 0;
   let basketCelebrationTimer = 0;
   let lastBballY = BASKETBALL_GROUND_Y;
@@ -7838,6 +7927,7 @@ export function startPlaceholderScene(
         startDrinking();
         return;
       }
+      if (nearBallCart() && grabBallFromCart()) return;
       // Check nearest chair (range: 1.8m)
       let nearestChair: ChairSlot | null = null;
       let minChairDist = 1.8;
@@ -9323,6 +9413,8 @@ export function startPlaceholderScene(
         hintText = "Press E or Click to reset cars 🚗";
       } else if (nearFountain()) {
         hintText = "Press E to take a drink 💧";
+      } else if (nearBallCart() && !bballHeld) {
+        hintText = mp && !ballSync.basket.own && ballSync.basket.held ? "Someone is using the basketball right now 🏀" : "Press E to grab a basketball 🏀";
       } else if (nearestChairDist <= 1.8) {
         hintText = "Press E to take a seat 🪑";
       } else if (nearestCarDist <= 3.8 && nearestCar) {

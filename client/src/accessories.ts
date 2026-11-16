@@ -82,7 +82,7 @@ export function recolor(objs: THREE.Object3D[], colors: RoleColors): void {
 // Procedural accessories
 // ---------------------------------------------------------------------------
 
-export type ProceduralKind = "round" | "locs" | "curls";
+export type ProceduralKind = "round" | "locs" | "curls" | "braid";
 
 /** Where the eyes are (model space): vertical center, front surface and outer-corner span. */
 export interface EyeInfo {
@@ -120,6 +120,7 @@ export function buildProcedural(kind: ProceduralKind, head: THREE.Box3, bulk = 1
   const g = new THREE.Group();
   if (kind === "locs") return buildLocs(head, g);
   if (kind === "curls") return buildCurls(head, g);
+  if (kind === "braid") return buildBraid(head, g);
 
   // Round glasses: fitted to the measured eye position, the frame sits right against the face.
   const e = eye ?? { y: top - 0.58 * w, z: head.max.z - 0.06 * d, span: 0.55 * w };
@@ -220,5 +221,53 @@ function buildCurls(head: THREE.Box3, g: THREE.Group): THREE.Group {
     const end = pts[pts.length - 1];
     g.add(withGeo(std("hair"), new THREE.SphereGeometry(r, 6, 5), end.x, end.y, end.z));
   }
+  return g;
+}
+
+/**
+ * Hair slicked straight back into one long braid: a smooth cap over the scalp, then a plaited rope from the nape
+ * that comes forward over the right shoulder and down the chest. Colored as hair.
+ */
+function buildBraid(head: THREE.Box3, g: THREE.Group): THREE.Group {
+  const size = head.getSize(new THREE.Vector3());
+  const c = head.getCenter(new THREE.Vector3());
+  const w = size.x;
+  const d = size.z;
+  const top = head.max.y;
+  // slicked-back cap (a flattened half sphere hugging the crown and the back of the head)
+  const cap = new THREE.SphereGeometry(0.5, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.55);
+  const capMesh = withGeo(std("hair"), cap, c.x, top - w * 0.42, c.z - d * 0.04);
+  capMesh.scale.set(w * 1.06, w * 0.98, d * 1.08);
+  g.add(capMesh);
+  // the braid: nape -> behind the right ear -> over the right shoulder -> down the front
+  const side = -1; // the character's right (the model faces +z)
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(c.x + side * w * 0.12, top - w * 0.72, head.min.z + d * 0.05),
+    new THREE.Vector3(c.x + side * w * 0.42, top - w * 1.0, head.min.z + d * 0.12),
+    new THREE.Vector3(c.x + side * w * 0.62, top - w * 1.3, c.z + d * 0.05),
+    new THREE.Vector3(c.x + side * w * 0.6, top - w * 1.65, head.max.z + d * 0.18),
+    new THREE.Vector3(c.x + side * w * 0.5, top - w * 2.15, head.max.z + d * 0.3),
+    new THREE.Vector3(c.x + side * w * 0.45, top - w * 2.6, head.max.z + d * 0.3),
+  ]);
+  const links = 16;
+  for (let i = 0; i < links; i++) {
+    const u = (i + 0.5) / links;
+    const p = curve.getPointAt(u);
+    const tan = curve.getTangentAt(u);
+    const r = w * (0.13 - 0.05 * u); // tapers toward the end
+    const link = withGeo(std(i % 2 ? "hairDark" : "hair"), new THREE.SphereGeometry(1, 10, 8), p.x, p.y, p.z);
+    link.scale.set(r, r * 1.5, r); // each plait is an oval along the braid
+    link.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tan);
+    // alternate the plaits left and right of the braid's line
+    const off = new THREE.Vector3(1, 0, 0).applyQuaternion(link.quaternion).multiplyScalar(r * 0.35 * (i % 2 ? 1 : -1));
+    link.position.add(off);
+    g.add(link);
+  }
+  // hair tie and the loose tip
+  const end = curve.getPointAt(1);
+  g.add(withGeo(std("hairDark"), new THREE.CylinderGeometry(w * 0.06, w * 0.06, w * 0.05, 10), end.x, end.y + w * 0.04, end.z));
+  const tip = withGeo(std("hair"), new THREE.ConeGeometry(w * 0.07, w * 0.22, 8), end.x, end.y - w * 0.1, end.z);
+  tip.rotation.x = Math.PI;
+  g.add(tip);
   return g;
 }

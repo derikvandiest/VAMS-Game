@@ -7,6 +7,7 @@ import type { DialogTree } from "./dialog";
 import vanDiestPortrait from "./assets/vandiest_portrait.png";
 import perryPortrait from "./assets/perry_portrait.png";
 import kurisuPortrait from "./assets/kurisu_portrait.png";
+import morrisPortrait from "./assets/morris_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -251,4 +252,49 @@ export const NPC_BLESSING: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING];
+/**
+ * Mrs. Morris, by the basketball cart at the courts. Matches her portrait: dark brown skin, hair slicked back
+ * into one long braid over her right shoulder, a black hoodie (the suit model in black: jacket and shirt), black
+ * joggers and sneakers.
+ */
+export const NPC_MORRIS: NpcDef = {
+  id: "npc-morris",
+  room: "campus",
+  x: 26.3, // beside the basketball cart, south of the courts
+  talkRange: 1.5, // short, so E next to the cart still grabs a ball
+  z: 62.4,
+  rotY: Math.PI, // looking out over the courts
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mrs. Morris",
+    title: "PE Teacher",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-suit",
+    outfitColor: "#1b1c20", // black hoodie
+    hairStyle: "f-explorer", // short base, slicked back under the braid
+    extraHair: "braid",
+    hairColor: "#1a1412",
+    skinTone: "#7A4A2E",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#1b1c20",
+    partColors: { "Body:White": "#1b1c20", "Legs:Black": "#202227" },
+  },
+  portrait: morrisPortrait,
+  // SAMPLE TEXT: replace with Mrs. Morris's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hey there! I'm Mrs. Morris. Welcome to the courts!",
+          "Grab a ball from the cart and shoot a few hoops whenever you need a break.",
+        ],
+        options: [{ label: "Thanks, Mrs. Morris!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS];
