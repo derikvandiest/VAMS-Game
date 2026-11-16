@@ -2646,3 +2646,11 @@ body {
   white-space: nowrap;
 }
 #inv-toast.show { opacity: 1; transform: translateX(-50%); }
+/* Chat lives at the bottom-left (clear of the quick bar in the middle and the backpack/map on the right) */
+.chat-widget { left: 16px; right: auto; }
+.chat-window { max-height: calc(100vh - 140px); }
+@media (max-width: 1060px) {
+  /* not enough room beside the quick bar: sit just above it */
+  .chat-widget { bottom: 96px; }
+  .chat-window { max-height: calc(100vh - 220px); }
+}
