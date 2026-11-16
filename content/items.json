@@ -13,7 +13,7 @@
       "id": "water-bottle-empty",
       "name": "Stanley Cup 40 oz (empty)",
       "icon": "svg:stanley",
-      "description": "Your 40 oz Stanley tumbler, empty. Fill it up at the drinking fountain by the 7th grade LMU classroom (press E at the fountain).",
+      "description": "Your 40 oz Stanley tumbler, empty. Fill it up at a drinking fountain: by the 7th grade LMU classroom, or upstairs next to the ELD classroom (press E at the fountain).",
       "stack": 1,
       "starter": true,
       "dim": true

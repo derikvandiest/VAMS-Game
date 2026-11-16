@@ -6716,31 +6716,42 @@ export function startPlaceholderScene(
   }
 
   // drinking from the fountain (E): leaning in for a few seconds while the water arcs into the basin
-  const fountainDrops: THREE.Mesh[] = [];
-  const FOUNTAIN_STAND = new THREE.Vector2(-12.78, 23.4); // where a player stands to drink
+  /** Every drinking fountain: where a player stands to drink (floor height, facing the wall) and its water drops */
+  const fountains: Array<{ x: number; z: number; y: number; rotY: number; drops: THREE.Mesh[] }> = [];
+  let activeFountain: (typeof fountains)[number] | null = null;
   const DRINK_TIME = 3;
   let drinkTimer = 0;
   let drinkElapsed = 0;
-  const nearFountain = (): boolean =>
-    !inMprRoom && !currentClassroom && !drivingCar && !seatedChair && player.position.y < 1.5 &&
-    Math.hypot(player.position.x - FOUNTAIN_STAND.x, player.position.z - FOUNTAIN_STAND.y) <= 1.7;
+  /** The fountain the player is standing at (same floor, within reach), if any */
+  const fountainNearby = (): (typeof fountains)[number] | null => {
+    if (inMprRoom || currentClassroom || drivingCar || seatedChair) return null;
+    return (
+      fountains.find((f) => Math.abs(player.position.y - f.y) < 1 && Math.hypot(player.position.x - f.x, player.position.z - f.z) <= 1.7) ??
+      null
+    );
+  };
+  const nearFountain = (): boolean => fountainNearby() !== null;
   function startDrinking(): void {
     if (bballHeld) {
       bballHeld = false;
       bballPos.set(player.position.x + 0.5, BASKETBALL_GROUND_Y, player.position.z);
       bballVel.set(0, 0, 0);
     }
+    const f = fountainNearby();
+    if (!f) return;
+    activeFountain = f;
     drinkTimer = DRINK_TIME;
     drinkElapsed = 0;
-    player.position.x = FOUNTAIN_STAND.x;
-    player.position.z = FOUNTAIN_STAND.y;
-    player.rotation.y = -Math.PI / 2; // facing the wall
+    player.position.x = f.x;
+    player.position.z = f.z;
+    player.rotation.y = f.rotY; // facing the wall
   }
   function stopDrinking(): void {
     if (drinkTimer <= 0 && drinkElapsed === 0) return;
     drinkTimer = 0;
     drinkElapsed = 0;
-    for (const d of fountainDrops) d.visible = false;
+    for (const f of fountains) for (const d of f.drops) d.visible = false;
+    activeFountain = null;
     torsoGroup.rotation.set(0, 0, 0);
     headGroup.rotation.set(0, 0, 0);
     leftArmPivot.rotation.set(0, 0, 0);
@@ -6816,13 +6827,18 @@ export function startPlaceholderScene(
     // and three full-size ones between the Learning Center and USC
     for (const x of [-1.5, 1.1, 3.7, 9.9, 14.3, 21.9, 25.9]) addBench(x, 0x2563eb, "north");
 
-    // Wall-mounted drinking fountain, between the blue benches and the 7th LMU door (closest to LMU)
-    const FOUNTAIN_Z = 23.4;
+    /**
+     * A wall-mounted drinking fountain. (x, z) is the wall face, floorY the floor, out the way it faces (the
+     * fountain's local +x): "east" or "south". A player stands about a metre in front of it to drink.
+     */
+    const addFountain = (wx: number, wz: number, floorY: number, out: "east" | "south"): void => {
     const FOUNTAIN_SCALE = 1.25;
     const steel = new THREE.MeshStandardMaterial({ color: 0xc4c9d0, roughness: 0.3, metalness: 0.8 });
     const fountain = new THREE.Group();
-    fountain.position.set(-13.8, -0.2, FOUNTAIN_Z);
+    fountain.position.set(wx, floorY - 0.2, wz);
+    fountain.rotation.y = out === "south" ? -Math.PI / 2 : 0;
     fountain.scale.setScalar(FOUNTAIN_SCALE);
+    const drops: THREE.Mesh[] = [];
     const plate = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.7, 0.55), steel); // backing on the wall
     plate.position.set(0.02, 1.15, 0);
     const basin = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.14, 0.5), steel);
@@ -6843,11 +6859,22 @@ export function startPlaceholderScene(
       const d = new THREE.Mesh(dropGeo, dropMat);
       d.visible = false;
       fountain.add(d);
-      fountainDrops.push(d);
+      drops.push(d);
     }
     scene.add(fountain);
-    buildingSolids.push({ x: -13.55, z: FOUNTAIN_Z, w: 0.5, d: 0.7, yBase: 0.7, yTop: 1.5 });
-    FOUNTAIN_STAND.set(-12.78, FOUNTAIN_Z); // just outside the solid (player radius 0.5)
+    // solid basin, and the spot to stand on just outside it (player radius 0.5)
+    if (out === "east") {
+      buildingSolids.push({ x: wx + 0.25, z: wz, w: 0.5, d: 0.7, yBase: floorY + 0.7, yTop: floorY + 1.5 });
+      fountains.push({ x: wx + 1.02, z: wz, y: floorY, rotY: -Math.PI / 2, drops });
+    } else {
+      buildingSolids.push({ x: wx, z: wz + 0.25, w: 0.7, d: 0.5, yBase: floorY + 0.7, yTop: floorY + 1.5 });
+      fountains.push({ x: wx, z: wz + 1.02, y: floorY, rotY: Math.PI, drops });
+    }
+    };
+    // between the blue benches and the 7th LMU door (closest to LMU)
+    addFountain(-13.8, 23.4, 0, "east");
+    // upstairs, on the left of the ELD classroom door (x = -16) as you face it, on the office building's walkway
+    addFountain(-18.4, -10.3, floor2, "south");
   }
 
   // --- Black music stands in a row on the upper walkway, against the wall just outside the music room door
@@ -8814,9 +8841,10 @@ export function startPlaceholderScene(
       leftKneePivot.rotation.x *= 0.8;
       rightKneePivot.rotation.x *= 0.8;
       // droplets: from the spout out and down into the basin
-      for (let i = 0; i < fountainDrops.length; i++) {
-        const ph = (drinkElapsed * 1.6 + i / fountainDrops.length) % 1;
-        const d = fountainDrops[i];
+      const drops = activeFountain?.drops ?? [];
+      for (let i = 0; i < drops.length; i++) {
+        const ph = (drinkElapsed * 1.6 + i / drops.length) % 1;
+        const d = drops[i];
         d.visible = drinkElapsed > 0.2 && drinkTimer > 0.15;
         d.position.set(0.1 + 0.18 * ph, 1.12 + 0.2 * Math.sin(ph * Math.PI) * 0.9 - 0.12 * ph * ph, 0.0);
       }
@@ -9764,7 +9792,7 @@ export function startPlaceholderScene(
   }
 
   (window as any).__debug = {
-    setPlayer: (x: number, z: number) => { player.position.x = x; player.position.z = z; },
+    setPlayer: (x: number, z: number, y?: number) => { player.position.x = x; player.position.z = z; if (y !== undefined) player.position.y = y; },
     setCamera: (angle: number, elev: number, dist: number) => { camAngle = angle; camElevation = elev; camDistance = dist; },
   };
 
