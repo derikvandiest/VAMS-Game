@@ -6649,6 +6649,72 @@ export function startPlaceholderScene(
     scene.add(group);
   });
 
+  // --- Drinking from the Stanley cup (clicking the full cup in the inventory): the cup appears in the right hand,
+  // comes up to the mouth, tips for a long sip and goes back down.
+  const SIP_TIME = 2.2;
+  let sipTimer = 0;
+  const sipCup = (() => {
+    const g = new THREE.Group();
+    const body = new THREE.MeshStandardMaterial({ color: 0x7fb3a7, roughness: 0.45, metalness: 0.25 });
+    const steel = new THREE.MeshStandardMaterial({ color: 0xd7dde2, roughness: 0.3, metalness: 0.8 });
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.04, 0.26, 18), body);
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.057, 0.055, 0.03, 18), steel);
+    band.position.y = 0.07;
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.06, 0.035, 18), steel);
+    lid.position.y = 0.145;
+    const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.12, 8), body);
+    straw.position.set(0.02, 0.21, 0);
+    straw.rotation.z = -0.2;
+    const handle = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 8, 16, Math.PI), body);
+    handle.position.set(0.058, 0.0, 0);
+    handle.rotation.z = -Math.PI / 2;
+    for (const m of [cup, band, lid, straw, handle]) m.castShadow = true;
+    g.add(cup, band, lid, straw, handle);
+    g.visible = false;
+    scene.add(g);
+    return g;
+  })();
+  const onDrinkEvent = (): void => {
+    if (drivingCar || seatedChair || bballHeld) return; // hands are busy: the cup is drunk without the animation
+    sipTimer = SIP_TIME;
+  };
+  window.addEventListener("eld-drink", onDrinkEvent);
+  /** The sip: the right hand brings the cup from the hip to the mouth and tips it, then lowers it */
+  function updateSip(dt: number): void {
+    if (sipTimer <= 0) {
+      sipCup.visible = false;
+      return;
+    }
+    if (drivingCar || seatedChair) {
+      sipTimer = 0;
+      return;
+    }
+    sipTimer -= dt;
+    const t = SIP_TIME - sipTimer; // time since the start
+    const smooth = (x: number): number => {
+      const k = Math.min(1, Math.max(0, x));
+      return k * k * (3 - 2 * k);
+    };
+    const up = smooth(t / 0.45) * (1 - smooth((t - (SIP_TIME - 0.5)) / 0.45)); // 0 at the hip, 1 at the mouth
+    const fx = Math.sin(player.rotation.y);
+    const fz = Math.cos(player.rotation.y);
+    const rx = -Math.cos(player.rotation.y); // the character's right
+    const rz = Math.sin(player.rotation.y);
+    const y0 = player.position.y;
+    const hand = new THREE.Vector3(
+      player.position.x + fx * (0.22 + 0.06 * up) + rx * (0.22 - 0.14 * up),
+      y0 + 1.0 + 0.62 * up,
+      player.position.z + fz * (0.22 + 0.06 * up) + rz * (0.22 - 0.14 * up)
+    );
+    rig.setHands?.(null, hand);
+    // the cup sits in the hand, upright, and tips toward the mouth while drinking
+    sipCup.visible = sipTimer > 0.05;
+    sipCup.position.copy(hand).add(new THREE.Vector3(0, 0.06, 0));
+    sipCup.rotation.set(0, player.rotation.y, 0);
+    sipCup.rotateX(-0.85 * up);
+    if (sipTimer <= 0) sipCup.visible = false;
+  }
+
   // drinking from the fountain (E): leaning in for a few seconds while the water arcs into the basin
   const fountainDrops: THREE.Mesh[] = [];
   const FOUNTAIN_STAND = new THREE.Vector2(-12.78, 23.4); // where a player stands to drink
@@ -8824,6 +8890,7 @@ export function startPlaceholderScene(
       bodyGroup.position.y = 0; // the walk/run clips carry their own bounce
       void bob;
     }
+    updateSip(dt);
     rig.syncSkeleton?.();
     presence?.update(dt, {
       zone: inMprRoom ? "mpr" : currentClassroom ? currentClassroom.id : "campus",
@@ -9705,6 +9772,7 @@ export function startPlaceholderScene(
     renderer.setAnimationLoop(null);
     window.removeEventListener("resize", resize);
     window.removeEventListener("eld-objective-complete", onObjectiveComplete);
+    window.removeEventListener("eld-drink", onDrinkEvent);
     presence?.dispose();
     if (mp) for (const [ev, fn] of mpHandlers) mp.off(ev, fn);
     if (renderer.domElement.parentElement) {

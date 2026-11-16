@@ -162,11 +162,16 @@ export function fillWaterBottle(): boolean {
   return filled;
 }
 
-/** Drink the water bottle (it becomes empty again; refill it at the fountain) */
+/** Drink the water bottle (it becomes empty again; refill it at the fountain). The character lifts the cup and
+ *  drinks (scene.ts listens for "eld-drink"). */
 export function drinkWaterBottle(): boolean {
-  const ok = transform("water-bottle-full", "water-bottle-empty");
-  if (ok) toast("Ahh, refreshing! Refill your Stanley at the drinking fountain.");
-  return ok;
+  if (countItem("water-bottle-full") === 0) return false;
+  window.dispatchEvent(new CustomEvent("eld-drink"));
+  // the cup is empty once the sip is over
+  window.setTimeout(() => {
+    if (transform("water-bottle-full", "water-bottle-empty")) toast("Ahh, refreshing! Refill your Stanley at the drinking fountain.");
+  }, 1900);
+  return true;
 }
 
 /** A short message above the quick bar */
@@ -522,9 +527,10 @@ function onPointerUp(e: PointerEvent): void {
   from.ghost.remove();
   document.querySelectorAll(".inv-slot.dragging, .inv-slot.drop-target").forEach((el) => el.classList.remove("dragging", "drop-target"));
   if (!from.moved) {
-    // a click: pick the quick slot, or show the item's details
+    // a click: pick the quick slot, or show the item's details; clicking a full Stanley cup drinks from it
     if (from.area === "quick") selectQuick(from.index);
     else showDetail(from.area, from.index);
+    if (listOf(from.area)[from.index]?.id === "water-bottle-full") drinkWaterBottle();
     return;
   }
   const target = e.type === "pointerup" ? targetSlot(e) : null;
