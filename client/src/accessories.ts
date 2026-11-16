@@ -82,7 +82,7 @@ export function recolor(objs: THREE.Object3D[], colors: RoleColors): void {
 // Procedural accessories
 // ---------------------------------------------------------------------------
 
-export type ProceduralKind = "round" | "rect" | "locs" | "curls" | "braid" | "buzz" | "curlyTop" | "locsWrap";
+export type ProceduralKind = "round" | "rect" | "locs" | "curls" | "braid" | "buzz" | "curlyTop" | "locsWrap" | "shoulder";
 
 /** Where the eyes are (model space): vertical center, front surface and outer-corner span. */
 export interface EyeInfo {
@@ -121,6 +121,7 @@ export function buildProcedural(kind: ProceduralKind, head: THREE.Box3, bulk = 1
   if (kind === "locs") return buildLocs(head, g);
   if (kind === "locsWrap") return buildLocsWrap(head, g);
   if (kind === "curls") return buildCurls(head, g);
+  if (kind === "shoulder") return buildCurls(head, g, { wave: 0.03, length: 0.62, thick: 1.15 });
   if (kind === "braid") return buildBraid(head, g);
   if (kind === "buzz") return buildBuzz(head, g);
   if (kind === "curlyTop") return buildCurlyTop(head, g);
@@ -198,7 +199,11 @@ function buildLocs(head: THREE.Box3, g: THREE.Group): THREE.Group {
  * Long curly hair: wavy ringlets falling from around the head (not in front of the face) past the shoulders,
  * fanning out a little as they go down. Goes over a long base hairstyle; colored as hair.
  */
-function buildCurls(head: THREE.Box3, g: THREE.Group): THREE.Group {
+/** Long curly hair (default) or, with a small wave and a shorter length, straight shoulder-length hair */
+function buildCurls(head: THREE.Box3, g: THREE.Group, opt: { wave?: number; length?: number; thick?: number } = {}): THREE.Group {
+  const waveAmt = opt.wave ?? 1;
+  const lenMul = opt.length ?? 1;
+  const thick = opt.thick ?? 1;
   const size = head.getSize(new THREE.Vector3());
   const c = head.getCenter(new THREE.Vector3());
   const w = size.x;
@@ -210,14 +215,14 @@ function buildCurls(head: THREE.Box3, g: THREE.Group): THREE.Group {
     const theta = -2.55 + (5.1 * i) / (N - 1);
     const jit = Math.sin(i * 12.9898 + 4.1) * 0.5 + 0.5;
     const front = Math.cos(theta) < -0.3; // strands framing the face (theta = 0 is the back of the head)
-    const len = w * (front ? 1.45 : 1.75) + w * 0.25 * jit;
+    const len = (w * (front ? 1.45 : 1.75) + w * 0.25 * jit) * lenMul;
     const pts: THREE.Vector3[] = [];
     const S = 28;
     for (let s = 0; s <= S; s++) {
       const u = s / S;
       // fans out toward the ends, with tight waves in and out and side to side (curls)
-      const spread = 0.58 + 0.24 * u + 0.07 * Math.sin(u * Math.PI * 7 + i * 1.7) * Math.min(1, u * 3);
-      const wave = Math.sin(u * Math.PI * 7 + i) * 0.16 * Math.min(1, u * 3);
+      const spread = 0.58 + 0.24 * u + 0.07 * waveAmt * Math.sin(u * Math.PI * 7 + i * 1.7) * Math.min(1, u * 3);
+      const wave = Math.sin(u * Math.PI * 7 + i) * 0.16 * waveAmt * Math.min(1, u * 3);
       const ang = theta + wave;
       pts.push(
         new THREE.Vector3(
@@ -228,7 +233,7 @@ function buildCurls(head: THREE.Box3, g: THREE.Group): THREE.Group {
       );
     }
     const curve = new THREE.CatmullRomCurve3(pts);
-    const r = w * (0.08 + 0.035 * jit);
+    const r = w * (0.08 + 0.035 * jit) * thick;
     g.add(withGeo(std(i % 4 === 0 ? "hairDark" : "hair"), new THREE.TubeGeometry(curve, 72, r, 6, false)));
     const end = pts[pts.length - 1];
     g.add(withGeo(std("hair"), new THREE.SphereGeometry(r, 6, 5), end.x, end.y, end.z));

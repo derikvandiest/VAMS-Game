@@ -13,6 +13,7 @@ import navarroPortrait from "./assets/navarro_portrait.png";
 import ipenaPortrait from "./assets/ipena_portrait.png";
 import castanedaPortrait from "./assets/castaneda_portrait.png";
 import tunsonPortrait from "./assets/tunson_portrait.png";
+import staufferPortrait from "./assets/stauffer_portrait.png";
 import daniPortrait from "./assets/dani_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
@@ -793,4 +794,37 @@ export const NPC_TUNSON: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON];
+/**
+ * Mr. Stauffer, the 6th grade LMU science teacher, standing in front of the whiteboard in his classroom (talk to him
+ * for the assignment). Matches his portrait: fair skin, long brown hair with a center part, a mustache and beard,
+ * an olive green t-shirt.
+ */
+export const NPC_STAUFFER: NpcDef = {
+  id: "npc-stauffer",
+  room: "classroom",
+  classroomId: "6th-lmu-science",
+  x: 0, // set from the classroom's whiteboard
+  z: 0,
+  rotY: 0, // facing the class
+  talkRange: 2.2,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mr. Stauffer",
+    title: "6th Grade Science Teacher",
+    noHomeroom: true,
+    gender: "masculine",
+    look: "masc-tee",
+    outfitColor: "#748a3c", // olive green tee
+    hairStyle: "m-king", // the crown, center part
+    extraHair: "shoulder", // straight brown hair falling to the shoulders
+    hairColor: "#7a4a24",
+    facialHair: "beard",
+    skinTone: "#F0C3A0",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#5b4636",
+  },
+  portrait: staufferPortrait,
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER];
