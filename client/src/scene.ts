@@ -6909,7 +6909,33 @@ export function startPlaceholderScene(
   const coverMinX = cover.center.x - cover.width / 2;
   const coverMaxX = cover.center.x + cover.width / 2;
   const coverMinZ = cover.center.z - cover.depth / 2;
-  const awningMaterial = new THREE.MeshStandardMaterial({ color: 0xa8322c, roughness: 0.85 });
+  // corrugated sheet metal: ridges running the length of the cover, light catching the crests (same red)
+  const corrugation = (() => {
+    const c = document.createElement("canvas");
+    c.width = 64;
+    c.height = 4;
+    const g = c.getContext("2d")!;
+    const grad = g.createLinearGradient(0, 0, 64, 0);
+    grad.addColorStop(0, "#7a7a7a");
+    grad.addColorStop(0.25, "#ffffff");
+    grad.addColorStop(0.5, "#9a9a9a");
+    grad.addColorStop(0.75, "#5e5e5e");
+    grad.addColorStop(1, "#7a7a7a");
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 64, 4);
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(cover.width / 0.25, 1); // a ridge every 25 cm across the width
+    return tex;
+  })();
+  const awningMaterial = new THREE.MeshStandardMaterial({
+    color: 0xa8322c,
+    roughness: 0.42,
+    metalness: 0.55,
+    map: corrugation,
+    bumpMap: corrugation,
+    bumpScale: 0.04,
+  });
   const awning = new THREE.Mesh(
     new THREE.BoxGeometry(cover.width, 0.3, cover.depth),
     awningMaterial
