@@ -6691,16 +6691,18 @@ export function startPlaceholderScene(
     const metal = new THREE.MeshStandardMaterial({ color: 0x2b2f36, roughness: 0.5, metalness: 0.5 });
     /** A bench against the west building's wall (facing east) or the north building's wall (facing south), at `along` */
     /** "west" = the west building's courtyard wall (facing east), "westOut" = its outside wall on the parking-lot
-     *  sidewalk (facing west), "north" = the north building's wall (facing south) */
-    const addBench = (along: number, color: number, wall: "west" | "westOut" | "north" = "west", len = BENCH_LEN): void => {
+     *  sidewalk (facing west), "north" = the north building's wall (facing south), "breezeway" = the west building's
+     *  end wall (z = -2) facing the entrance breezeway inside the gate (facing north) */
+    const addBench = (along: number, color: number, wall: "west" | "westOut" | "north" | "breezeway" = "west", len = BENCH_LEN): void => {
       const wood = new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
       const bench = new THREE.Group();
-      const north = wall === "north";
+      const breeze = wall === "breezeway";
+      const north = wall === "north" || breeze; // both run along x
       const out = wall === "westOut";
       const bx = north ? along : out ? -30.3 : BENCH_X; // the outside wall's face is at x = -30
-      const bz = north ? BENCH_NORTH_Z : along;
+      const bz = breeze ? -2.3 : north ? BENCH_NORTH_Z : along;
       bench.position.set(bx, 0, bz);
-      bench.rotation.y = north ? -Math.PI / 2 : out ? Math.PI : 0; // local +x is the way the bench faces
+      bench.rotation.y = breeze ? Math.PI / 2 : north ? -Math.PI / 2 : out ? Math.PI : 0; // local +x is the way the bench faces
       const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, len), wood);
       seat.position.set(0, 0.39, 0);
       const back = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, len), wood);
@@ -6717,25 +6719,31 @@ export function startPlaceholderScene(
       buildingSolids.push({ x: bx, z: bz, w: north ? len : 0.5, d: north ? 0.5 : len, yBase: 0, yTop: 0.9 });
       for (const off of len > 1.5 ? [-0.5, 0.5] : [0]) {
         const sx = north ? bx + off : out ? bx - 0.05 : bx + 0.05;
-        const sz = north ? bz + 0.05 : bz + off;
+        const sz = breeze ? bz - 0.05 : north ? bz + 0.05 : bz + off;
         chairSlots.push({
           chairX: sx,
           chairZ: sz,
           seatY: 0.4,
           tableX: north ? sx : out ? sx - 2 : sx + 2,
-          tableZ: north ? sz + 2 : sz,
-          facingAngle: north ? 0 : out ? -Math.PI / 2 : Math.PI / 2, // looking out over the walkway / the parking lot
-          bench: north ? { exitX: sx, exitZ: -0.7 } : out ? { exitX: -31.1, exitZ: sz } : { exitX: -12.7, exitZ: sz },
+          tableZ: breeze ? sz - 2 : north ? sz + 2 : sz,
+          facingAngle: breeze ? Math.PI : north ? 0 : out ? -Math.PI / 2 : Math.PI / 2, // looking out over the walkway / lot / breezeway
+          bench: breeze
+            ? { exitX: sx, exitZ: -3.1 }
+            : north
+              ? { exitX: sx, exitZ: -0.7 }
+              : out
+                ? { exitX: -31.1, exitZ: sz }
+                : { exitX: -12.7, exitZ: sz },
         });
       }
     };
     addBench(8.5, 0xf47a20); // orange, exactly midway between the 7th USC (3.5) and 7th UCLA (13.5) doors
     addBench(16.6, 0x2563eb); // two blue benches in a row (with a gap) between the 7th UCLA and 7th LMU doors
     addBench(20.0, 0x2563eb);
-    // two more on the courtyard wall of the 7th USC classroom, one on each side of its door (z = 3.5): a full one
-    // toward the north building and a shorter one in the gap before the orange bench
-    addBench(0.2, 0x2563eb);
-    addBench(5.95, 0x2563eb, "west", 1.6);
+    // two more on the 7th USC classroom's outside wall inside the campus: the end wall facing the entrance
+    // breezeway (just inside the gate), spaced apart
+    addBench(-25.0, 0x2563eb, "breezeway");
+    addBench(-18.5, 0x2563eb, "breezeway");
     // 8th grade side (north building, ground floor): two between LMU and UCLA, two between UCLA and USC,
     // and three full-size ones between the Learning Center and USC
     for (const x of [-1.5, 1.1, 3.7, 9.9, 14.3, 21.9, 25.9]) addBench(x, 0x2563eb, "north");
