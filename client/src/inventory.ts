@@ -82,10 +82,10 @@ const QUICK_SLOTS = 5;
 const BAG_SLOTS = 20;
 
 const POUCH_SLOTS = 6;
-/** What starts out inside the pencil pouch */
-const POUCH_START: Stack[] = [
-  { id: "pencil", qty: 5 },
-];
+/** What starts out inside the pencil pouch (empty: the optional objective is to fill it with 5 pencils) */
+const POUCH_START: Stack[] = [];
+/** Optional objective: find this many sharpened pencils around campus once you have the pencil pouch */
+export const PENCILS_NEEDED = 5;
 const state: {
   quick: Slot[];
   bag: Slot[];
@@ -94,11 +94,15 @@ const state: {
   backpack: string | null;
   starterGiven: boolean;
   showBackpack: boolean;
+  pencilQuest: boolean; // the pencil pouch was taken from the MPR storage room: the optional objective is on
+  pencilsFound: string[]; // which of the campus pencils were picked up
 } = {
   quick: new Array(QUICK_SLOTS).fill(null),
   bag: new Array(BAG_SLOTS).fill(null),
   pouch: new Array(POUCH_SLOTS).fill(null),
   selected: 0,
+  pencilQuest: false,
+  pencilsFound: [],
   backpack: null, // the color of the backpack the player picked up (null = none yet: no inventory)
   starterGiven: false,
   showBackpack: true, // drawn on the character (it can be hidden: the inventory works either way)
@@ -131,6 +135,8 @@ function load(): void {
   state.backpack = null;
   state.starterGiven = false;
   state.showBackpack = true;
+  state.pencilQuest = false;
+  state.pencilsFound = [];
   try {
     const raw = localStorage.getItem(storageKey());
     if (raw) {
@@ -142,8 +148,15 @@ function load(): void {
       state.backpack = typeof d.backpack === "string" && /^#[0-9a-fA-F]{6}$/.test(d.backpack) ? d.backpack : null;
       state.starterGiven = d.starterGiven === true || state.quick.some(Boolean) || state.bag.some(Boolean);
       state.showBackpack = d.showBackpack !== false;
+      state.pencilQuest = d.pencilQuest === true;
+      state.pencilsFound = Array.isArray(d.pencilsFound) ? d.pencilsFound.filter((x: unknown) => typeof x === "string") : [];
+      // the pencil pouch used to come with the backpack: it now comes from the MPR storage room (with an empty pouch)
+      if ((d.kit ?? 0) < 4 && !state.pencilQuest) {
+        for (const list of [state.quick, state.bag]) list.forEach((s, i) => s?.id === "pencil-pouch" && (list[i] = null));
+        state.pouch = new Array(POUCH_SLOTS).fill(null);
+      }
       // saves from before the folder and the bottle: they come with the backpack now
-      if (state.backpack && d.kit !== 3) giveKit();
+      if (state.backpack && (d.kit ?? 0) < 4) giveKit();
     }
   } catch {
     /* start fresh */
@@ -228,6 +241,76 @@ function toast(text: string): void {
   toastTimer = window.setTimeout(() => el!.classList.remove("show"), 2600);
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Optional objective: the pencil pouch and the 5 sharpened pencils
+// ---------------------------------------------------------------------------------------------------------------
+/** The state of the pencil objective (for the scene: which campus pencils to show) */
+export function pencilQuest(): { active: boolean; found: string[]; done: boolean } {
+  return { active: state.pencilQuest, found: [...state.pencilsFound], done: state.pencilsFound.length >= PENCILS_NEEDED };
+}
+
+/** Take a pencil pouch from the MPR storage room (it starts the optional objective) */
+export function takePencilPouch(): "ok" | "no-backpack" | "has" | "full" {
+  if (!state.backpack) return "no-backpack";
+  if ([...state.quick, ...state.bag].some((s) => s?.id === "pencil-pouch")) return "has";
+  const k = state.bag.indexOf(null);
+  if (k < 0) return "full";
+  state.bag[k] = { id: "pencil-pouch", qty: 1 };
+  state.pouch = new Array(POUCH_SLOTS).fill(null);
+  state.pencilQuest = true;
+  save();
+  render();
+  toast("✏️ Optional objective: find 5 sharpened pencils for your pouch!");
+  return "ok";
+}
+
+/** Pick up one of the campus pencils: it goes into the pencil pouch */
+export function collectPencil(id: string): boolean {
+  if (!state.pencilQuest || state.pencilsFound.includes(id)) return false;
+  // into the pouch: onto a pencil stack, else into an empty pocket
+  const stack = state.pouch.find((s) => s?.id === "pencil" && s.qty < (itemById("pencil")?.stack ?? 5));
+  if (stack) stack.qty += 1;
+  else {
+    const k = state.pouch.indexOf(null);
+    if (k < 0) {
+      toast("Your pencil pouch is full!");
+      return false;
+    }
+    state.pouch[k] = { id: "pencil", qty: 1 };
+  }
+  state.pencilsFound.push(id);
+  save();
+  render();
+  const n = state.pencilsFound.length;
+  toast(n >= PENCILS_NEEDED ? "⭐ Optional objective complete: 5 sharpened pencils!" : `✏️ Sharpened pencil found (${n}/${PENCILS_NEEDED})`);
+  return true;
+}
+
+/** The optional objectives line under the main objective */
+function renderOptional(): void {
+  let el = document.getElementById("optional-hud");
+  if (!bar) {
+    el?.remove();
+    return;
+  }
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "optional-hud";
+    document.body.appendChild(el);
+  }
+  if (!state.pencilQuest) {
+    el.style.display = "none";
+    return;
+  }
+  const n = Math.min(state.pencilsFound.length, PENCILS_NEEDED);
+  const done = n >= PENCILS_NEEDED;
+  el.style.display = "flex";
+  el.classList.toggle("done", done);
+  el.innerHTML = `<span class="opt-tag">OPTIONAL</span><span class="opt-text">${
+    done ? "Pencil pouch filled ✓" : "Find 5 sharpened pencils around campus for your pencil pouch"
+  }</span><span class="opt-count">${n}/${PENCILS_NEEDED}</span>`;
+}
+
 /** Is the backpack drawn on the character? */
 export function backpackVisible(): boolean {
   return state.showBackpack;
@@ -267,7 +350,7 @@ export function equipBackpack(color: string): void {
 
 function save(): void {
   try {
-    localStorage.setItem(storageKey(), JSON.stringify({ ...state, kit: kitGiven || state.starterGiven ? 3 : 0 }));
+    localStorage.setItem(storageKey(), JSON.stringify({ ...state, kit: kitGiven || state.starterGiven ? 4 : 0 }));
   } catch {
     /* storage unavailable: keep it for this session */
   }
@@ -365,6 +448,7 @@ export function stopInventory(): void {
   closeBackpack();
   bar?.remove();
   bar = null;
+  document.getElementById("optional-hud")?.remove();
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -397,6 +481,7 @@ function buildBar(): void {
 }
 
 function render(): void {
+  renderOptional();
   // no backpack, no inventory: the quick bar and the backpack button only appear once the player has one
   const has = state.backpack !== null;
   const btn = document.getElementById("backpack-btn");

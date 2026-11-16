@@ -30,9 +30,8 @@
       "id": "pencil-pouch",
       "name": "Pencil Pouch",
       "icon": "svg:pouch",
-      "description": "A zippered pencil pouch that matches your backpack. Open your backpack to see what's inside: drag things in and out of its pockets.",
-      "stack": 1,
-      "starter": true
+      "description": "A zippered pencil pouch that matches your backpack, from the MPR storage room. Optional objective: find 5 sharpened pencils around campus to fill it. Open your backpack to see its pockets.",
+      "stack": 1
     },
     {
       "id": "pencil",

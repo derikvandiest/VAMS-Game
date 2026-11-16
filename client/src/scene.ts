@@ -1,3 +1,4 @@
+import type { DialogTree } from "./dialog";
 import * as THREE from "three";
 import layout from "../../content/layout.json";
 import classroomsData from "../../content/classrooms.json";
@@ -41,7 +42,7 @@ import {
 } from "./classrooms";
 import { createAvatarRig, GAME_AVATAR_SCALE, AvatarRig } from "./avatar";
 import { openMap } from "./map";
-import { equipBackpack, backpackColor, fillWaterBottle, countItem } from "./inventory";
+import { equipBackpack, backpackColor, fillWaterBottle, countItem, takePencilPouch, pencilQuest, collectPencil } from "./inventory";
 import { loadCharacterProfile, onProfileChange } from "./profile";
 import { initSettingsModal } from "./settings";
 
@@ -7289,6 +7290,154 @@ export function startPlaceholderScene(
     });
     mprSolids.push({ x: BACKPACK_WALL_X + 0.2, z: z0 + (STEP * (BACKPACK_COLORS.length - 1)) / 2, w: 0.4, d: STEP * BACKPACK_COLORS.length, yBase: 0, yTop: 2 });
   }
+  // --- The MPR storage room: a door on the back wall (the north wall, across from the projection screen) that
+  // can't be entered; pressing E at it offers a pencil pouch (the start of the optional pencil objective).
+  const STORAGE_DOOR = { x: 400, z: 388.12 };
+  {
+    const doorMat = new THREE.MeshStandardMaterial({ color: 0x5b6470, roughness: 0.6, metalness: 0.2 });
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x2f343b, roughness: 0.5, metalness: 0.4 });
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(1.9, 2.5, 0.12), frameMat);
+    frame.position.set(STORAGE_DOOR.x, 1.25, STORAGE_DOOR.z + 0.02);
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(1.66, 2.36, 0.1), doorMat);
+    panel.position.set(STORAGE_DOOR.x, 1.2, STORAGE_DOOR.z + 0.06);
+    const handle = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.24, 0.08), new THREE.MeshStandardMaterial({ color: 0xc8cdd5, metalness: 0.9, roughness: 0.3 }));
+    handle.position.set(STORAGE_DOOR.x + 0.6, 1.1, STORAGE_DOOR.z + 0.14);
+    const sign = createHeaderPlaqueMesh(makeDoorHeaderSignTexture("STORAGE", "SUPPLY ROOM"), 1.42, 0.45);
+    sign.scale.setScalar(0.85);
+    sign.position.set(STORAGE_DOOR.x, 2.05, STORAGE_DOOR.z + 0.13);
+    for (const m of [frame, panel]) m.castShadow = true;
+    mprRoomGroup.add(frame, panel, handle, sign);
+    mprSolids.push({ x: STORAGE_DOOR.x, z: STORAGE_DOOR.z + 0.1, w: 1.9, d: 0.3, yBase: 0, yTop: 2.5 });
+  }
+  const nearStorageDoor = (): boolean =>
+    inMprRoom && !seatedChair && Math.hypot(player.position.x - STORAGE_DOOR.x, player.position.z - (STORAGE_DOOR.z + 0.9)) <= 1.8;
+  /** The storage room's pop-up: take a pencil pouch (or why not) */
+  function openStorage(): void {
+    const q = pencilQuest();
+    const has = countItem("pencil-pouch") > 0;
+    const noBag = backpackColor() === null;
+    const tree: DialogTree = noBag
+      ? {
+          start: "root",
+          nodes: {
+            root: {
+              paragraphs: [
+                "The storage room is full of school supplies: boxes of pencils, folders, and a stack of zippered pencil pouches.",
+                "You'll need a backpack to carry a pencil pouch. Grab one from the hooks on the wall by the MPR doors first!",
+              ],
+              options: [{ label: "OK" }],
+            },
+          },
+        }
+      : has || q.active
+        ? {
+            start: "root",
+            nodes: {
+              root: {
+                paragraphs: [
+                  "You already have a pencil pouch from the storage room.",
+                  q.done ? "And it's full of sharpened pencils. Nice work!" : `Optional objective: find ${5 - q.found.length} more sharpened pencil${5 - q.found.length === 1 ? "" : "s"} around campus to fill it.`,
+                ],
+                options: [{ label: "OK" }],
+              },
+            },
+          }
+        : {
+            start: "root",
+            nodes: {
+              root: {
+                paragraphs: [
+                  "The storage room is full of school supplies: boxes of pencils, folders, and a stack of zippered pencil pouches in every color.",
+                  "Take a pencil pouch? It will match your backpack. Then, as an optional objective, find 5 sharpened pencils around campus to fill it.",
+                ],
+                options: [
+                  { label: "Yes, take a pencil pouch", action: "take-pouch" },
+                  { label: "No thanks" },
+                ],
+              },
+            },
+          };
+    showDialog({ name: "Storage Room", title: "MPR supply closet" }, tree, undefined, (event) => {
+      if (event === "take-pouch") takePencilPouch();
+    });
+  }
+
+  // --- The 5 sharpened pencils for the optional objective, lying around campus (shown once the pouch is taken)
+  const CAMPUS_PENCILS: Array<{ id: string; x: number; z: number; rot: number }> = [
+    { id: "pencil-fountain", x: -12.1, z: 20.6, rot: 0.6 }, // by the blue benches near the drinking fountain
+    { id: "pencil-cart", x: 21.9, z: 61.0, rot: -0.4 }, // next to the basketball cart
+    { id: "pencil-learning", x: 5.2, z: 0.9, rot: 1.2 }, // in front of the benches by the Learning Center
+    { id: "pencil-mpr", x: -10.8, z: 48.8, rot: 2.2 }, // outside the MPR doors
+    { id: "pencil-field", x: 43.6, z: 36.9, rot: -1.0 }, // on the field near the reset grate
+  ];
+  const pencilMeshes = new Map<string, THREE.Group>();
+  {
+    const wood = new THREE.MeshStandardMaterial({ color: 0xf5c518, roughness: 0.6 });
+    const tip = new THREE.MeshStandardMaterial({ color: 0xe8c9a0, roughness: 0.8 });
+    const lead = new THREE.MeshStandardMaterial({ color: 0x2b2b2b, roughness: 0.5 });
+    const metal = new THREE.MeshStandardMaterial({ color: 0xbfc5cc, roughness: 0.3, metalness: 0.8 });
+    const eraser = new THREE.MeshStandardMaterial({ color: 0xf28ca5, roughness: 0.8 });
+    const sparkleTex = (() => {
+      const c = document.createElement("canvas");
+      c.width = c.height = 64;
+      const g2 = c.getContext("2d")!;
+      const grad = g2.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grad.addColorStop(0, "rgba(255,240,150,0.95)");
+      grad.addColorStop(0.35, "rgba(255,220,80,0.45)");
+      grad.addColorStop(1, "rgba(255,210,0,0)");
+      g2.fillStyle = grad;
+      g2.fillRect(0, 0, 64, 64);
+      return new THREE.CanvasTexture(c);
+    })();
+    const glow = new THREE.SpriteMaterial({ map: sparkleTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.8 });
+    for (const pc of CAMPUS_PENCILS) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.3, 6), wood);
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.06, 6), tip);
+      cone.position.y = 0.18;
+      const point = new THREE.Mesh(new THREE.ConeGeometry(0.008, 0.02, 6), lead);
+      point.position.y = 0.205;
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.023, 0.023, 0.03, 8), metal);
+      band.position.y = -0.165;
+      const rub = new THREE.Mesh(new THREE.CylinderGeometry(0.021, 0.021, 0.03, 8), eraser);
+      rub.position.y = -0.195;
+      const pencil = new THREE.Group();
+      pencil.add(body, cone, point, band, rub);
+      pencil.rotation.set(0, 0, Math.PI / 2); // lying on the ground
+      pencil.position.y = 0.03;
+      const sparkle = new THREE.Sprite(glow);
+      sparkle.scale.set(0.7, 0.7, 1);
+      sparkle.position.y = 0.25;
+      g.add(pencil, sparkle);
+      g.position.set(pc.x, 0, pc.z);
+      g.rotation.y = pc.rot;
+      g.visible = false;
+      scene.add(g);
+      outdoorObjects.add(g);
+      pencilMeshes.set(pc.id, g);
+    }
+  }
+  /** Show the campus pencils that are still to find (only during the optional objective) */
+  function updateCampusPencils(): void {
+    const q = pencilQuest();
+    const t = performance.now() * 0.004;
+    for (const pc of CAMPUS_PENCILS) {
+      const g = pencilMeshes.get(pc.id)!;
+      const show = q.active && !q.found.includes(pc.id) && !inMprRoom && !currentClassroom;
+      g.visible = show;
+      if (show) (g.children[1] as THREE.Sprite).position.y = 0.25 + Math.sin(t + pc.x) * 0.05;
+    }
+  }
+  /** The campus pencil the player is standing over, if any */
+  function nearbyPencil(): string | null {
+    const q = pencilQuest();
+    if (!q.active || inMprRoom || currentClassroom || drivingCar || seatedChair || player.position.y > 1.5) return null;
+    for (const pc of CAMPUS_PENCILS) {
+      if (!q.found.includes(pc.id) && Math.hypot(player.position.x - pc.x, player.position.z - pc.z) <= 1.4) return pc.id;
+    }
+    return null;
+  }
+
   /** The backpack hook the player is standing at (inside the MPR), if any */
   function nearbyBackpack(): { name: string; hex: string } | null {
     if (!inMprRoom || seatedChair) return null;
@@ -8101,6 +8250,15 @@ export function startPlaceholderScene(
       if (talkNpc) {
         if (talkNpc.def.room === "classroom") openAssignment(); // the teacher hands out the assignment
         else talkToNpc(talkNpc);
+        return;
+      }
+      const pencilHere = nearbyPencil();
+      if (pencilHere) {
+        collectPencil(pencilHere);
+        return;
+      }
+      if (nearStorageDoor()) {
+        openStorage();
         return;
       }
       if (inMprRoom) {
@@ -8966,6 +9124,7 @@ export function startPlaceholderScene(
       void bob;
     }
     updateSip(dt);
+    updateCampusPencils();
     rig.syncSkeleton?.();
     presence?.update(dt, {
       zone: inMprRoom ? "mpr" : currentClassroom ? currentClassroom.id : "campus",
@@ -9056,7 +9215,9 @@ export function startPlaceholderScene(
         const distToWestExit = Math.hypot(player.position.x - MPR_EXIT_DOOR_X, player.position.z - MPR_EXIT_DOOR_Z);
         const distToEastExit = Math.hypot(player.position.x - MPR_EAST_EXIT_DOOR_X, player.position.z - MPR_EAST_EXIT_DOOR_Z);
         const bp = nearbyBackpack();
-        if (bp) {
+        if (nearStorageDoor()) {
+          wanted = "Press E to look in the storage room 📦";
+        } else if (bp) {
           const mine = backpackColor();
           wanted =
             bp.hex === mine
@@ -9685,6 +9846,8 @@ export function startPlaceholderScene(
         hintText = hintElev;
       } else if (distToCarResetBtn <= 2.2) {
         hintText = "Press E or Click to reset cars 🚗";
+      } else if (nearbyPencil()) {
+        hintText = "Press E to pick up the sharpened pencil ✏️";
       } else if (nearFountain()) {
         hintText = countItem("water-bottle-empty") > 0 ? "Press E to drink and fill your Stanley cup 💧" : "Press E to take a drink 💧";
       } else if (nearBallCart() && !bballHeld) {
