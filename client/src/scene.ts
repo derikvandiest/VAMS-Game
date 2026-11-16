@@ -39,7 +39,7 @@ import {
   getAllClassroomIds,
   ClassroomInstance,
 } from "./classrooms";
-import { createAvatarRig, GAME_AVATAR_SCALE, AvatarRig, animateAvatar } from "./avatar";
+import { createAvatarRig, GAME_AVATAR_SCALE, AvatarRig } from "./avatar";
 import { openMap } from "./map";
 import { loadCharacterProfile, onProfileChange } from "./profile";
 import { initSettingsModal } from "./settings";
@@ -8774,10 +8774,22 @@ export function startPlaceholderScene(
       if (!visible) continue;
       const seatY = npcList[i].def.seatY;
       if (seatY !== undefined) {
-        // sitting NPC: the seated pose, resting on the seat
+        // sitting NPC: the same seated pose as a player on a chair (thighs on the seat, hands resting on the lap)
         const r = npcRigs[i];
-        animateAvatar(r, performance.now() / 1000, 0, { seated: true });
-        r.bodyGroup.position.y = r.seatDrop ? r.seatDrop(seatY) : 0;
+        const breathe = Math.sin(Date.now() * 0.0022 + i) * 0.012;
+        r.bodyGroup.position.y = r.seatDrop ? r.seatDrop(seatY) : seatY + 0.01 - 0.68;
+        r.bodyGroup.rotation.set(0, 0, 0);
+        r.torsoGroup.position.y = 0.84;
+        r.torsoGroup.rotation.set(0.06 + breathe, 0, 0);
+        r.headGroup.rotation.set(-0.04 - breathe * 0.5, 0, 0);
+        r.leftLegPivot.rotation.set(-1.52, 0, -0.06);
+        r.rightLegPivot.rotation.set(-1.52, 0, 0.06);
+        r.leftKneePivot.rotation.set(1.48, 0, 0);
+        r.rightKneePivot.rotation.set(1.48, 0, 0);
+        r.leftArmPivot.rotation.set(-0.48, 0.14, 0.18);
+        r.rightArmPivot.rotation.set(-0.48, -0.14, -0.18);
+        r.leftElbowPivot.rotation.set(-0.62, 0.12, 0);
+        r.rightElbowPivot.rotation.set(-0.62, -0.12, 0);
         r.setLocomotion?.(0);
       }
       npcRigs[i].syncSkeleton?.();
