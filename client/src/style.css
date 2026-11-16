@@ -2658,3 +2658,10 @@ body {
 .inv-detail-icon .inv-svg { width: 40px; height: 40px; }
 .inv-detail-icon.dim { opacity: 0.5; filter: grayscale(0.6); }
 .inv-ghost .inv-svg { width: 34px; height: 34px; }
+.inv-pouch { margin-top: 12px; padding: 10px; border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px dashed rgba(255, 255, 255, 0.18); }
+.inv-pouch-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+.inv-pouch-icon .inv-svg { width: 24px; height: 24px; }
+.inv-pouch-grid { display: grid; grid-template-columns: repeat(6, 46px); gap: 6px; justify-content: center; }
+.inv-pouch-grid .inv-slot { width: 46px; height: 46px; }
+.inv-pouch-grid .inv-icon { font-size: 22px; }
+.inv-pouch-grid .inv-svg { width: 28px; height: 28px; }

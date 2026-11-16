@@ -30,7 +30,7 @@ interface Stack {
   qty: number;
 }
 type Slot = Stack | null;
-type Area = "quick" | "bag";
+type Area = "quick" | "bag" | "pouch";
 
 export const ITEMS: ItemDef[] = (itemsData as { items: ItemDef[] }).items;
 const itemById = (id: string): ItemDef | undefined => ITEMS.find((i) => i.id === id);
@@ -40,6 +40,14 @@ const itemById = (id: string): ItemDef | undefined => ITEMS.find((i) => i.id ===
  * stanley: a 40 oz Stanley Quencher tumbler: tapered body, stainless band, lid with a straw, big side handle.
  */
 const SVG_ICONS: Record<string, string> = {
+  chromebook: `<svg viewBox="0 0 64 64" class="inv-svg" aria-hidden="true">
+    <rect x="12" y="12" width="40" height="27" rx="2.5" fill="#2b2f36"/>
+    <rect x="15" y="15" width="34" height="21" rx="1" fill="#5b9be6"/>
+    <circle cx="32" cy="25.5" r="5.2" fill="#ffffff"/>
+    <circle cx="32" cy="25.5" r="2.2" fill="#5b9be6"/>
+    <path d="M6 41 H58 L54 48 H10 Z" fill="#c3c8cf"/>
+    <rect x="27" y="42" width="10" height="2" rx="1" fill="#8b929b"/>
+  </svg>`,
   stanley: `<svg viewBox="0 0 64 64" class="inv-svg" aria-hidden="true">
     <path d="M40 22 C52 22 54 26 54 34 C54 42 52 46 44 46" fill="none" stroke="#5f8f86" stroke-width="5" stroke-linecap="round"/>
     <path d="M40 22 C52 22 54 26 54 34 C54 42 52 46 44 46" fill="none" stroke="#86b8ad" stroke-width="2" stroke-linecap="round"/>
@@ -53,17 +61,42 @@ const SVG_ICONS: Record<string, string> = {
     <rect x="34" y="2" width="3.4" height="11" rx="1.5" fill="#6aa196" transform="rotate(12 35.7 8)"/>
   </svg>`,
 };
+/** A zippered pencil pouch in the backpack's color */
+function pouchSvg(color: string): string {
+  return `<svg viewBox="0 0 64 64" class="inv-svg" aria-hidden="true">
+    <rect x="5" y="20" width="54" height="28" rx="12" fill="${color}" stroke="rgba(0,0,0,0.35)" stroke-width="1.5"/>
+    <rect x="5" y="20" width="54" height="11" rx="10" fill="rgba(255,255,255,0.16)"/>
+    <path d="M11 27 H53" stroke="#c9ced4" stroke-width="2.4" stroke-dasharray="2 1.4"/>
+    <rect x="47" y="24" width="5" height="10" rx="2" fill="#9ca3af"/>
+    <circle cx="49.5" cy="36.5" r="2.4" fill="none" stroke="#9ca3af" stroke-width="1.4"/>
+  </svg>`;
+}
 /** An item's icon as HTML: an emoji, or a drawn SVG icon */
 function iconHtml(icon: string): string {
+  if (icon === "svg:pouch") return pouchSvg(state.backpack ?? "#64748b");
   return icon.startsWith("svg:") ? SVG_ICONS[icon.slice(4)] ?? "❔" : icon;
 }
 
 const QUICK_SLOTS = 5;
 const BAG_SLOTS = 20;
 
-const state: { quick: Slot[]; bag: Slot[]; selected: number; backpack: string | null; starterGiven: boolean; showBackpack: boolean } = {
+const POUCH_SLOTS = 6;
+/** What starts out inside the pencil pouch */
+const POUCH_START: Stack[] = [
+  { id: "pencil", qty: 5 },
+];
+const state: {
+  quick: Slot[];
+  bag: Slot[];
+  pouch: Slot[]; // the pencil pouch's pockets
+  selected: number;
+  backpack: string | null;
+  starterGiven: boolean;
+  showBackpack: boolean;
+} = {
   quick: new Array(QUICK_SLOTS).fill(null),
   bag: new Array(BAG_SLOTS).fill(null),
+  pouch: new Array(POUCH_SLOTS).fill(null),
   selected: 0,
   backpack: null, // the color of the backpack the player picked up (null = none yet: no inventory)
   starterGiven: false,
@@ -92,6 +125,7 @@ function sanitize(list: unknown, size: number): Slot[] {
 function load(): void {
   state.quick = new Array(QUICK_SLOTS).fill(null);
   state.bag = new Array(BAG_SLOTS).fill(null);
+  state.pouch = new Array(POUCH_SLOTS).fill(null);
   state.selected = 0;
   state.backpack = null;
   state.starterGiven = false;
@@ -102,12 +136,13 @@ function load(): void {
       const d = JSON.parse(raw);
       state.quick = sanitize(d.quick, QUICK_SLOTS);
       state.bag = sanitize(d.bag, BAG_SLOTS);
+      state.pouch = sanitize(d.pouch, POUCH_SLOTS);
       state.selected = Math.max(0, Math.min(QUICK_SLOTS - 1, Number(d.selected) || 0));
       state.backpack = typeof d.backpack === "string" && /^#[0-9a-fA-F]{6}$/.test(d.backpack) ? d.backpack : null;
       state.starterGiven = d.starterGiven === true || state.quick.some(Boolean) || state.bag.some(Boolean);
       state.showBackpack = d.showBackpack !== false;
       // saves from before the folder and the bottle: they come with the backpack now
-      if (state.backpack && d.kit !== 2) giveKit();
+      if (state.backpack && d.kit !== 3) giveKit();
     }
   } catch {
     /* start fresh */
@@ -121,13 +156,16 @@ function wearBackpack(color: string | null): void {
   if ((p.backpack || "") !== (color || "")) saveCharacterProfile({ ...p, backpack: color || "" });
 }
 
-/** The backpack's starting kit: the assignment folder and an empty water bottle (whatever is not already carried) */
+/** The backpack's starting kit: the assignment folder, an empty water bottle, the pencil pouch (with 5 sharpened
+ *  pencils inside), a student agenda and a Chromebook (whatever is not already carried) */
 function giveKit(): void {
   for (const i of ITEMS.filter((x) => x.starter)) {
-    const has = (id: string): boolean => [...state.quick, ...state.bag].some((s) => s?.id === id);
+    const has = (id: string): boolean => [...state.quick, ...state.bag, ...state.pouch].some((s) => s?.id === id);
     if (has(i.id) || (i.id === "water-bottle-empty" && has("water-bottle-full"))) continue;
     const k = state.bag.indexOf(null);
-    if (k >= 0) state.bag[k] = { id: i.id, qty: 1 };
+    if (k < 0) continue;
+    state.bag[k] = { id: i.id, qty: 1 };
+    if (i.id === "pencil-pouch") POUCH_START.forEach((s, j) => (state.pouch[j] = { ...s }));
   }
   kitGiven = true;
 }
@@ -228,7 +266,7 @@ export function equipBackpack(color: string): void {
 
 function save(): void {
   try {
-    localStorage.setItem(storageKey(), JSON.stringify({ ...state, kit: kitGiven || state.starterGiven ? 2 : 0 }));
+    localStorage.setItem(storageKey(), JSON.stringify({ ...state, kit: kitGiven || state.starterGiven ? 3 : 0 }));
   } catch {
     /* storage unavailable: keep it for this session */
   }
@@ -286,8 +324,9 @@ export function removeItem(id: string, qty = 1): number {
 
 /** How many of an item the player has */
 export function countItem(id: string): number {
-  return [...state.quick, ...state.bag].reduce((n, s) => n + (s && s.id === id ? s.qty : 0), 0);
+  return [...state.quick, ...state.bag, ...state.pouch].reduce((n, s) => n + (s && s.id === id ? s.qty : 0), 0);
 }
+const hasPouch = (): boolean => [...state.quick, ...state.bag].some((s) => s?.id === "pencil-pouch");
 
 /** The item in the active quick slot (or null) */
 export function selectedItem(): ItemDef | null {
@@ -329,7 +368,7 @@ export function stopInventory(): void {
 // ---------------------------------------------------------------------------------------------------------------
 // UI
 // ---------------------------------------------------------------------------------------------------------------
-const listOf = (area: Area): Slot[] => (area === "quick" ? state.quick : state.bag);
+const listOf = (area: Area): Slot[] => (area === "quick" ? state.quick : area === "pouch" ? state.pouch : state.bag);
 const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
 function slotHtml(area: Area, i: number, s: Slot): string {
@@ -370,6 +409,11 @@ function render(): void {
   }
   if (panel) {
     panel.querySelector(".inv-grid")!.innerHTML = state.bag.map((s, i) => slotHtml("bag", i, s)).join("");
+    // the pencil pouch's pockets (only while the player carries the pouch)
+    const pouchBox = panel.querySelector<HTMLElement>(".inv-pouch")!;
+    pouchBox.style.display = hasPouch() ? "block" : "none";
+    pouchBox.querySelector(".inv-pouch-grid")!.innerHTML = state.pouch.map((s, i) => slotHtml("pouch", i, s)).join("");
+    pouchBox.querySelector<HTMLElement>(".inv-pouch-icon")!.innerHTML = iconHtml("svg:pouch");
     const used = state.bag.filter(Boolean).length;
     panel.querySelector(".inv-count")!.textContent = `${used} / ${BAG_SLOTS}`;
     const vis = panel.querySelector<HTMLButtonElement>(".inv-visible");
@@ -421,6 +465,10 @@ export function openBackpack(): void {
     </div>
     <button type="button" class="inv-visible" aria-pressed="true"></button>
     <div class="inv-grid"></div>
+    <div class="inv-pouch">
+      <div class="inv-pouch-title"><span class="inv-pouch-icon"></span>Pencil Pouch</div>
+      <div class="inv-pouch-grid"></div>
+    </div>
     <div class="inv-detail"></div>
     <div class="inv-foot">Drag items to and from the quick bar · <kbd>I</kbd> or <kbd>Esc</kbd> to close</div>`;
   document.body.appendChild(panel);
@@ -552,6 +600,8 @@ function moveItem(fromArea: Area, fromIndex: number, toArea: Area, toIndex: numb
   const src = a[fromIndex];
   const dst = b[toIndex];
   if (!src) return;
+  // the pouch can't go inside itself (nor be swapped into it)
+  if ((toArea === "pouch" && src.id === "pencil-pouch") || (fromArea === "pouch" && dst?.id === "pencil-pouch")) return;
   const def = itemById(src.id)!;
   if (dst && dst.id === src.id && dst.qty < def.stack) {
     const n = Math.min(src.qty, def.stack - dst.qty);

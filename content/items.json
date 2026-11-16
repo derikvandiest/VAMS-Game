@@ -25,6 +25,37 @@
       "badge": "💧",
       "description": "Your 40 oz Stanley tumbler, full of cold water. Drink it any time; refill it at the drinking fountain.",
       "stack": 1
+    },
+    {
+      "id": "pencil-pouch",
+      "name": "Pencil Pouch",
+      "icon": "svg:pouch",
+      "description": "A zippered pencil pouch that matches your backpack. Open your backpack to see what's inside: drag things in and out of its pockets.",
+      "stack": 1,
+      "starter": true
+    },
+    {
+      "id": "pencil",
+      "name": "Pencil",
+      "icon": "✏️",
+      "description": "A sharpened No. 2 pencil.",
+      "stack": 5
+    },
+    {
+      "id": "student-agenda",
+      "name": "Student Agenda",
+      "icon": "📒",
+      "description": "Your student agenda planner: the day's schedule, homework and reminders.",
+      "stack": 1,
+      "starter": true
+    },
+    {
+      "id": "chromebook",
+      "name": "Chromebook",
+      "icon": "svg:chromebook",
+      "description": "Your school Chromebook laptop.",
+      "stack": 1,
+      "starter": true
     }
   ]
 }
