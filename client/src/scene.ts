@@ -40,6 +40,7 @@ import {
   ClassroomInstance,
 } from "./classrooms";
 import { createAvatarRig, GAME_AVATAR_SCALE, AvatarRig, animateAvatar } from "./avatar";
+import { openMap } from "./map";
 import { loadCharacterProfile, onProfileChange } from "./profile";
 import { initSettingsModal } from "./settings";
 
@@ -7233,6 +7234,8 @@ export function startPlaceholderScene(
         if (event === "survey" && n.def.talkObjective) (window as any).__completeObjective?.(n.def.talkObjective);
         // Mr. Ashi resets the soccer ball and the basketball (for everyone)
         if (event === "reset-balls") doBallReset();
+        // Mr. Ipena opens the campus map for you
+        if (event === "open-map") setTimeout(() => openMap(), 0);
         // Mr. Navarro runs the car gate (the only way to open or close it)
         if (event === "vgate-open" && !vehicleGateOpen) toggleVehicleGate();
         if (event === "vgate-close" && vehicleGateOpen) toggleVehicleGate();

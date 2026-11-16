@@ -557,8 +557,64 @@ export const NPC_IPENA: NpcDef = {
           "I help keep the campus running behind the scenes: facilities, supplies, events setup, and whatever else comes up during the day.",
         ],
         options: [
+          { label: "Can you help me find my way around? (the map)", next: "map" },
           { label: "What does an Operations Assistant do?", next: "ops" },
           { label: "Who do I ask if something is broken?", next: "broken" },
+          { label: "Thanks, Mr. Ipena!" },
+        ],
+      },
+      map: {
+        paragraphs: [
+          "(Sample text) Of course! Getting around is easy once you know the map. Press M at any time, or click the Map button in the top-right corner, to open it. Press M again, press Esc, or click the ✕ to close it.",
+          "While the map is open your character stays put, so take your time.",
+        ],
+        options: [
+          { label: "How do I read it?", next: "mapRead" },
+          { label: "Open the map for me", action: "open-map" },
+          { label: "Back", next: "root" },
+        ],
+      },
+      mapRead: {
+        paragraphs: [
+          "(Sample text) The map is a top-down view of the whole campus with north at the top. The little arrow in the corner points north, and the compass in the top-left of your screen does too: click the compass to turn your camera to face north.",
+          "The blue arrow is you, and it points the way you're facing. Classroom names are written right on the map.",
+        ],
+        options: [
+          { label: "What do the colors mean?", next: "mapColors" },
+          { label: "Open the map for me", action: "open-map" },
+          { label: "Back", next: "map" },
+        ],
+      },
+      mapColors: {
+        paragraphs: [
+          "(Sample text) Green classrooms still have an assignment for you, just like the green ! over their doors on campus. Dark gray rooms with a check mark are done. Rooms with a dashed outline, like the office, the MPR and the Learning Center, don't have an assignment.",
+          "At the top of the map it also tells you how many of the 16 classrooms still have an assignment.",
+        ],
+        options: [
+          { label: "What about the second floor?", next: "mapFloors" },
+          { label: "Open the map for me", action: "open-map" },
+          { label: "Back", next: "mapRead" },
+        ],
+      },
+      mapFloors: {
+        paragraphs: [
+          "(Sample text) The classrooms are on two floors. Use the Ground floor and Upper floor buttons at the top of the map to switch between them. The map opens on whichever floor you're on.",
+          "To get upstairs, take the stairs at the far end of each building, or the elevator in front of the Learning Center (it's a little slow to arrive, so be patient!).",
+        ],
+        options: [
+          { label: "Any tips for finding a room fast?", next: "mapTips" },
+          { label: "Open the map for me", action: "open-map" },
+          { label: "Back", next: "mapColors" },
+        ],
+      },
+      mapTips: {
+        paragraphs: [
+          "(Sample text) Find the yellow room on the map, close it, and walk toward it, checking the map again whenever you need to. When you get close, look for the green ! over the door, then press E to go inside.",
+          "Inside, talk to the teacher or read the whiteboard to get the assignment. When you finish them all, take your work to Mr. Van Diest at the ELD classroom upstairs.",
+        ],
+        options: [
+          { label: "Open the map for me", action: "open-map" },
+          { label: "Start over", next: "map" },
           { label: "Thanks, Mr. Ipena!" },
         ],
       },
