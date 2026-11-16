@@ -6732,9 +6732,10 @@ export function startPlaceholderScene(
     addBench(8.5, 0xf47a20); // orange, exactly midway between the 7th USC (3.5) and 7th UCLA (13.5) doors
     addBench(16.6, 0x2563eb); // two blue benches in a row (with a gap) between the 7th UCLA and 7th LMU doors
     addBench(20.0, 0x2563eb);
-    // two more on the outside wall of the 7th USC classroom, on the parking-lot sidewalk, spaced apart
-    addBench(0.8, 0x2563eb, "westOut");
-    addBench(5.8, 0x2563eb, "westOut");
+    // two more on the courtyard wall of the 7th USC classroom, one on each side of its door (z = 3.5): a full one
+    // toward the north building and a shorter one in the gap before the orange bench
+    addBench(0.2, 0x2563eb);
+    addBench(5.95, 0x2563eb, "west", 1.6);
     // 8th grade side (north building, ground floor): two between LMU and UCLA, two between UCLA and USC,
     // and three full-size ones between the Learning Center and USC
     for (const x of [-1.5, 1.1, 3.7, 9.9, 14.3, 21.9, 25.9]) addBench(x, 0x2563eb, "north");
