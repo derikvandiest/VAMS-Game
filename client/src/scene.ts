@@ -4052,7 +4052,7 @@ export function startPlaceholderScene(
   if (plateHint) {
     plateHint.textContent = "Step here to reset the soccer ball ⚽";
     plateHint.style.cssText =
-      "position:fixed;bottom:78px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.92);color:#38bdf8;font-family:system-ui,-apple-system,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.4px;padding:9px 22px;border-radius:20px;border:1.5px solid rgba(56,189,248,0.7);box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:none;z-index:900;opacity:0;transition:opacity 0.25s, transform 0.25s;display:none;";
+      "position:fixed;bottom:196px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.92);color:#38bdf8;font-family:system-ui,-apple-system,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.4px;padding:9px 22px;border-radius:20px;border:1.5px solid rgba(56,189,248,0.7);box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:none;z-index:900;opacity:0;transition:opacity 0.25s, transform 0.25s;display:none;";
   }
 
   let plateIsPressed = false;
@@ -4478,7 +4478,7 @@ export function startPlaceholderScene(
   bballHint.id = "bball-hint";
   bballHint.textContent = "Press E to shoot at hoop 🏀";
   bballHint.style.cssText =
-    "position:fixed;bottom:78px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.92);color:#ea580c;font-family:system-ui,-apple-system,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.4px;padding:9px 22px;border-radius:20px;border:1.5px solid rgba(234,88,12,0.7);box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:none;z-index:900;opacity:0;transition:opacity 0.25s, transform 0.25s;display:none;";
+    "position:fixed;bottom:196px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.92);color:#ea580c;font-family:system-ui,-apple-system,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.4px;padding:9px 22px;border-radius:20px;border:1.5px solid rgba(234,88,12,0.7);box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:none;z-index:900;opacity:0;transition:opacity 0.25s, transform 0.25s;display:none;";
   container.appendChild(bballHint);
 
   function triggerBucket(text: string) {
