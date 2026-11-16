@@ -9,6 +9,7 @@ import perryPortrait from "./assets/perry_portrait.png";
 import kurisuPortrait from "./assets/kurisu_portrait.png";
 import morrisPortrait from "./assets/morris_portrait.png";
 import ashiPortrait from "./assets/ashi_portrait.png";
+import navarroPortrait from "./assets/navarro_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -360,4 +361,77 @@ export const NPC_ASHI: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI];
+/**
+ * Mr. Navarro, instructional assistant (upper school) and girls volleyball coach. He runs the car gate by the school
+ * buses: asking him is the only way to open or close it. Matches his portrait: warm tan skin, short full dark
+ * curly hair, a mustache and chin beard, a slate-blue button-up shirt (the suit model in one color, no tie).
+ */
+const NAVARRO_SHIRT = "#6f84a3";
+export const NPC_NAVARRO: NpcDef = {
+  id: "npc-navarro",
+  room: "campus",
+  x: 53.4, // inside the campus, just north of the car gate (x = 55, z 54.6 .. 61.4)
+  z: 53.3,
+  rotY: -Math.PI / 2 - 0.35, // facing into the campus, turned a little toward the gate
+  talkRange: 3.0,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mr. Navarro",
+    title: "Instructional Assistant",
+    noHomeroom: true,
+    gender: "masculine",
+    look: "masc-suit",
+    outfitColor: NAVARRO_SHIRT,
+    hairStyle: "m-explorer", // wavy base under the curls
+    extraHair: "curlyTop",
+    hairColor: "#24180f",
+    facialHair: "goatee",
+    skinTone: "#C68A5E",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#2a2d33",
+    partColors: { White: NAVARRO_SHIRT, Tie: NAVARRO_SHIRT, "Legs:Suit": "#2c3442" },
+  },
+  portrait: navarroPortrait,
+  // SAMPLE TEXT: replace with Mr. Navarro's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hey, I'm Mr. Navarro! I'm an instructional assistant here, supporting our upper school students and teachers.",
+          "I also take care of the car gate by the buses. Need it opened or closed? Just ask.",
+        ],
+        options: [
+          { label: "Can you open the car gate?", action: "vgate-open" },
+          { label: "Can you close the car gate?", action: "vgate-close" },
+          { label: "What do you do in the upper school?", next: "upper" },
+          { label: "I heard you coach volleyball!", next: "volleyball" },
+          { label: "Thanks, Mr. Navarro!" },
+        ],
+      },
+      upper: {
+        paragraphs: [
+          "(Sample text) I work alongside the 6th, 7th and 8th grade teachers, helping students in small groups, checking in during work time, and making sure everyone has what they need to keep up.",
+          "A lot of it is building relationships: when students know someone is in their corner, they take more risks with their learning.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Navarro!" },
+        ],
+      },
+      volleyball: {
+        paragraphs: [
+          "(Sample text) Yes! I lead the girls volleyball team. We practice after school, and the team works hard on teamwork, communication and never giving up on a play.",
+          "Come cheer us on at our next home game!",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Go team!" },
+        ],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO];

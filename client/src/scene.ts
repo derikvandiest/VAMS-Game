@@ -7212,6 +7212,9 @@ export function startPlaceholderScene(
         if (event === "survey" && n.def.talkObjective) (window as any).__completeObjective?.(n.def.talkObjective);
         // Mr. Ashi resets the soccer ball and the basketball (for everyone)
         if (event === "reset-balls") doBallReset();
+        // Mr. Navarro runs the car gate (the only way to open or close it)
+        if (event === "vgate-open" && !vehicleGateOpen) toggleVehicleGate();
+        if (event === "vgate-close" && vehicleGateOpen) toggleVehicleGate();
       },
       (objectiveId) => !!loadSlot(getActiveSlotId())?.objectives.completedIds.includes(objectiveId)
     );
@@ -7915,10 +7918,6 @@ export function startPlaceholderScene(
       if (gateDistance(player.position.x, player.position.z) <= GATE_INTERACT_RANGE) {
         gateOpen = !gateOpen;
         mp?.emit("world:gate", gateOpen);
-        return;
-      }
-      if (!inMprRoom && !currentClassroom && !drivingCar && player.position.y < 1.5 && vehicleGateDistance(player.position.x, player.position.z) <= 3.5) {
-        toggleVehicleGate();
         return;
       }
       if (drinkTimer > 0) {
@@ -8781,10 +8780,8 @@ export function startPlaceholderScene(
         ? gateOpen
           ? "Press E to close the gate"
           : "Press E to open the gate"
-        : nearVehicleGate
-          ? vehicleGateOpen
-            ? "Press E to close the vehicle gate"
-            : "Press E to open the vehicle gate"
+        : nearVehicleGate && !nearbyNpc()
+          ? "Mr. Navarro opens and closes the car gate: ask him 🚗"
           : "";
       if (wanted !== gateHintShown) {
         gateHintShown = wanted;

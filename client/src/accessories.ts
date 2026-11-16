@@ -82,7 +82,7 @@ export function recolor(objs: THREE.Object3D[], colors: RoleColors): void {
 // Procedural accessories
 // ---------------------------------------------------------------------------
 
-export type ProceduralKind = "round" | "locs" | "curls" | "braid" | "buzz";
+export type ProceduralKind = "round" | "locs" | "curls" | "braid" | "buzz" | "curlyTop";
 
 /** Where the eyes are (model space): vertical center, front surface and outer-corner span. */
 export interface EyeInfo {
@@ -122,6 +122,7 @@ export function buildProcedural(kind: ProceduralKind, head: THREE.Box3, bulk = 1
   if (kind === "curls") return buildCurls(head, g);
   if (kind === "braid") return buildBraid(head, g);
   if (kind === "buzz") return buildBuzz(head, g);
+  if (kind === "curlyTop") return buildCurlyTop(head, g);
 
   // Round glasses: fitted to the measured eye position, the frame sits right against the face.
   const e = eye ?? { y: top - 0.58 * w, z: head.max.z - 0.06 * d, span: 0.55 * w };
@@ -284,5 +285,50 @@ function buildBuzz(head: THREE.Box3, g: THREE.Group): THREE.Group {
   m.scale.set(w * 1.14, w * 1.1, d * 1.32);
   m.rotation.x = -0.12; // hairline a little higher at the front than at the nape
   g.add(m);
+  return g;
+}
+
+/**
+ * Short, full curly hair: a mop of tight curls over the crown, the sides down to the ears and the back of the head,
+ * with a few curls falling onto the forehead. Each curl is a small ball; colored as hair (some a shade darker).
+ */
+function buildCurlyTop(head: THREE.Box3, g: THREE.Group): THREE.Group {
+  const size = head.getSize(new THREE.Vector3());
+  const c = head.getCenter(new THREE.Vector3());
+  const w = size.x;
+  const d = size.z;
+  const top = head.max.y;
+  const cy = top - w * 0.45; // centre of the skull dome
+  const ball = new THREE.IcosahedronGeometry(1, 1);
+  let k = 0;
+  for (let ring = 0; ring <= 7; ring++) {
+    const polar = (ring / 7) * 1.85; // from the crown down past the ears (radians from straight up)
+    const count = ring === 0 ? 1 : Math.round(6 + ring * 3.2);
+    for (let j = 0; j < count; j++) {
+      k++;
+      const az = (j / count) * Math.PI * 2 + ring * 0.37;
+      const sx = Math.sin(polar) * Math.sin(az);
+      const sz = Math.sin(polar) * Math.cos(az);
+      const sy = Math.cos(polar);
+      // keep the face clear: in front, stop at the hairline (a couple of loose curls hang a little lower)
+      const frontness = sz;
+      const loose = k % 9 === 0;
+      if (frontness > 0.35 && polar > (loose ? 1.05 : 0.85)) continue;
+      if (frontness > -0.2 && polar > 1.45) continue; // sides: stop at the top of the ears
+      const jit = Math.sin(k * 12.9898) * 0.5 + 0.5;
+      const r = w * (0.1 + 0.04 * jit);
+      const out = 1.02 + 0.06 * jit; // a little volume
+      const curl = withGeo(
+        std(k % 4 === 0 ? "hairDark" : "hair"),
+        ball,
+        c.x + sx * w * 0.55 * out,
+        cy + sy * w * 0.52 * out,
+        c.z + sz * d * 0.56 * out
+      );
+      curl.scale.setScalar(r);
+      curl.rotation.set(k, k * 0.7, k * 1.3);
+      g.add(curl);
+    }
+  }
   return g;
 }
