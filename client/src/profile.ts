@@ -29,7 +29,7 @@ export interface LookDef {
 export interface HairStyleDef { id: string; name: string; gender: Gender | "both"; donor?: string; parts?: string[]; cut?: "beard" | "rest" | "rest-nape" | "rest-sideburns"; /** materials of a mohawk crest, removed under hats */ crest?: string[] }
 export interface FacialHairDef { id: string; name: string; /** only for NPCs, not offered to players */ npcOnly?: boolean; donor?: string; parts?: string[]; cut?: "beard" | "rest" | "rest-nape" | "rest-sideburns" }
 export interface HatDef { id: string; name: string; /** only for NPCs, not offered to players */ npcOnly?: boolean; donors?: Partial<Record<Gender, string>>; parts?: string[] }
-export interface GlassesDef { id: string; name: string; proc?: "round" }
+export interface GlassesDef { id: string; name: string; proc?: "round" | "rect"; /** only NPCs wear it (not offered in character creation) */ npcOnly?: boolean }
 export interface ShoeDef { id: string; name: string; /** shoes without donors (the model's own) are limited to these genders */ genders?: Gender[]; /** reaches the knee: no skin legs needed underneath */ tall?: boolean | Gender[]; donors?: Partial<Record<Gender, string>>; tint?: Partial<Record<Gender, string[]>> }
 
 export interface CharacterProfile {
@@ -81,6 +81,8 @@ export const HAIR_STYLES = options.hairStyles as HairStyleDef[];
 export const FACIAL_HAIR = options.facialHair as FacialHairDef[];
 export const HATS = options.hats as HatDef[];
 export const GLASSES = options.glasses as GlassesDef[];
+/** The glasses players can choose (NPC-only ones left out) */
+export const PLAYER_GLASSES = GLASSES.filter((g) => !g.npcOnly);
 export const SHOES = options.shoes as ShoeDef[];
 export const ACCENT_COLORS = options.accentColors as Array<{ name: string; hex: string }>;
 /** Preset outfit colors (players can also pick any color on the color wheel) */
@@ -168,7 +170,7 @@ export function sanitizeProfile(raw: unknown): CharacterProfile {
     facialHair: byId(facialHairFor(gender, npc), p.facialHair, FACIAL_HAIR[0]).id,
     hat: byId(hatsFor(gender, npc), p.hat, HATS[0]).id,
     hatColor: isHex(p.hatColor) ? p.hatColor : "",
-    glasses: getGlasses(p.glasses as string).id,
+    glasses: npc ? getGlasses(p.glasses as string).id : byId(PLAYER_GLASSES, p.glasses, PLAYER_GLASSES[0]).id,
     glassesColor: isHex(p.glassesColor) ? p.glassesColor : fb.glassesColor,
     shoes: byId(shoesFor(gender), p.shoes, shoesFor(gender)[0]).id,
     shoeColor: isHex(p.shoeColor) ? p.shoeColor : fb.shoeColor,
@@ -234,7 +236,7 @@ export function randomizeProfile(base: CharacterProfile): CharacterProfile {
     look: randOf(looksForGender(base.gender)).id,
     hairStyle: randOf(hairStylesFor(base.gender)).id,
     hat: randOf(hatsFor(base.gender)).id,
-    glasses: randOf(GLASSES).id,
+    glasses: randOf(PLAYER_GLASSES).id,
     shoes: randOf(shoesFor(base.gender)).id,
     skinTone: randOf(SKIN_TONES).hex,
     hairColor: randOf(HAIR_COLORS).hex,

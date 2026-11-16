@@ -476,6 +476,12 @@
       "id": "round",
       "name": "Round",
       "proc": "round"
+    },
+    {
+      "id": "rect",
+      "name": "Rectangle",
+      "proc": "rect",
+      "npcOnly": true
     }
   ],
   "shoes": [

@@ -39,7 +39,7 @@ import {
   getAllClassroomIds,
   ClassroomInstance,
 } from "./classrooms";
-import { createAvatarRig, GAME_AVATAR_SCALE, AvatarRig } from "./avatar";
+import { createAvatarRig, GAME_AVATAR_SCALE, AvatarRig, animateAvatar } from "./avatar";
 import { loadCharacterProfile, onProfileChange } from "./profile";
 import { initSettingsModal } from "./settings";
 
@@ -7128,6 +7128,12 @@ export function startPlaceholderScene(
       outdoorObjects.add(npcRig.player); // hidden while inside the MPR or a classroom
       buildingSolids.push(solid);
     }
+    if (def.seatY !== undefined) {
+      // the seat the NPC is sitting on is taken
+      for (let k = chairSlots.length - 1; k >= 0; k--) {
+        if (Math.hypot(chairSlots[k].chairX - def.x, chairSlots[k].chairZ - def.z) < 0.3) chairSlots.splice(k, 1);
+      }
+    }
     npcRigs.push(npcRig);
     npcList.push({ def, rig: npcRig });
   }
@@ -8758,7 +8764,16 @@ export function startPlaceholderScene(
       const room = npcList[i].def.room;
       const visible =
         room === "classroom" ? currentClassroom?.id === npcList[i].def.classroomId : room === "mpr" ? inMprRoom : !inMprRoom && !currentClassroom;
-      if (visible) npcRigs[i].syncSkeleton?.();
+      if (!visible) continue;
+      const seatY = npcList[i].def.seatY;
+      if (seatY !== undefined) {
+        // sitting NPC: the seated pose, resting on the seat
+        const r = npcRigs[i];
+        animateAvatar(r, performance.now() / 1000, 0, { seated: true });
+        r.bodyGroup.position.y = r.seatDrop ? r.seatDrop(seatY) : 0;
+        r.setLocomotion?.(0);
+      }
+      npcRigs[i].syncSkeleton?.();
     }
 
     // --- Vehicle gate: slide the leaves toward their open/closed position ----------

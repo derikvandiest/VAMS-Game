@@ -20,7 +20,7 @@ import {
   Gender,
   Homeroom,
   GENDERS,
-  GLASSES,
+  PLAYER_GLASSES as GLASSES,
   HAIR_COLORS,
   HOMEROOMS,
   HOMEROOM_INFO,

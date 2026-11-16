@@ -10,6 +10,7 @@ import kurisuPortrait from "./assets/kurisu_portrait.png";
 import morrisPortrait from "./assets/morris_portrait.png";
 import ashiPortrait from "./assets/ashi_portrait.png";
 import navarroPortrait from "./assets/navarro_portrait.png";
+import ipenaPortrait from "./assets/ipena_portrait.png";
 import daniPortrait from "./assets/dani_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
@@ -37,6 +38,8 @@ export interface NpcDef {
   talkObjective?: string;
   /** How close a player must be to talk (default 3.8); smaller next to a door so E still opens the door */
   talkRange?: number;
+  /** Sitting (on a bench or chair) with the seat at this height; x/z/rotY are then the seated position */
+  seatY?: number;
 }
 
 const BLACK = "#1f1f24";
@@ -511,4 +514,74 @@ export const NPC_DANI: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI];
+/**
+ * Mr. Ipena, Operations Assistant, sitting on the blue bench closest to the entrance gate (the west building's
+ * end wall in the breezeway). Matches his portrait: warm tan skin, short neat dark brown hair, dark gray
+ * rectangular glasses, clean-shaven, a cream long-sleeve henley (the suit model all in cream), dark pants.
+ */
+const IPENA_SHIRT = "#e6dcc8";
+export const NPC_IPENA: NpcDef = {
+  id: "npc-ipena",
+  room: "campus",
+  x: -25.5, // the bench seat nearest the gate (the bench is at x = -25, against the wall at z = -2)
+  z: -2.27,
+  rotY: Math.PI, // facing the breezeway
+  seatY: 0.4,
+  talkRange: 2.4,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mr. Ipena",
+    title: "Operations Assistant",
+    noHomeroom: true,
+    gender: "masculine",
+    look: "masc-suit",
+    outfitColor: IPENA_SHIRT,
+    hairStyle: "m-suit", // short and neat
+    hairColor: "#2b1d14",
+    facialHair: "none",
+    glasses: "rect",
+    glassesColor: "#3d3f44",
+    skinTone: "#C98E66",
+    shoes: "sneakers",
+    shoeColor: "#2a2d33",
+    partColors: { White: IPENA_SHIRT, Tie: IPENA_SHIRT, "Legs:Suit": "#323844" },
+  },
+  portrait: ipenaPortrait,
+  // SAMPLE TEXT: replace with Mr. Ipena's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hey there! I'm Mr. Ipena, the Operations Assistant. Just taking a quick break before the next thing.",
+          "I help keep the campus running behind the scenes: facilities, supplies, events setup, and whatever else comes up during the day.",
+        ],
+        options: [
+          { label: "What does an Operations Assistant do?", next: "ops" },
+          { label: "Who do I ask if something is broken?", next: "broken" },
+          { label: "Thanks, Mr. Ipena!" },
+        ],
+      },
+      ops: {
+        paragraphs: [
+          "(Sample text) A little bit of everything! I coordinate with maintenance, order and deliver supplies, set up rooms for events like this PD, and make sure the day runs smoothly for students and staff.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Ipena!" },
+        ],
+      },
+      broken: {
+        paragraphs: [
+          "(Sample text) Come find me, or let the front office know, and I'll make sure it gets taken care of.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Will do, thanks!" },
+        ],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA];

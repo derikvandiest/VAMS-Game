@@ -82,7 +82,7 @@ export function recolor(objs: THREE.Object3D[], colors: RoleColors): void {
 // Procedural accessories
 // ---------------------------------------------------------------------------
 
-export type ProceduralKind = "round" | "locs" | "curls" | "braid" | "buzz" | "curlyTop";
+export type ProceduralKind = "round" | "rect" | "locs" | "curls" | "braid" | "buzz" | "curlyTop";
 
 /** Where the eyes are (model space): vertical center, front surface and outer-corner span. */
 export interface EyeInfo {
@@ -132,7 +132,16 @@ export function buildProcedural(kind: ProceduralKind, head: THREE.Box3, bulk = 1
   const zf = e.z + t * 0.1; // lens ring resting on the face
   for (const sx of [-1, 1]) {
     const cx = c.x + sx * gap;
-    g.add(withGeo(std("accent"), new THREE.TorusGeometry(lensR, t, 8, 24), cx, e.y, zf));
+    if (kind === "rect") {
+      // rectangular frames: a slightly wide, short rim (top bar a little heavier)
+      const hw = lensR * 1.12;
+      const hh = lensR * 0.72;
+      g.add(withGeo(std("accent"), new THREE.BoxGeometry(hw * 2 + t * 2, t * 2.4, t * 1.8), cx, e.y + hh, zf));
+      g.add(withGeo(std("accent"), new THREE.BoxGeometry(hw * 2 + t * 2, t * 1.8, t * 1.8), cx, e.y - hh, zf));
+      for (const ex of [-1, 1]) g.add(withGeo(std("accent"), new THREE.BoxGeometry(t * 1.8, hh * 2, t * 1.8), cx + ex * hw, e.y, zf));
+    } else {
+      g.add(withGeo(std("accent"), new THREE.TorusGeometry(lensR, t, 8, 24), cx, e.y, zf));
+    }
     // temple arm: leaves the lens corner and runs straight back, hugging the side of the face
     const outer = gap + lensR + t;
     const side = outer + Math.max(0, w / 2 - outer) * 0.3;
