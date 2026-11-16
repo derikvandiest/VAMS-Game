@@ -10,6 +10,7 @@ import kurisuPortrait from "./assets/kurisu_portrait.png";
 import morrisPortrait from "./assets/morris_portrait.png";
 import ashiPortrait from "./assets/ashi_portrait.png";
 import navarroPortrait from "./assets/navarro_portrait.png";
+import daniPortrait from "./assets/dani_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -434,4 +435,80 @@ export const NPC_NAVARRO: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO];
+/**
+ * Ms. Dani, instructional assistant (lower school) who runs student drop-off and pick-up at the car line. She stands
+ * on the parking-lot sidewalk centred in front of the entrance gate. Matches her portrait: fair skin, dark
+ * shoulder-length hair with a center part, a tan chore jacket with a brown collar over a dark top, dark jeans.
+ */
+export const NPC_DANI: NpcDef = {
+  id: "npc-dani",
+  room: "campus",
+  x: -31.5, // the sidewalk along the parking lot (x -33 .. -30), centred on the entrance gate (z = -6.25)
+  z: -6.25,
+  rotY: -Math.PI / 2, // facing the car line in the parking lot
+  profile: {
+    ...getDefaultProfile(),
+    name: "Ms. Dani",
+    title: "Instructional Assistant",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-suit", // the jacket is her chore coat, the shirt her dark top
+    outfitColor: "#c2a57c", // tan jacket
+    hairStyle: "f-witch", // long and straight, center part
+    hairColor: "#1f1a18",
+    skinTone: "#F0C6A8",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#2a2d33",
+    partColors: { "Body:White": "#2a2a2e", "Legs:Black": "#2f3646" },
+  },
+  portrait: daniPortrait,
+  // SAMPLE TEXT: replace with Ms. Dani's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi, welcome to Valor! I'm Ms. Dani. I'm an instructional assistant in the lower school, and every morning and afternoon you'll find me out here running the car line for drop-off and pick-up.",
+          "Heading onto campus? The entrance gate is right behind me. Ms. Castaneda opens and closes it, so just let her know.",
+        ],
+        options: [
+          { label: "How do I get through the gate?", next: "gate" },
+          { label: "What do you do in the lower school?", next: "lower" },
+          { label: "How does the car line work?", next: "carline" },
+          { label: "Thanks, Ms. Dani!" },
+        ],
+      },
+      gate: {
+        paragraphs: [
+          "(Sample text) Talk to Ms. Castaneda. She's in charge of the entrance gate and will open it or close it for you.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Dani!" },
+        ],
+      },
+      lower: {
+        paragraphs: [
+          "(Sample text) I support our youngest students and their teachers: reading with small groups, helping during centers, and making sure everyone feels safe and ready to learn.",
+          "The little ones keep me busy, but I wouldn't have it any other way!",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Dani!" },
+        ],
+      },
+      carline: {
+        paragraphs: [
+          "(Sample text) Families pull up along the sidewalk, stay in their cars, and we walk the students in or out. Keep moving forward, no parking in the line, and be patient: it goes fast when everyone follows the flow!",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Got it, thanks!" },
+        ],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI];
