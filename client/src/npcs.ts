@@ -126,8 +126,8 @@ export const NPC_VAN_DIEST: NpcDef = {
 export const NPC_PRINCIPAL: NpcDef = {
   id: "npc-principal",
   room: "campus",
-  x: 1.5,
-  z: 9.5,
+  x: -1.3, // moved diagonally toward the elevator (in front of the Learning Center / Theater, x = -6.8)
+  z: 6.8,
   rotY: 0.8, // looking out toward the field
   profile: {
     ...getDefaultProfile(),
