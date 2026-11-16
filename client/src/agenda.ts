@@ -105,8 +105,8 @@ export function openAgenda(playerName: string): void {
               q.active
                 ? q.done
                   ? "All 5 sharpened pencils found. Nice work!"
-                  : "Find 5 sharpened pencils lying around campus (look for the sparkle) and press E to pick them up."
-                : "Get a pencil pouch from the storage room in the MPR (you'll need a backpack first), then find 5 sharpened pencils around campus."
+                  : "Find 5 sharpened pencils hidden in 5 of the homeroom classrooms, on a desk or the floor (look for the sparkle), and press E to pick them up."
+                : "Get a pencil pouch from the storage room in the MPR (you'll need a backpack first), then find 5 sharpened pencils hidden in the classrooms."
             }</small></div></li>
           <li>${box(surveyDone)}<div><b>Feedback survey</b><small>Talk to Mr. Van Diest in the MPR and fill out the feedback survey.</small></div></li>
         </ul>

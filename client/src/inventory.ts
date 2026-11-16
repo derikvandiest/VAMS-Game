@@ -96,7 +96,9 @@ const state: {
   starterGiven: boolean;
   showBackpack: boolean;
   pencilQuest: boolean; // the pencil pouch was taken from the MPR storage room: the optional objective is on
-  pencilsFound: string[]; // which of the campus pencils were picked up
+  pencilsFound: string[]; // which of the pencils were picked up
+  /** Where this player's pencils are: 5 random homeroom classrooms, each on a student desk or the floor */
+  pencilSpots: PencilSpot[];
 } = {
   quick: new Array(QUICK_SLOTS).fill(null),
   bag: new Array(BAG_SLOTS).fill(null),
@@ -104,6 +106,7 @@ const state: {
   selected: 0,
   pencilQuest: false,
   pencilsFound: [],
+  pencilSpots: [],
   backpack: null, // the color of the backpack the player picked up (null = none yet: no inventory)
   starterGiven: false,
   showBackpack: true, // drawn on the character (it can be hidden: the inventory works either way)
@@ -138,6 +141,7 @@ function load(): void {
   state.showBackpack = true;
   state.pencilQuest = false;
   state.pencilsFound = [];
+  state.pencilSpots = [];
   try {
     const raw = localStorage.getItem(storageKey());
     if (raw) {
@@ -151,6 +155,11 @@ function load(): void {
       state.showBackpack = d.showBackpack !== false;
       state.pencilQuest = d.pencilQuest === true;
       state.pencilsFound = Array.isArray(d.pencilsFound) ? d.pencilsFound.filter((x: unknown) => typeof x === "string") : [];
+      state.pencilSpots = Array.isArray(d.pencilSpots)
+        ? d.pencilSpots.filter((s: PencilSpot) => s && typeof s.id === "string" && typeof s.room === "string")
+        : [];
+      // earlier saves had the pencils outdoors: hide the ones still to find in classrooms instead
+      if (state.pencilQuest && state.pencilSpots.length === 0) placePencils();
       // the pencil pouch used to come with the backpack: it now comes from the MPR storage room (with an empty pouch)
       if ((d.kit ?? 0) < 4 && !state.pencilQuest) {
         for (const list of [state.quick, state.bag]) list.forEach((s, i) => s?.id === "pencil-pouch" && (list[i] = null));
@@ -245,9 +254,40 @@ function toast(text: string): void {
 // ---------------------------------------------------------------------------------------------------------------
 // Optional objective: the pencil pouch and the 5 sharpened pencils
 // ---------------------------------------------------------------------------------------------------------------
-/** The state of the pencil objective (for the scene: which campus pencils to show) */
-export function pencilQuest(): { active: boolean; found: string[]; done: boolean } {
-  return { active: state.pencilQuest, found: [...state.pencilsFound], done: state.pencilsFound.length >= PENCILS_NEEDED };
+/** A hidden pencil: in a homeroom classroom, on a student desk (desk = which desk) or on the floor next to it */
+export interface PencilSpot {
+  id: string;
+  room: string;
+  onDesk: boolean;
+  desk: number;
+  rot: number;
+}
+
+/** Hide the pencils still to find in random homeroom classrooms (one per room) */
+function placePencils(): void {
+  const rooms = ROOMS.filter((r) => r.type === "stamp").map((r) => r.id);
+  for (let i = rooms.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [rooms[i], rooms[j]] = [rooms[j], rooms[i]];
+  }
+  const need = Math.max(0, PENCILS_NEEDED - state.pencilsFound.length);
+  state.pencilSpots = rooms.slice(0, need).map((room) => ({
+    id: `pencil-${room}`,
+    room,
+    onDesk: Math.random() < 0.5,
+    desk: Math.floor(Math.random() * 1000),
+    rot: Math.random() * Math.PI * 2,
+  }));
+}
+
+/** The state of the pencil objective (for the scene: which pencils to show, and where) */
+export function pencilQuest(): { active: boolean; found: string[]; done: boolean; spots: PencilSpot[] } {
+  return {
+    active: state.pencilQuest,
+    found: [...state.pencilsFound],
+    done: state.pencilsFound.length >= PENCILS_NEEDED,
+    spots: state.pencilSpots.filter((s) => !state.pencilsFound.includes(s.id)),
+  };
 }
 
 /** Take a pencil pouch from the MPR storage room (it starts the optional objective) */
@@ -259,9 +299,10 @@ export function takePencilPouch(): "ok" | "no-backpack" | "has" | "full" {
   state.bag[k] = { id: "pencil-pouch", qty: 1 };
   state.pouch = new Array(POUCH_SLOTS).fill(null);
   state.pencilQuest = true;
+  placePencils();
   save();
   render();
-  toast("✏️ Optional objective: find 5 sharpened pencils for your pouch!");
+  toast("✏️ Optional objective: find 5 sharpened pencils hidden in the classrooms!");
   return "ok";
 }
 
@@ -308,7 +349,7 @@ function renderOptional(): void {
   el.style.display = "flex";
   el.classList.toggle("done", done);
   el.innerHTML = `<span class="opt-tag">OPTIONAL</span><span class="opt-text">${
-    done ? "Pencil pouch filled ✓" : "Find 5 sharpened pencils around campus for your pencil pouch"
+    done ? "Pencil pouch filled ✓" : "Find 5 sharpened pencils hidden in the classrooms for your pencil pouch"
   }</span><span class="opt-count">${n}/${PENCILS_NEEDED}</span>`;
 }
 

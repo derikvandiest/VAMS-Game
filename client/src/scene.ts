@@ -7290,10 +7290,10 @@ export function startPlaceholderScene(
     });
     mprSolids.push({ x: BACKPACK_WALL_X + 0.2, z: z0 + (STEP * (BACKPACK_COLORS.length - 1)) / 2, w: 0.4, d: STEP * BACKPACK_COLORS.length, yBase: 0, yTop: 2 });
   }
-  // --- The MPR storage room: a door at the left end of the back wall (the north wall, across from the projection
-  // screen), next to the doors out to the courtyard. It
+  // --- The MPR storage room: a door at the far end of the back wall (the north wall, across from the projection
+  // screen). It
   // can't be entered; pressing E at it offers a pencil pouch (the start of the optional pencil objective).
-  const STORAGE_DOOR = { x: 391.6, z: 388.12 }; // the left end of the back wall, next to the doors to the courtyard
+  const STORAGE_DOOR = { x: 408.4, z: 388.12 }; // the far (east) end of the back wall
   {
     const doorMat = new THREE.MeshStandardMaterial({ color: 0x5b6470, roughness: 0.6, metalness: 0.2 });
     const frameMat = new THREE.MeshStandardMaterial({ color: 0x2f343b, roughness: 0.5, metalness: 0.4 });
@@ -7337,7 +7337,7 @@ export function startPlaceholderScene(
               root: {
                 paragraphs: [
                   "You already have a pencil pouch from the storage room.",
-                  q.done ? "And it's full of sharpened pencils. Nice work!" : `Optional objective: find ${5 - q.found.length} more sharpened pencil${5 - q.found.length === 1 ? "" : "s"} around campus to fill it.`,
+                  q.done ? "And it's full of sharpened pencils. Nice work!" : `Optional objective: find ${5 - q.found.length} more sharpened pencil${5 - q.found.length === 1 ? "" : "s"} hidden in the classrooms to fill it.`,
                 ],
                 options: [{ label: "OK" }],
               },
@@ -7349,7 +7349,7 @@ export function startPlaceholderScene(
               root: {
                 paragraphs: [
                   "The storage room is full of school supplies: boxes of pencils, folders, and a stack of zippered pencil pouches in every color.",
-                  "Take a pencil pouch? It will match your backpack. Then, as an optional objective, find 5 sharpened pencils around campus to fill it.",
+                  "Take a pencil pouch? It will match your backpack. Then, as an optional objective, find 5 sharpened pencils hidden in the classrooms to fill it.",
                 ],
                 options: [
                   { label: "Yes, take a pencil pouch", action: "take-pouch" },
@@ -7363,78 +7363,87 @@ export function startPlaceholderScene(
     });
   }
 
-  // --- The 5 sharpened pencils for the optional objective, lying around campus (shown once the pouch is taken)
-  const CAMPUS_PENCILS: Array<{ id: string; x: number; z: number; rot: number }> = [
-    { id: "pencil-fountain", x: -12.1, z: 20.6, rot: 0.6 }, // by the blue benches near the drinking fountain
-    { id: "pencil-cart", x: 21.9, z: 61.0, rot: -0.4 }, // next to the basketball cart
-    { id: "pencil-learning", x: 5.2, z: 0.9, rot: 1.2 }, // in front of the benches by the Learning Center
-    { id: "pencil-mpr", x: -10.8, z: 48.8, rot: 2.2 }, // outside the MPR doors
-    { id: "pencil-field", x: 43.6, z: 36.9, rot: -1.0 }, // on the field near the reset grate
-  ];
-  const pencilMeshes = new Map<string, THREE.Group>();
-  {
-    const wood = new THREE.MeshStandardMaterial({ color: 0xf5c518, roughness: 0.6 });
-    const tip = new THREE.MeshStandardMaterial({ color: 0xe8c9a0, roughness: 0.8 });
-    const lead = new THREE.MeshStandardMaterial({ color: 0x2b2b2b, roughness: 0.5 });
-    const metal = new THREE.MeshStandardMaterial({ color: 0xbfc5cc, roughness: 0.3, metalness: 0.8 });
-    const eraser = new THREE.MeshStandardMaterial({ color: 0xf28ca5, roughness: 0.8 });
-    const sparkleTex = (() => {
-      const c = document.createElement("canvas");
-      c.width = c.height = 64;
-      const g2 = c.getContext("2d")!;
-      const grad = g2.createRadialGradient(32, 32, 0, 32, 32, 32);
-      grad.addColorStop(0, "rgba(255,240,150,0.95)");
-      grad.addColorStop(0.35, "rgba(255,220,80,0.45)");
-      grad.addColorStop(1, "rgba(255,210,0,0)");
-      g2.fillStyle = grad;
-      g2.fillRect(0, 0, 64, 64);
-      return new THREE.CanvasTexture(c);
-    })();
-    const glow = new THREE.SpriteMaterial({ map: sparkleTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.8 });
-    for (const pc of CAMPUS_PENCILS) {
-      const g = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.3, 6), wood);
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.06, 6), tip);
-      cone.position.y = 0.18;
-      const point = new THREE.Mesh(new THREE.ConeGeometry(0.008, 0.02, 6), lead);
-      point.position.y = 0.205;
-      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.023, 0.023, 0.03, 8), metal);
-      band.position.y = -0.165;
-      const rub = new THREE.Mesh(new THREE.CylinderGeometry(0.021, 0.021, 0.03, 8), eraser);
-      rub.position.y = -0.195;
-      const pencil = new THREE.Group();
-      pencil.add(body, cone, point, band, rub);
-      pencil.rotation.set(0, 0, Math.PI / 2); // lying on the ground
-      pencil.position.y = 0.03;
-      const sparkle = new THREE.Sprite(glow);
-      sparkle.scale.set(0.7, 0.7, 1);
-      sparkle.position.y = 0.25;
-      g.add(pencil, sparkle);
-      g.position.set(pc.x, 0, pc.z);
-      g.rotation.y = pc.rot;
-      g.visible = false;
-      scene.add(g);
-      outdoorObjects.add(g);
-      pencilMeshes.set(pc.id, g);
-    }
+  // --- The 5 sharpened pencils for the optional objective: hidden in 5 random homeroom classrooms (chosen when the
+  // pouch is taken, saved with the inventory), each on a student desk or on the floor beside one.
+  const pencilMeshes = new Map<string, { g: THREE.Group; x: number; z: number }>();
+  const pencilMats = {
+    wood: new THREE.MeshStandardMaterial({ color: 0xf5c518, roughness: 0.6 }),
+    tip: new THREE.MeshStandardMaterial({ color: 0xe8c9a0, roughness: 0.8 }),
+    lead: new THREE.MeshStandardMaterial({ color: 0x2b2b2b, roughness: 0.5 }),
+    metal: new THREE.MeshStandardMaterial({ color: 0xbfc5cc, roughness: 0.3, metalness: 0.8 }),
+    eraser: new THREE.MeshStandardMaterial({ color: 0xf28ca5, roughness: 0.8 }),
+  };
+  const pencilSparkle = (() => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 64;
+    const g2 = c.getContext("2d")!;
+    const grad = g2.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, "rgba(255,240,150,0.95)");
+    grad.addColorStop(0.35, "rgba(255,220,80,0.45)");
+    grad.addColorStop(1, "rgba(255,210,0,0)");
+    g2.fillStyle = grad;
+    g2.fillRect(0, 0, 64, 64);
+    return new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.8 });
+  })();
+  /** Build (once) the pencil for a hidden spot, inside its classroom */
+  function pencilMeshFor(spot: { id: string; room: string; onDesk: boolean; desk: number; rot: number }): { g: THREE.Group; x: number; z: number } | null {
+    const have = pencilMeshes.get(spot.id);
+    if (have) return have;
+    const inst = getClassroom(spot.room);
+    const desks = inst?.chairs.slice(1) ?? []; // the first chair is the teacher's
+    if (!inst || desks.length === 0) return null;
+    const c = desks[spot.desk % desks.length];
+    const x = spot.onDesk ? c.tableX : c.chairX + Math.cos(c.facingAngle) * 0.55;
+    const z = spot.onDesk ? c.tableZ : c.chairZ - Math.sin(c.facingAngle) * 0.55;
+    const y = spot.onDesk ? 0.8 : 0.0;
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.24, 6), pencilMats.wood);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.05, 6), pencilMats.tip);
+    cone.position.y = 0.145;
+    const point = new THREE.Mesh(new THREE.ConeGeometry(0.007, 0.016, 6), pencilMats.lead);
+    point.position.y = 0.165;
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.019, 0.025, 8), pencilMats.metal);
+    band.position.y = -0.132;
+    const rub = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.025, 8), pencilMats.eraser);
+    rub.position.y = -0.157;
+    const pencil = new THREE.Group();
+    pencil.add(body, cone, point, band, rub);
+    pencil.rotation.set(0, 0, Math.PI / 2); // lying down
+    pencil.position.y = 0.02;
+    const sparkle = new THREE.Sprite(pencilSparkle);
+    sparkle.scale.set(0.55, 0.55, 1);
+    sparkle.position.y = 0.2;
+    g.add(pencil, sparkle);
+    g.position.set(x, y, z);
+    g.rotation.y = spot.rot;
+    inst.group.add(g); // shows and hides with the classroom
+    const entry = { g, x, z };
+    pencilMeshes.set(spot.id, entry);
+    return entry;
   }
-  /** Show the campus pencils that are still to find (only during the optional objective) */
+  /** Show the pencils still to find in the classroom the player is in (only during the optional objective) */
   function updateCampusPencils(): void {
     const q = pencilQuest();
     const t = performance.now() * 0.004;
-    for (const pc of CAMPUS_PENCILS) {
-      const g = pencilMeshes.get(pc.id)!;
-      const show = q.active && !q.found.includes(pc.id) && !inMprRoom && !currentClassroom;
-      g.visible = show;
-      if (show) (g.children[1] as THREE.Sprite).position.y = 0.25 + Math.sin(t + pc.x) * 0.05;
+    const open = new Set(q.active ? q.spots.map((s) => s.id) : []);
+    for (const [id, m] of pencilMeshes) if (!open.has(id)) m.g.visible = false;
+    if (!q.active || !currentClassroom) return;
+    for (const s of q.spots) {
+      if (s.room !== currentClassroom.id) continue;
+      const m = pencilMeshFor(s);
+      if (!m) continue;
+      m.g.visible = true;
+      (m.g.children[1] as THREE.Sprite).position.y = 0.2 + Math.sin(t + m.x) * 0.04;
     }
   }
-  /** The campus pencil the player is standing over, if any */
+  /** The hidden pencil the player is standing next to, if any */
   function nearbyPencil(): string | null {
     const q = pencilQuest();
-    if (!q.active || inMprRoom || currentClassroom || drivingCar || seatedChair || player.position.y > 1.5) return null;
-    for (const pc of CAMPUS_PENCILS) {
-      if (!q.found.includes(pc.id) && Math.hypot(player.position.x - pc.x, player.position.z - pc.z) <= 1.4) return pc.id;
+    if (!q.active || !currentClassroom || drivingCar || seatedChair) return null;
+    for (const s of q.spots) {
+      if (s.room !== currentClassroom.id) continue;
+      const m = pencilMeshFor(s);
+      if (m && Math.hypot(player.position.x - m.x, player.position.z - m.z) <= 1.3) return s.id;
     }
     return null;
   }
