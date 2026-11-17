@@ -91,18 +91,44 @@ function buildSvg(): SVGSVGElement {
 
   // Classroom doors on the chosen floor, with labels just outside the door
   const doors = layout.doors.filter((d) => d.floor === floor && !!roomById(d.id));
-  for (const d of doors) {
+  const h = 3.6;
+  const chips = doors.map((d) => {
     const room = roomById(d.id)!;
-    // outward direction: west-building doors face +x (north, up on the map), north-building doors face +z (right)
-    const out = d.axis === "z" ? { sx: 0, sy: -1 } : { sx: 1, sy: 0 };
-    const cx = d.z + out.sx * (d.axis === "z" ? 0 : 3.6);
-    const cy = -d.x + out.sy * (d.axis === "z" ? 3.2 : 0);
     const isStamp = room.type === "stamp";
     const isDone = isStamp && room.objectiveId ? done.has(room.objectiveId) : false;
     const cls = !isStamp ? "map-chip-other" : isDone ? "map-chip-done" : "map-chip-todo";
     const text = isDone ? `${room.shortLabel} ✓` : room.shortLabel;
     const w = Math.max(6.6, text.length * 1.25 + 2);
-    const h = 3.6;
+    // position along the wall on the map: west-building walls run left-right, north-building walls run up-down
+    const along = d.axis === "z" ? d.z : -d.x;
+    const size = d.axis === "z" ? w : h; // chip size along the wall
+    return { d, cls, text, w, along, pos: along, size, wall: `${d.axis}|${d.axis === "z" ? d.x : d.z}` };
+  });
+  // Doors that sit close together (the upstairs pairs) would overlap: spread their chips apart along the wall.
+  const GAP = 1.2;
+  const walls = new Map<string, typeof chips>();
+  for (const c of chips) walls.set(c.wall, [...(walls.get(c.wall) ?? []), c]);
+  for (const list of walls.values()) {
+    list.sort((a, b) => a.along - b.along);
+    for (let iter = 0; iter < 60; iter++) {
+      let moved = false;
+      for (let i = 0; i + 1 < list.length; i++) {
+        const a = list[i], b = list[i + 1];
+        const need = (a.size + b.size) / 2 + GAP;
+        const overlap = need - (b.pos - a.pos);
+        if (overlap > 0.01) {
+          a.pos -= overlap / 2;
+          b.pos += overlap / 2;
+          moved = true;
+        }
+      }
+      if (!moved) break;
+    }
+  }
+  for (const { d, cls, text, w, pos } of chips) {
+    // outward direction: west-building doors face +x (north, up on the map), north-building doors face +z (right)
+    const cx = d.axis === "z" ? pos : d.z + 3.6 + (w - 6.6) / 2;
+    const cy = d.axis === "z" ? -d.x - 3.2 : pos;
     // door tick: from the door to the label
     el("line", { x1: d.z, y1: -d.x, x2: cx, y2: cy, class: "map-tick" }, svg);
     const chip = el("g", { class: cls }, svg);
