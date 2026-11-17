@@ -7483,6 +7483,18 @@ export function startPlaceholderScene(
   scene.add(mprRoomGroup);
 
   // NPCs: in the MPR (they hide and show with the room) or outdoors on the campus
+  /** Non-homeroom rooms that can still be entered (no assignment inside) */
+  const ENTERABLE_ROOMS = new Set(["music"]);
+  /** Turn an arm bone so its child (the next joint) points along a world direction (used for NPC arm poses) */
+  const aimBone = (bone: THREE.Object3D, child: THREE.Object3D, dirW: THREE.Vector3): void => {
+    bone.updateWorldMatrix(true, true);
+    const from = child.getWorldPosition(new THREE.Vector3()).sub(bone.getWorldPosition(new THREE.Vector3())).normalize();
+    const delta = new THREE.Quaternion().setFromUnitVectors(from, dirW.clone().normalize());
+    const world = delta.multiply(bone.getWorldQuaternion(new THREE.Quaternion()));
+    const parentQ = bone.parent!.getWorldQuaternion(new THREE.Quaternion()).invert();
+    bone.quaternion.copy(parentQ.multiply(world));
+    bone.updateMatrixWorld(true);
+  };
   const npcRigs: AvatarRig[] = [];
   const npcList: Array<{ def: NpcDef; rig: AvatarRig }> = [];
   const npcCups = new Map<string, THREE.Group>(); // coffee cups NPCs hold
@@ -7515,6 +7527,27 @@ export function startPlaceholderScene(
       for (let k = chairSlots.length - 1; k >= 0; k--) {
         if (Math.hypot(chairSlots[k].chairX - def.x, chairSlots[k].chairZ - def.z) < 0.3) chairSlots.splice(k, 1);
       }
+    }
+    if (def.pose === "keyboard") {
+      // playing the keyboard in front of him: upper arms down and a little forward, forearms reaching forward to the
+      // keys; the hands move over the keys (each on its own rhythm)
+      npcRig.postPose = () => {
+        const p = npcRig.player;
+        const yaw = p.rotation.y;
+        const fwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+        const right = new THREE.Vector3(-Math.cos(yaw), 0, Math.sin(yaw));
+        const t = performance.now() * 0.001;
+        for (const [s, sideSign, phase] of [["R", 1, 0], ["L", -1, 1.7]] as const) {
+          const up = p.getObjectByName(`UpperArm${s}`);
+          const lo = p.getObjectByName(`LowerArm${s}`);
+          const wr = p.getObjectByName(`Wrist${s}`);
+          if (!up || !lo || !wr) continue;
+          const reach = Math.sin(t * 2.3 + phase) * 0.08; // sliding along the keys
+          const tap = Math.max(0, Math.sin(t * 9 + phase * 3)) * 0.05; // pressing keys
+          aimBone(up, lo, new THREE.Vector3(0, -1, 0).addScaledVector(fwd, 0.3).addScaledVector(right, sideSign * 0.12));
+          aimBone(lo, wr, fwd.clone().multiplyScalar(0.85).add(new THREE.Vector3(0, -0.32 - tap, 0)).addScaledVector(right, -sideSign * (0.12 - reach)));
+        }
+      };
     }
     if (def.holding === "coffee") {
       // a 40 oz Stanley tumbler held in the right hand (placed every frame, see below)
@@ -7860,7 +7893,7 @@ export function startPlaceholderScene(
   }
 
   function enterClassroom(roomId: string): void {
-    if (roomById(roomId)?.type !== "stamp") return; // only the 16 homeroom classrooms can be entered
+    if (roomById(roomId)?.type !== "stamp" && !ENTERABLE_ROOMS.has(roomId)) return; // the 16 homerooms (+ the music room)
     const inst = getClassroom(roomId);
     if (!inst) return;
     if (drivingCar) exitCar();
@@ -8394,7 +8427,7 @@ export function startPlaceholderScene(
             if (d <= 2.4) {
               if (cId === "eld") openEldDoor();
               else if (DOOR_TALK[cId]) showDialog(DOOR_TALK[cId].speaker, DOOR_TALK[cId].tree); // Theater / Music room: their teachers greet you at the door
-              else if (roomById(cId)?.type === "stamp") enterClassroom(cId); // the Learning Center stays closed (the hint says so)
+              else if (roomById(cId)?.type === "stamp" || ENTERABLE_ROOMS.has(cId)) enterClassroom(cId); // the Learning Center stays closed (the hint says so)
               return;
             }
           }
@@ -9341,7 +9374,7 @@ export function startPlaceholderScene(
                     ? "Press E to speak with Mr. Van Diest at the ELD door 🚪"
                     : DOOR_TALK[cId]
                       ? DOOR_TALK[cId].hint
-                      : roomById(cId)?.type !== "stamp"
+                      : roomById(cId)?.type !== "stamp" && !ENTERABLE_ROOMS.has(cId)
                         ? `${inst.data.label}: closed 🔒`
                       : `Press E to enter ${inst.data.label}`;
                 break;
@@ -9924,7 +9957,7 @@ export function startPlaceholderScene(
       const hintElev = !inMprRoom && !currentClassroom ? elevator.hint(player.position.x, player.position.y, player.position.z) : "";
       if (hintNpc) {
         hintText =
-          hintNpc.def.room === "classroom"
+          hintNpc.def.room === "classroom" && roomById(hintNpc.def.classroomId ?? "")?.type === "stamp"
             ? `Press E to talk to ${hintNpc.def.profile.name} about the assignment 📋`
             : `Press E to talk to ${hintNpc.def.noNameTag ? "the " + hintNpc.def.profile.name.toLowerCase() : hintNpc.def.profile.name} 💬`;
       } else if (hintElev) {

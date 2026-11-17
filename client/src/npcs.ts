@@ -20,6 +20,7 @@ import nayfeldPortrait from "./assets/nayfeld_portrait.png";
 import daniPortrait from "./assets/dani_portrait.png";
 import somozaPortrait from "./assets/somoza_portrait.png";
 import weberPortrait from "./assets/weber_portrait.png";
+import dominguezPortrait from "./assets/dominguez_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -52,6 +53,8 @@ export interface NpcDef {
   chatFirst?: boolean;
   /** No floating name tag above the head (generic, unnamed characters) */
   noNameTag?: boolean;
+  /** A special standing pose (applied after the animation every frame): "keyboard" = playing a keyboard in front */
+  pose?: "keyboard";
   /** Something held in the right hand */
   holding?: "coffee"; // drawn as a 40 oz Stanley tumbler
 }
@@ -1214,7 +1217,81 @@ export const NPC_WEBER: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER];
+/**
+ * Mr. Dominguez, the music teacher, at the front of the music room playing the keyboard. Matches his portrait: bald,
+ * a short light-brown beard, a black polo under an open maroon hoodie.
+ */
+const DOMINGUEZ_MAROON = "#6b2233";
+const DOMINGUEZ_BLACK = "#1e1f23";
+export const NPC_DOMINGUEZ: NpcDef = {
+  id: "npc-dominguez",
+  room: "classroom",
+  classroomId: "music",
+  x: 0, // set from the classroom's whiteboard (the keyboard stands in front of him)
+  z: 0,
+  rotY: 0, // facing the class
+  talkRange: 2.4,
+  chatFirst: true,
+  pose: "keyboard",
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mr. Dominguez",
+    title: "Music Teacher",
+    noHomeroom: true,
+    gender: "masculine",
+    look: "masc-suit", // the jacket is his open hoodie, the shirt his black polo
+    outfitColor: DOMINGUEZ_MAROON,
+    noHair: true, // bald
+    hairColor: "#7a5a42", // his short beard
+    facialHair: "beard",
+    skinTone: "#DDA582",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: DOMINGUEZ_BLACK,
+    partColors: { White: DOMINGUEZ_BLACK, Tie: DOMINGUEZ_BLACK, "Legs:Suit": "#2a2d33" },
+  },
+  portrait: dominguezPortrait,
+  // SAMPLE TEXT: replace with Mr. Dominguez's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Welcome to the Music room! I'm Mr. Dominguez, the music teacher. Pull up a chair, the band is warming up.",
+          "Feel free to look around: guitars along the wall, the drum set in the corner, and our wind section right here.",
+        ],
+        options: [
+          { label: "What do students do in Music?", next: "about" },
+          { label: "What are you playing?", next: "playing" },
+          { label: "Thanks, Mr. Dominguez!", next: "bye" },
+        ],
+      },
+      about: {
+        paragraphs: [
+          "(Sample text) We learn to read music, play instruments, and perform together. Every student can find an instrument they enjoy.",
+          "Music is a language too, so my English learners practice listening, rhythm, and vocabulary every single class.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Dominguez!", next: "bye" },
+        ],
+      },
+      playing: {
+        paragraphs: ["(Sample text) Just a warm-up! Scales first, then the song we're performing at the winter concert."],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Dominguez!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Thanks for stopping by! Keep the music going. \uD83C\uDFB5"],
+        options: [{ label: "See you, Mr. Dominguez!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.

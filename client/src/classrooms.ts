@@ -813,6 +813,53 @@ function canvasTex(key: string, w: number, h: number, draw: (ctx: CanvasRenderin
   return t;
 }
 
+/** Low-pile gray classroom carpet (music room) */
+function carpetTexture(): THREE.CanvasTexture {
+  const t = canvasTex("carpet", 512, 512, (ctx) => {
+    ctx.fillStyle = "#7a7d82";
+    ctx.fillRect(0, 0, 512, 512);
+    const r = rng(7);
+    for (let i = 0; i < 26000; i++) {
+      const v = 100 + Math.floor(r() * 50);
+      ctx.fillStyle = `rgba(${v},${v + 2},${v + 6},0.55)`;
+      ctx.fillRect(r() * 512, r() * 512, 2, 2);
+    }
+  });
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(6, 6);
+  return t;
+}
+
+/** Sheet music: staves with notes */
+function sheetMusicTexture(): THREE.CanvasTexture {
+  return canvasTex("sheet", 256, 192, (ctx) => {
+    ctx.fillStyle = "#fbfaf5"; ctx.fillRect(0, 0, 256, 192);
+    const r = rng(3);
+    ctx.strokeStyle = "#333"; ctx.fillStyle = "#222"; ctx.lineWidth = 1;
+    for (let s = 0; s < 4; s++) {
+      const y0 = 22 + s * 42;
+      for (let l = 0; l < 5; l++) { ctx.beginPath(); ctx.moveTo(12, y0 + l * 5); ctx.lineTo(244, y0 + l * 5); ctx.stroke(); }
+      for (let x = 30; x < 236; x += 16) {
+        const ny = y0 + Math.floor(r() * 9) * 2.5;
+        ctx.beginPath(); ctx.ellipse(x, ny, 3.2, 2.4, -0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(x + 3, ny); ctx.lineTo(x + 3, ny - 12); ctx.stroke();
+      }
+    }
+  });
+}
+
+/** Piano keys seen from above: white keys with the black keys in groups of 2 and 3 */
+function pianoKeysTexture(): THREE.CanvasTexture {
+  return canvasTex("keys", 1024, 140, (ctx) => {
+    const n = 36, w = 1024 / n;
+    ctx.fillStyle = "#f5f5f2"; ctx.fillRect(0, 0, 1024, 140);
+    ctx.strokeStyle = "#9a9a9a"; ctx.lineWidth = 2;
+    for (let k = 0; k <= n; k++) { ctx.beginPath(); ctx.moveTo(k * w, 0); ctx.lineTo(k * w, 140); ctx.stroke(); }
+    ctx.fillStyle = "#111";
+    for (let k = 0; k < n; k++) if ([0, 1, 3, 4, 5].includes(k % 7)) ctx.fillRect((k + 1) * w - w * 0.3, 0, w * 0.6, 86);
+  });
+}
+
 function clockFaceTexture(): THREE.CanvasTexture {
   return canvasTex("clock", 256, 256, (ctx) => {
     ctx.fillStyle = "#ffffff";
@@ -874,11 +921,28 @@ function subjectPosterTexture(subject: string, accent: string): THREE.CanvasText
     ctx.lineWidth = 14; ctx.strokeStyle = accent; ctx.strokeRect(7, 7, 498, 586);
     ctx.fillStyle = "#ffffff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.font = "900 46px Arial Black, Arial, sans-serif";
-    const title = subject === "Science" ? "PERIODIC TABLE" : subject === "Math" ? "MATH TALK" : subject === "English" ? "READING STRATEGIES" : subject === "Humanities" ? "HISTORY TIMELINE" : "ACADEMIC TALK";
+    const title = subject === "Music" ? "NOTE VALUES" : subject === "Science" ? "PERIODIC TABLE" : subject === "Math" ? "MATH TALK" : subject === "English" ? "READING STRATEGIES" : subject === "Humanities" ? "HISTORY TIMELINE" : "ACADEMIC TALK";
     ctx.font = `900 ${title.length > 14 ? 38 : 46}px Arial Black, Arial, sans-serif`;
     ctx.fillText(title, 256, 50);
     ctx.textAlign = "left"; ctx.fillStyle = "#1f2937";
-    if (subject === "Science") {
+    if (subject === "Music") {
+      // a staff with the note values and their beats
+      const notes: Array<[string, string, boolean, boolean, number]> = [["Whole", "4 beats", false, false, 0], ["Half", "2 beats", false, true, 0], ["Quarter", "1 beat", true, true, 0], ["Eighth", "1/2 beat", true, true, 1]];
+      notes.forEach(([name, beats, filled, stem, flags], i) => {
+        const y0 = 140 + i * 112;
+        ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 2;
+        for (let l = 0; l < 5; l++) { ctx.beginPath(); ctx.moveTo(30, y0 + l * 12); ctx.lineTo(200, y0 + l * 12); ctx.stroke(); }
+        const nx = 115, ny = y0 + 30;
+        ctx.save(); ctx.translate(nx, ny); ctx.rotate(-0.35);
+        ctx.beginPath(); ctx.ellipse(0, 0, 13, 9, 0, 0, Math.PI * 2);
+        if (filled) { ctx.fillStyle = "#111827"; ctx.fill(); } else { ctx.lineWidth = 4; ctx.stroke(); }
+        ctx.restore();
+        if (stem) { ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(nx + 12, ny - 3); ctx.lineTo(nx + 12, ny - 50); ctx.stroke(); }
+        if (flags) { ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(nx + 12, ny - 50); ctx.quadraticCurveTo(nx + 34, ny - 34, nx + 26, ny - 14); ctx.stroke(); }
+        ctx.fillStyle = accent; ctx.font = "900 34px Arial Black, Arial"; ctx.fillText(name, 230, y0 + 22);
+        ctx.fillStyle = "#1f2937"; ctx.font = "26px Arial"; ctx.fillText(beats, 232, y0 + 56);
+      });
+    } else if (subject === "Science") {
       const cols = ["#fca5a5", "#fdba74", "#fde68a", "#86efac", "#93c5fd", "#c4b5fd", "#f9a8d4", "#a5f3fc"];
       const layout = [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1], [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]];
       const sz = 26, x0 = 22, y0 = 130;
@@ -1083,11 +1147,12 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     pennantFg = spCfg.bannerText;
   }
 
-  // 1) FLOOR
+  // 1) FLOOR (the music room has gray carpet)
+  const isMusic = roomData.id === "music";
   const floorMat = new THREE.MeshStandardMaterial({
-    map: makeClassroomFloorTexture(roomData),
-    roughness: 0.45,
-    metalness: 0.05,
+    map: isMusic ? carpetTexture() : makeClassroomFloorTexture(roomData),
+    roughness: isMusic ? 0.95 : 0.45,
+    metalness: isMusic ? 0 : 0.05,
   });
   const floorMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(CLASSROOM_SIZE, CLASSROOM_SIZE),
@@ -1323,7 +1388,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     group.add(g);
   }
   // subject poster left of the whiteboard
-  wallPanel(subjectPosterTexture(roomData.subject ?? "", accentHex), "N", worldX - 4.85, 2.15, 1.5, 1.76);
+  wallPanel(subjectPosterTexture(isMusic ? "Music" : roomData.subject ?? "", accentHex), "N", worldX - 4.85, 2.15, 1.5, 1.76);
   // academic-talk sentence frames (west wall, front) and student work (west wall, above the laptop cart)
   wallPanel(bulletinTexture("talk", "ACADEMIC TALK", accentHex, lightHex, index + 1), "W", worldZ - 4.15, 1.75, 2.7, 1.35);
   wallPanel(bulletinTexture("work", "STUDENT WORK", accentHex, lightHex, index + 101), "W", worldZ + 2.1, 2.55, 2.8, 1.4);
@@ -1782,52 +1847,267 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     });
   }
 
-  // Room-specific layouts for all classrooms
-  if (roomData.id === "music") {
-    // Music Room: Upright Piano + Music Stands & Arc Chairs
-    // Piano
-    const pianoMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.3 });
-    const pianoMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.25, 0.65), pianoMat);
-    pianoMesh.position.set(worldX - 3.8, 0.625, minZ + 1.8);
-    group.add(pianoMesh);
-    // Piano keyboard ledge
-    const keysMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(1.4, 0.06, 0.25),
-      new THREE.MeshStandardMaterial({ color: 0xffffff })
-    );
-    keysMesh.position.set(worldX - 3.8, 0.68, minZ + 2.15);
-    group.add(keysMesh);
+  /**
+   * The music room: gray carpet (above), a keyboard on an X-stand at the front (Mr. Dominguez plays it), a drum set in
+   * the front-left corner on a rug, guitars lined up along the west wall (a floor row and a hanging row), and a band
+   * section in the middle: two arcs of chairs facing the keyboard, each with a music stand and a wind instrument
+   * standing on its own little stand beside it.
+   */
+  function buildMusicRoom(): void {
+    const black = new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.5, metalness: 0.3 });
+    const chrome = new THREE.MeshStandardMaterial({ color: 0xd9dde3, roughness: 0.2, metalness: 0.9 });
+    const brass = new THREE.MeshStandardMaterial({ color: 0xd4a72c, roughness: 0.25, metalness: 0.85 });
+    const silver = new THREE.MeshStandardMaterial({ color: 0xc9ced6, roughness: 0.2, metalness: 0.9 });
+    const ebony = new THREE.MeshStandardMaterial({ color: 0x101010, roughness: 0.35 });
+    const cymbalMat = new THREE.MeshStandardMaterial({ color: 0xc9a23a, roughness: 0.3, metalness: 0.8, side: THREE.DoubleSide });
+    const shellMat = new THREE.MeshStandardMaterial({ color: 0x9b1c1c, roughness: 0.3, metalness: 0.25 }); // Valor red drums
+    const headMat = new THREE.MeshStandardMaterial({ color: 0xf3f1ea, roughness: 0.7 });
+    const sheetMat = new THREE.MeshStandardMaterial({ map: sheetMusicTexture(), roughness: 0.9 });
 
-    solids.push({
-      x: worldX - 3.8,
-      z: minZ + 1.8,
-      w: 1.7,
-      d: 0.8,
-      yBase: 0,
-      yTop: 1.3,
-    });
+    // --- Keyboard on an X-stand at the front, centred on the whiteboard (the teacher stands behind it) ---
+    {
+      const kb = new THREE.Group();
+      kb.position.set(worldX - 0.3, 0, minZ + 1.83);
+      const legs = (sx: number) => {
+        for (const t of [0.55, -0.55]) {
+          const bar = part(kb, black, 0.04, 1.05, 0.04, sx, 0.44, 0);
+          bar.rotation.x = t;
+        }
+      };
+      legs(-0.42);
+      legs(0.42);
+      part(kb, black, 0.9, 0.03, 0.05, 0, 0.44, 0); // cross brace
+      part(kb, black, 0.9, 0.04, 0.3, 0, 0.88, 0); // support arms
+      part(kb, black, 1.22, 0.09, 0.34, 0, 0.945, 0); // keyboard body
+      const keys = new THREE.Mesh(new THREE.PlaneGeometry(1.08, 0.15), new THREE.MeshStandardMaterial({ map: pianoKeysTexture(), roughness: 0.4 }));
+      keys.rotation.x = -Math.PI / 2;
+      keys.position.set(0, 0.992, -0.06); // the keys face the player standing behind it (towards the wall)
+      keys.rotation.z = Math.PI;
+      kb.add(keys);
+      part(kb, new THREE.MeshStandardMaterial({ color: 0x2b2f36, roughness: 0.4 }), 1.0, 0.01, 0.1, 0, 0.993, 0.1); // control panel
+      const lcd = part(kb, new THREE.MeshStandardMaterial({ color: 0x0b3a2e, emissive: 0x16a34a, emissiveIntensity: 0.6 }), 0.16, 0.004, 0.05, 0, 0.999, 0.1);
+      lcd.castShadow = false;
+      group.add(kb);
+      solids.push({ x: worldX - 0.3, z: minZ + 1.88, w: 1.3, d: 0.4, yBase: 0, yTop: 1.2 });
+    }
 
-    // Rehearsal arcs of blue student chairs & music stands
-    const arcRadii = [2.6, 4.0];
-    for (const r of arcRadii) {
-      for (let a = -0.7; a <= 0.7; a += 0.35) {
-        const cx = worldX + Math.sin(a) * r;
-        const cz = minZ + 2.2 + Math.cos(a) * r;
+    // --- Drum set in the front-left corner, on a rug, facing the room ---
+    {
+      const dx = minX + 1.55, dz = minZ + 1.6;
+      const rugMat = new THREE.MeshStandardMaterial({ color: 0x3b1f2b, roughness: 1 });
+      const rug = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.0), rugMat);
+      rug.rotation.x = -Math.PI / 2;
+      rug.position.set(dx, 0.012, dz + 0.1);
+      rug.receiveShadow = true;
+      group.add(rug);
+      const kit = new THREE.Group();
+      kit.position.set(dx, 0, dz);
+      kit.rotation.y = 0.5; // angled out toward the middle of the room
+      const drum = (r: number, h: number, x: number, y: number, z: number, rx = 0, rz = 0) => {
+        const d = new THREE.Group();
+        const shell = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 24, 1, true), shellMat);
+        shell.material.side = THREE.DoubleSide;
+        const top = new THREE.Mesh(new THREE.CircleGeometry(r, 24), headMat);
+        top.rotation.x = -Math.PI / 2;
+        top.position.y = h / 2;
+        const bot = top.clone();
+        bot.rotation.x = Math.PI / 2;
+        bot.position.y = -h / 2;
+        const rim1 = new THREE.Mesh(new THREE.TorusGeometry(r, 0.008, 6, 24), chrome);
+        rim1.rotation.x = Math.PI / 2;
+        rim1.position.y = h / 2;
+        const rim2 = rim1.clone();
+        rim2.position.y = -h / 2;
+        d.add(shell, top, bot, rim1, rim2);
+        d.position.set(x, y, z);
+        d.rotation.set(rx, 0, rz);
+        d.traverse((o) => { o.castShadow = true; });
+        kit.add(d);
+        return d;
+      };
+      const stand = (x: number, z: number, h: number) => {
+        part(kit, chrome, 0.018, h, 0.018, x, h / 2, z, UC);
+        for (let k = 0; k < 3; k++) {
+          const a = (k / 3) * Math.PI * 2;
+          const leg = part(kit, chrome, 0.012, 0.3, 0.012, x + Math.sin(a) * 0.1, 0.1, z + Math.cos(a) * 0.1, UC);
+          leg.rotation.set(Math.cos(a) * 0.7, 0, -Math.sin(a) * 0.7);
+        }
+      };
+      const cymbal = (x: number, y: number, z: number, r: number, tilt: number) => {
+        const c = new THREE.Mesh(new THREE.ConeGeometry(r, 0.03, 28, 1, true), cymbalMat);
+        c.position.set(x, y, z);
+        c.rotation.x = tilt;
+        c.castShadow = true;
+        kit.add(c);
+      };
+      drum(0.28, 0.4, 0, 0.3, 0.05, Math.PI / 2); // bass drum on its side, front head toward the room (+z)
+      drum(0.14, 0.14, -0.17, 0.72, 0.0, -0.25); // rack toms on the bass drum
+      drum(0.15, 0.15, 0.17, 0.72, 0.0, -0.25);
+      part(kit, chrome, 0.02, 0.22, 0.02, 0, 0.6, 0.0, UC);
+      stand(-0.42, -0.25, 0.55); drum(0.18, 0.13, -0.42, 0.62, -0.25, -0.15); // snare
+      drum(0.2, 0.36, 0.45, 0.42, -0.3); // floor tom
+      for (const [lx, lz] of [[0.31, -0.15], [0.59, -0.15], [0.45, -0.48]]) part(kit, chrome, 0.015, 0.25, 0.015, lx, 0.12, lz, UC);
+      stand(-0.72, -0.15, 0.85); cymbal(-0.72, 0.86, -0.15, 0.17, 0); cymbal(-0.72, 0.9, -0.15, 0.17, Math.PI); // hi-hat
+      stand(-0.35, 0.35, 1.25); cymbal(-0.35, 1.27, 0.35, 0.24, 0.3); // crash
+      stand(0.62, 0.3, 1.15); cymbal(0.62, 1.17, 0.3, 0.27, -0.25); // ride
+      // drum throne behind the kit, sticks on the snare
+      part(kit, black, 0.36, 0.08, 0.36, 0, 0.55, -0.65, UC);
+      stand(0, -0.65, 0.5);
+      for (const s of [-0.03, 0.03]) part(kit, new THREE.MeshStandardMaterial({ color: 0xd9b382 }), 0.012, 0.012, 0.4, -0.42 + s, 0.7, -0.25, UB);
+      group.add(kit);
+      solids.push({ x: dx, z: dz, w: 1.9, d: 1.6, yBase: 0, yTop: 1.3 });
+    }
 
-        // Use the uniform blue student chair with tennis balls facing the conductor
-        addStudentChair(cx, cz, Math.PI - a);
+    // --- Guitars lined up along the west wall: a floor row on a long rack and a row hanging above ---
+    {
+      const bodies = [0xb5651d, 0x6b3e1f, 0xd9a35f, 0x1c1c1f, 0x8a1c1c, 0xc98a3e, 0x3d2614, 0x2c4a7a];
+      const fretMat = new THREE.MeshStandardMaterial({ color: 0x2b1a10, roughness: 0.6 });
+      const holeMat = new THREE.MeshStandardMaterial({ color: 0x0c0806, roughness: 1 });
+      const guitar = (x: number, y: number, z: number, lean: number, color: number, idx: number) => {
+        const g = new THREE.Group();
+        const body = new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.05 });
+        // body: lower and upper bouts (flattened cylinders), waist between them
+        const lower = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.09, 24), body);
+        lower.rotation.z = Math.PI / 2;
+        lower.position.y = 0.2;
+        const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.145, 0.145, 0.09, 24), body);
+        upper.rotation.z = Math.PI / 2;
+        upper.position.y = 0.45;
+        const hole = new THREE.Mesh(new THREE.CircleGeometry(0.05, 16), holeMat);
+        hole.rotation.y = Math.PI / 2;
+        hole.position.set(0.046, 0.38, 0);
+        const neck = part(g, fretMat, 0.03, 0.5, 0.05, 0.03, 0.82, 0);
+        neck.castShadow = true;
+        const head = part(g, fretMat, 0.03, 0.15, 0.07, 0.03, 1.12, 0);
+        head.rotation.z = -0.15;
+        const bridge = part(g, fretMat, 0.02, 0.02, 0.1, 0.048, 0.18, 0);
+        g.add(lower, upper, hole);
+        for (const m of [lower, upper]) m.castShadow = true;
+        g.position.set(x, y, z);
+        g.rotation.z = lean; // leaning back against the wall
+        g.rotation.y = idx % 2 ? 0.06 : -0.06;
+        void bridge;
+        group.add(g);
+      };
+      // long floor rack: a low padded rail and a back rail, guitars standing in it facing the room (+x)
+      const z0 = worldZ - 2.6, z1 = worldZ + 4.2;
+      const rack = new THREE.Group();
+      part(rack, black, 0.3, 0.06, z1 - z0 + 0.3, minX + 0.42, 0.1, (z0 + z1) / 2);
+      part(rack, black, 0.04, 0.04, z1 - z0 + 0.3, minX + 0.2, 0.72, (z0 + z1) / 2);
+      for (const z of [z0 - 0.1, (z0 + z1) / 2, z1 + 0.1]) part(rack, black, 0.04, 0.72, 0.04, minX + 0.2, 0.36, z);
+      group.add(rack);
+      const n = 11;
+      for (let k = 0; k < n; k++) guitar(minX + 0.36, 0.07, z0 + (k * (z1 - z0)) / (n - 1), 0.16, bodies[k % bodies.length], k);
+      // hanging row above (wall hangers): spaced wider
+      for (let k = 0; k < 6; k++) {
+        const z = z0 + 0.3 + (k * (z1 - z0 - 0.6)) / 5;
+        guitar(minX + 0.17, 1.55, z, 0, bodies[(k * 3 + 2) % bodies.length], k + 1);
+        part(group, black, 0.06, 0.04, 0.08, minX + 0.13, 2.75, z); // hanger
+      }
+      solids.push({ x: minX + 0.4, z: (z0 + z1) / 2, w: 0.7, d: z1 - z0 + 0.4, yBase: 0, yTop: 1.3 });
+    }
 
-        // Music stand in front
-        const mx = worldX + Math.sin(a) * (r - 0.7);
-        const mz = minZ + 2.2 + Math.cos(a) * (r - 0.7);
-        const standPole = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.05), tLegMat);
-        standPole.position.set(mx, 0.525, mz);
-        const standDesk = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.32, 0.02), tDeskMat);
-        standDesk.position.set(mx, 1.08, mz);
-        standDesk.rotation.x = 0.35;
-        group.add(standPole, standDesk);
+    // --- Band section in the middle: two arcs of chairs facing the keyboard, each with a music stand in front and a
+    // wind instrument on a small stand beside it ---
+    {
+      const cx = worldX - 0.3, cz = minZ + 1.95;
+      const winds = ["trumpet", "clarinet", "flute", "saxophone", "trombone"];
+      const standUnit = (x: number, z: number, face: number) => {
+        // music stand: tripod base, pole, tilted desk with sheet music
+        const s = new THREE.Group();
+        s.position.set(x, 0, z);
+        s.rotation.y = face;
+        for (let k = 0; k < 3; k++) {
+          const a = (k / 3) * Math.PI * 2;
+          const leg = part(s, black, 0.012, 0.28, 0.012, Math.sin(a) * 0.1, 0.1, Math.cos(a) * 0.1, UC);
+          leg.rotation.set(Math.cos(a) * 0.8, 0, -Math.sin(a) * 0.8);
+        }
+        part(s, black, 0.018, 0.95, 0.018, 0, 0.6, 0, UC);
+        const desk = part(s, black, 0.5, 0.34, 0.012, 0, 1.12, 0);
+        desk.rotation.x = -0.35;
+        const sheet = part(s, sheetMat, 0.44, 0.3, 0.004, 0, 1.123, 0.009);
+        sheet.rotation.x = -0.35;
+        part(s, black, 0.5, 0.03, 0.04, 0, 0.965, 0.05);
+        group.add(s);
+      };
+      const instrument = (kind: string, x: number, z: number) => {
+        const g = new THREE.Group();
+        g.position.set(x, 0, z);
+        // small peg / tripod stand
+        for (let k = 0; k < 3; k++) {
+          const a = (k / 3) * Math.PI * 2;
+          const leg = part(g, black, 0.01, 0.14, 0.01, Math.sin(a) * 0.06, 0.05, Math.cos(a) * 0.06, UC);
+          leg.rotation.set(Math.cos(a) * 0.9, 0, -Math.sin(a) * 0.9);
+        }
+        part(g, black, 0.014, 0.18, 0.014, 0, 0.12, 0, UC);
+        if (kind === "clarinet" || kind === "flute") {
+          const m = kind === "flute" ? silver : ebony;
+          part(g, m, kind === "flute" ? 0.022 : 0.03, 0.62, kind === "flute" ? 0.022 : 0.03, 0, 0.52, 0, UC);
+          if (kind === "clarinet") {
+            const bell = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.1, 16, 1, true), ebony);
+            bell.position.y = 0.24;
+            bell.rotation.x = Math.PI;
+            g.add(bell);
+            for (let k = 0; k < 5; k++) part(g, silver, 0.034, 0.01, 0.034, 0, 0.4 + k * 0.08, 0, UC);
+          } else for (let k = 0; k < 6; k++) part(g, silver, 0.03, 0.012, 0.03, 0.012, 0.36 + k * 0.07, 0, UC);
+        } else if (kind === "trumpet") {
+          // upright on its peg, bell up
+          part(g, brass, 0.028, 0.34, 0.028, 0, 0.38, 0, UC);
+          const bell = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.14, 20, 1, true), brass);
+          bell.position.y = 0.6;
+          bell.rotation.x = Math.PI;
+          g.add(bell);
+          for (let k = 0; k < 3; k++) part(g, brass, 0.022, 0.08, 0.022, 0.045, 0.36 + k * 0.035, 0, UC);
+          part(g, brass, 0.03, 0.2, 0.03, -0.04, 0.33, 0, UC);
+        } else if (kind === "saxophone") {
+          // body tilted, the curved bottom bow and the flared bell up the front
+          const body = part(g, brass, 0.06, 0.5, 0.06, 0, 0.5, 0, UC);
+          body.rotation.z = 0.12;
+          const bow = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.035, 10, 16, Math.PI), brass);
+          bow.position.set(0.04, 0.27, 0);
+          bow.rotation.z = Math.PI;
+          g.add(bow);
+          part(g, brass, 0.07, 0.22, 0.07, 0.11, 0.38, 0, UC);
+          const bell = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.12, 20, 1, true), brass);
+          bell.position.set(0.12, 0.53, 0);
+          bell.rotation.x = Math.PI;
+          g.add(bell);
+          const neck = part(g, brass, 0.02, 0.16, 0.02, -0.06, 0.8, 0, UC);
+          neck.rotation.z = 0.9;
+        } else {
+          // trombone: long slide upright with the bell beside it
+          part(g, brass, 0.02, 0.8, 0.02, -0.03, 0.55, 0, UC);
+          part(g, brass, 0.02, 0.8, 0.02, 0.03, 0.55, 0, UC);
+          const bell = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.18, 20, 1, true), brass);
+          bell.position.set(0.1, 0.9, 0);
+          bell.rotation.x = Math.PI;
+          g.add(bell);
+          part(g, brass, 0.025, 0.4, 0.025, 0.1, 0.7, 0, UC);
+        }
+        g.traverse((o) => { o.castShadow = true; });
+        group.add(g);
+      };
+      let k = 0;
+      for (const r of [2.9, 4.3]) {
+        const step = r < 3 ? 0.38 : 0.3;
+        for (let a = -step * 2; a <= step * 2 + 1e-6; a += step) {
+          const px = cx + Math.sin(a) * r;
+          const pz = cz + Math.cos(a) * r;
+          addStudentChair(px, pz, Math.PI + a); // facing the keyboard
+          // music stand between the chair and the keyboard, its desk facing the player
+          standUnit(cx + Math.sin(a) * (r - 0.75), cz + Math.cos(a) * (r - 0.75), a);
+          // the instrument on its stand at the chair's right
+          const side = a + Math.PI / 2;
+          instrument(winds[k % winds.length], px + Math.sin(side) * -0.45, pz + Math.cos(side) * -0.45);
+          k++;
+        }
       }
     }
+  }
+
+  // Room-specific layouts for all classrooms
+  if (roomData.id === "music") {
+    buildMusicRoom();
   } else if (roomData.id === "theater") {
     // Raised mini rehearsal stage + Director table
     const stageMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.5 });
@@ -1901,7 +2181,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
   // Open bookcase on the West wall (shelves face the room, +x), filled with books and a few bins
   const bkX = minX + 0.33;
   const bkZ = worldZ - 1.2;
-  {
+  if (!isMusic) {
     const bc = new THREE.Group();
     bc.position.set(bkX, 0, bkZ);
     const H = 1.95, D = 0.4, W = 1.8;
@@ -1941,7 +2221,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     bc.add(globe);
     group.add(bc);
   }
-  solids.push({
+  if (!isMusic) solids.push({
     x: bkX,
     z: bkZ,
     w: 0.5,
@@ -1992,7 +2272,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
   // Black laptop cart along the West wall (south of the bookcase): Chromebooks standing in its slots
   const lcX = minX + 0.42;
   const lcZ = worldZ + 1.8;
-  {
+  if (!isMusic) {
     const black = new THREE.MeshStandardMaterial({ color: 0x17181b, roughness: 0.55, metalness: 0.3 });
     const steel = new THREE.MeshStandardMaterial({ color: 0x9aa1aa, roughness: 0.35, metalness: 0.8 });
     const shell = new THREE.MeshStandardMaterial({ color: 0x3a3d43, roughness: 0.5, metalness: 0.4 });
@@ -2123,7 +2403,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     exitDoorX,
     exitDoorZ,
     whiteboard: { x: worldX - 0.3, z: minZ + 0.11, w: wbWidth },
-    laptopCart: { x: lcX + 0.95, z: lcZ },
+    laptopCart: isMusic ? { x: 1e6, z: 1e6 } : { x: lcX + 0.95, z: lcZ }, // no laptop cart in the music room
     campusDoor,
   };
 
