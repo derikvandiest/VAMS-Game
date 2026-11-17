@@ -1063,7 +1063,7 @@ export const NPC_NAYFELD: NpcDef = {
 
 /**
  * Mr. Somoza, the 7th grade LMU humanities teacher, standing in front of the whiteboard in his classroom (talk to him
- * for the assignment). Always excited: "Here we go!" Matches his portrait: black wide-brim hat, dark curly hair, a full
+ * for the assignment). Always excited; says goodbye with "Here we go!" Matches his portrait: black wide-brim hat, dark hair, a full
  * dark curly beard, warm tan skin, an open gray-and-brown plaid flannel over a navy tee, jeans.
  */
 const SOMOZA_NAVY = "#1d2433";
@@ -1084,9 +1084,8 @@ export const NPC_SOMOZA: NpcDef = {
     gender: "masculine",
     look: "masc-suit", // the jacket is his open flannel, the shirt his navy tee
     outfitColor: SOMOZA_NAVY,
-    hairStyle: "m-explorer",
+    hairStyle: "f-long", // modelled hair down to the collar (like Mr. Stauffer's), under the hat
     hairColor: "#2a1a10", // dark brown
-    extraHair: "shoulder", // dark curls down to the collar under the hat
     skinTone: "#D9A074", // warm tan
     facialHair: "full-beard",
     hat: "farmer",
@@ -1104,35 +1103,41 @@ export const NPC_SOMOZA: NpcDef = {
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Here we go! Welcome, welcome! I'm Mr. Somoza, and I teach 7th grade humanities here in LMU!",
+          "(Sample text) Welcome, welcome! I'm Mr. Somoza, and I teach 7th grade humanities here in LMU!",
           "I am SO excited you're here today. History is full of amazing stories, and my students tell them best!",
         ],
         options: [
           { label: "Show me the assignment!", action: "open-assignment" },
           { label: "What are your students learning?", next: "learn" },
           { label: "Why are you always so excited?", next: "excited" },
-          { label: "Thanks, Mr. Somoza!" },
+          { label: "Thanks, Mr. Somoza!", next: "bye" },
         ],
       },
       learn: {
         paragraphs: [
           "(Sample text) Right now we're traveling back in time to ancient civilizations! My students read primary sources, talk with partners using sentence frames, and then debate big questions.",
-          "Every student gets a voice, especially my English learners. Here we go!",
+          "Every student gets a voice, especially my English learners!",
         ],
         options: [
-          { label: "Here we go! Show me the assignment!", action: "open-assignment" },
+          { label: "Show me the assignment!", action: "open-assignment" },
           { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Somoza!", next: "bye" },
         ],
       },
       excited: {
         paragraphs: [
-          "(Sample text) Because every day is a new adventure! When the bell rings, I say “Here we go!” and my students say it right back.",
-          "Energy is contagious. Bring it, and your students will bring it too!",
+          "(Sample text) Because every day is a new adventure! Energy is contagious: bring it, and your students will bring it too.",
+          "And when it's time to go? You'll hear it. My students know it by heart!",
         ],
         options: [
-          { label: "Here we go! Show me the assignment!", action: "open-assignment" },
           { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Somoza!", next: "bye" },
         ],
+      },
+      bye: {
+        // how Mr. Somoza always says goodbye
+        paragraphs: ["Here we go!"],
+        options: [{ label: "See you, Mr. Somoza!" }],
       },
     },
   },
