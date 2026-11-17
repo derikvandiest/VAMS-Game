@@ -885,7 +885,9 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
         if (y <= start) continue;
         const over = y - start;
         pos.setY(v, start + room * (1 - Math.exp(-over / room)));
-        const shrink = 1 - Math.min(0.35, over * 2.5); // pull the tips in towards the head
+        // pull only the tips that rise well above the crown in towards the head; hair near the head keeps its
+        // shape, so it still reaches up to the hat's brim instead of disappearing into the scalp
+        const shrink = 1 - Math.min(0.35, Math.max(0, over - room * 0.8) * 2.5);
         pos.setX(v, pos.getX(v) * shrink);
         pos.setZ(v, (pos.getZ(v) - 0.04) * shrink + 0.04);
       }

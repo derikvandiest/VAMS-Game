@@ -10091,6 +10091,7 @@ export function startPlaceholderScene(
   (window as any).__debug = {
     setPlayer: (x: number, z: number, y?: number) => { player.position.x = x; player.position.z = z; if (y !== undefined) player.position.y = y; },
     setCamera: (angle: number, elev: number, dist: number) => { camAngle = angle; camElevation = elev; camDistance = dist; },
+    setPlayerVisible: (v: boolean) => { player.visible = v; },
   };
 
   function stop(): void {
