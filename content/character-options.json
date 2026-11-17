@@ -425,6 +425,16 @@
       ],
       "cut": "goatee",
       "npcOnly": true
+    },
+    {
+      "id": "chin-goatee",
+      "name": "Thin Moustache & Chin Goatee",
+      "donor": "Male/Adventurer",
+      "parts": [
+        "Head:Hair"
+      ],
+      "cut": "goatee-narrow",
+      "npcOnly": true
     }
   ],
   "hats": [

@@ -23,6 +23,7 @@ import weberPortrait from "./assets/weber_portrait.png";
 import dominguezPortrait from "./assets/dominguez_portrait.png";
 import larkPortrait from "./assets/lark_portrait.png";
 import gilletPortrait from "./assets/gillet_portrait.png";
+import noroPortrait from "./assets/norori_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -1442,7 +1443,76 @@ export const NPC_GILLET: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLET];
+/**
+ * Mr. Norori, the 6th grade UCLA humanities teacher, standing in front of the whiteboard in his classroom (talk to him
+ * for the assignment). Matches his portrait: short black hair, black rectangular glasses, a thin moustache and chin
+ * goatee, tan skin, a gray Valor polo.
+ */
+const NORORI_GRAY = "#8a8d93";
+export const NPC_NORORI: NpcDef = {
+  id: "npc-norori",
+  room: "classroom",
+  classroomId: "6th-ucla-humanities",
+  x: 0, // set from the classroom's whiteboard
+  z: 0,
+  rotY: 0, // facing the class
+  talkRange: 2.2,
+  chatFirst: true,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mr. Norori",
+    title: "6th Grade Humanities Teacher",
+    noHomeroom: true,
+    gender: "masculine",
+    look: "masc-tee",
+    outfitColor: NORORI_GRAY,
+    noHair: true,
+    extraHair: "buzz", // short and neat, faded sides
+    hairColor: "#141210",
+    facialHair: "chin-goatee",
+    beardColor: "#2b221d",
+    skinTone: "#C99068",
+    glasses: "rect",
+    glassesColor: "#1d2129",
+    shoes: "sneakers",
+    shoeColor: "#1f1f24",
+  },
+  portrait: noroPortrait,
+  // SAMPLE TEXT: replace with Mr. Norori's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hey, welcome in! I'm Mr. Norori, and I teach 6th grade humanities here in UCLA.",
+          "Your assignment is ready whenever you are. Make yourself comfortable.",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "What are your students learning?", next: "learn" },
+          { label: "Thanks, Mr. Norori!", next: "bye" },
+        ],
+      },
+      learn: {
+        paragraphs: [
+          "(Sample text) We're exploring ancient civilizations: how people lived, what they believed, and how their ideas still shape our world today.",
+          "My students analyze primary sources and discuss them with partners using sentence frames, so everyone, including my English learners, can share their thinking.",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Norori!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Take care! Enjoy the rest of the classrooms."],
+        options: [{ label: "See you, Mr. Norori!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLET, NPC_NORORI];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.

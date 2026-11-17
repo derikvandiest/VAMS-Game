@@ -534,7 +534,7 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
    * (lower face, in front of the ears) or only everything else, so beards can be a separate option.
    */
   const GOATEE_HALF_WIDTH = 0.068; // how far out from the middle of the face a goatee reaches (model units)
-  function cutRegion(objs: THREE.Object3D[] | null, cut?: "beard" | "goatee" | "rest" | "rest-nape" | "rest-sideburns"): THREE.Object3D[] | null {
+  function cutRegion(objs: THREE.Object3D[] | null, cut?: "beard" | "goatee" | "goatee-narrow" | "rest" | "rest-nape" | "rest-sideburns"): THREE.Object3D[] | null {
     if (!objs || !cut) return objs;
     for (const o of objs) {
       const mesh = o as THREE.Mesh;
@@ -559,8 +559,9 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
         // the Punk's dark undercut band leaves a patch at the nape: drop it
         if (cut === "rest-nape" && /dark/i.test(matName) && y < 1.68 && z < 0.0) continue;
         // a moustache and goatee: the beard without the cheeks and jaw sides
-        if (cut === "goatee") {
-          if (isBeard && x < GOATEE_HALF_WIDTH) keep.push(idx.getX(t), idx.getX(t + 1), idx.getX(t + 2));
+        if (cut === "goatee" || cut === "goatee-narrow") {
+          // the narrow one is also short: trimmed just under the chin
+          if (isBeard && x < (cut === "goatee" ? GOATEE_HALF_WIDTH : 0.045) && (cut === "goatee" || y > 1.565)) keep.push(idx.getX(t), idx.getX(t + 1), idx.getX(t + 2));
           continue;
         }
         if (isBeard === (cut === "beard")) keep.push(idx.getX(t), idx.getX(t + 1), idx.getX(t + 2));
