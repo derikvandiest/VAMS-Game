@@ -7,7 +7,7 @@ import layout from "../../content/layout.json";
 import { loadSlot, getActiveSlotId } from "./saveManager";
 import { ROOMS } from "./rooms";
 import { teacherFor } from "./assignments";
-import { pencilQuest, PENCILS_NEEDED } from "./inventory";
+import { pencilQuest, PENCILS_NEEDED, OPTIONAL, optionalDone } from "./inventory";
 
 let overlay: HTMLElement | null = null;
 
@@ -60,6 +60,12 @@ export function openAgenda(playerName: string): void {
           : "You've finished the PD. Thank you for playing!";
 
   const q = pencilQuest();
+  const optDone = new Set(optionalDone());
+  const optHow: Record<string, string> = {
+    basket: "Grab a basketball from the cart by the courts and shoot (E or click) until one goes in.",
+    goal: "Kick the soccer ball into either goal on the field (hold Shift while running for a harder kick).",
+    cup: "With your backpack, walk up to a drinking fountain and press E to fill your Stanley cup.",
+  };
   const surveyDone = done.has("obj_survey");
   const today = new Date().toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
 
@@ -99,7 +105,9 @@ export function openAgenda(playerName: string): void {
         </ol>
 
         <h3>Optional objectives</h3>
-        <ul class="ag-opt">
+        <ul class="ag-opt">${OPTIONAL.map(
+          (o) => `<li>${box(optDone.has(o.id))}<div><b>${esc(o.title)}</b><small>${esc(optDone.has(o.id) ? o.done : optHow[o.id])}</small></div></li>`
+        ).join("")}
           <li>${box(q.done)}<div><b>Fill your pencil pouch</b> <em>${q.active ? `${Math.min(q.found.length, PENCILS_NEEDED)}/${PENCILS_NEEDED}` : "not started"}</em>
             <small>${
               q.active

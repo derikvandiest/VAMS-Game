@@ -99,6 +99,8 @@ const state: {
   pencilsFound: string[]; // which of the pencils were picked up
   /** Where this player's pencils are: 5 random homeroom classrooms, each on a student desk or the floor */
   pencilSpots: PencilSpot[];
+  /** The other optional objectives done so far: a basket, a soccer goal, a filled Stanley cup */
+  optDone: OptionalId[];
 } = {
   quick: new Array(QUICK_SLOTS).fill(null),
   bag: new Array(BAG_SLOTS).fill(null),
@@ -107,6 +109,7 @@ const state: {
   pencilQuest: false,
   pencilsFound: [],
   pencilSpots: [],
+  optDone: [],
   backpack: null, // the color of the backpack the player picked up (null = none yet: no inventory)
   starterGiven: false,
   showBackpack: true, // drawn on the character (it can be hidden: the inventory works either way)
@@ -142,6 +145,7 @@ function load(): void {
   state.pencilQuest = false;
   state.pencilsFound = [];
   state.pencilSpots = [];
+  state.optDone = [];
   try {
     const raw = localStorage.getItem(storageKey());
     if (raw) {
@@ -155,6 +159,7 @@ function load(): void {
       state.showBackpack = d.showBackpack !== false;
       state.pencilQuest = d.pencilQuest === true;
       state.pencilsFound = Array.isArray(d.pencilsFound) ? d.pencilsFound.filter((x: unknown) => typeof x === "string") : [];
+      state.optDone = Array.isArray(d.optDone) ? d.optDone.filter((x: unknown): x is OptionalId => OPTIONAL.some((o) => o.id === x)) : [];
       state.pencilSpots = Array.isArray(d.pencilSpots)
         ? d.pencilSpots.filter((s: PencilSpot) => s && typeof s.id === "string" && typeof s.room === "string")
         : [];
@@ -222,7 +227,10 @@ function transform(fromId: string, toId: string): boolean {
 export function fillWaterBottle(): boolean {
   if (!state.backpack) return false;
   const filled = transform("water-bottle-empty", "water-bottle-full");
-  if (filled) toast("💧 Stanley cup filled!");
+  if (filled) {
+    toast("💧 Stanley cup filled!");
+    completeOptional("cup");
+  }
   return filled;
 }
 
@@ -330,7 +338,32 @@ export function collectPencil(id: string): boolean {
   return true;
 }
 
-/** The optional objectives line under the main objective */
+// ---------------------------------------------------------------------------------------------------------------
+// The other optional objectives: make a basket, score a soccer goal, fill your Stanley cup
+// ---------------------------------------------------------------------------------------------------------------
+export type OptionalId = "basket" | "goal" | "cup";
+export const OPTIONAL: Array<{ id: OptionalId; title: string; todo: string; done: string }> = [
+  { id: "basket", title: "Make a basket", todo: "Make 1 basket at the basketball court", done: "Basket made 🏀" },
+  { id: "goal", title: "Score a goal", todo: "Score a goal at the soccer field", done: "Goal scored ⚽" },
+  { id: "cup", title: "Fill your Stanley cup", todo: "Fill up your Stanley cup at a drinking fountain", done: "Stanley cup filled 💧" },
+];
+
+/** Which of these optional objectives are done */
+export function optionalDone(): OptionalId[] {
+  return [...state.optDone];
+}
+
+/** Mark an optional objective done (once): a toast and the line under the main objective update */
+export function completeOptional(id: OptionalId): void {
+  if (state.optDone.includes(id)) return;
+  state.optDone.push(id);
+  save();
+  renderOptional();
+  const o = OPTIONAL.find((x) => x.id === id)!;
+  window.setTimeout(() => toast(`⭐ Optional objective complete: ${o.title}!`), 900); // after the GOAL!/BUCKET! moment
+}
+
+/** The optional objectives line under the main objective: the next one to do, and how many are done */
 function renderOptional(): void {
   let el = document.getElementById("optional-hud");
   if (!bar) {
@@ -342,17 +375,19 @@ function renderOptional(): void {
     el.id = "optional-hud";
     document.body.appendChild(el);
   }
-  if (!state.pencilQuest) {
-    el.style.display = "none";
-    return;
-  }
   const n = Math.min(state.pencilsFound.length, PENCILS_NEEDED);
-  const done = n >= PENCILS_NEEDED;
+  const pencilsDone = n >= PENCILS_NEEDED;
+  const total = OPTIONAL.length + 1; // + the pencil pouch
+  const doneCount = state.optDone.length + (pencilsDone ? 1 : 0);
+  const next = OPTIONAL.find((o) => !state.optDone.includes(o.id));
+  let text: string;
+  if (state.pencilQuest && !pencilsDone) text = `Find 5 sharpened pencils for your pencil pouch (${n}/${PENCILS_NEEDED})`;
+  else if (next) text = next.todo;
+  else if (!state.pencilQuest) text = "Get a pencil pouch from the storage room in the MPR";
+  else text = "All optional objectives complete ✓";
   el.style.display = "flex";
-  el.classList.toggle("done", done);
-  el.innerHTML = `<span class="opt-tag">OPTIONAL</span><span class="opt-text">${
-    done ? "Pencil pouch filled ✓" : "Find 5 sharpened pencils hidden in the classrooms for your pencil pouch"
-  }</span><span class="opt-count">${n}/${PENCILS_NEEDED}</span>`;
+  el.classList.toggle("done", doneCount >= total);
+  el.innerHTML = `<span class="opt-tag">OPTIONAL</span><span class="opt-text">${text}</span><span class="opt-count">${doneCount}/${total}</span>`;
 }
 
 // ---------------------------------------------------------------------------------------------------------------

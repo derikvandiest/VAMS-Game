@@ -42,7 +42,7 @@ import {
 } from "./classrooms";
 import { createAvatarRig, GAME_AVATAR_SCALE, AvatarRig } from "./avatar";
 import { openMap } from "./map";
-import { equipBackpack, backpackColor, fillWaterBottle, countItem, takePencilPouch, pencilQuest, collectPencil, borrowChromebook, returnChromebook } from "./inventory";
+import { equipBackpack, backpackColor, fillWaterBottle, countItem, takePencilPouch, pencilQuest, collectPencil, borrowChromebook, returnChromebook, completeOptional } from "./inventory";
 import { loadCharacterProfile, onProfileChange } from "./profile";
 import { initSettingsModal } from "./settings";
 
@@ -4466,6 +4466,8 @@ export function startPlaceholderScene(
   let bballDribblePhase = 0;
   let basketCelebrationTimer = 0;
   let lastBballY = BASKETBALL_GROUND_Y;
+  let lastBballX = 0; // where the ball was a frame ago (to find where it crossed the rim's height)
+  let lastBballZ = 0;
 
   // Basket celebration floating banner
   const basketBanner = document.createElement("div");
@@ -4507,6 +4509,7 @@ export function startPlaceholderScene(
   function shootBasketball() {
     if (!bballHeld) return;
     bballHeld = false;
+    touchedByMe.basket = true;
     bballShootAnimTimer = 0.45;
 
     // Determine target hoop aligned with player facing orientation
@@ -4551,7 +4554,9 @@ export function startPlaceholderScene(
     const tFall = Math.sqrt((2 * apexAboveRim) / BASKETBALL_GRAVITY);
     const totalFlightTime = tRise + tFall;
 
-    const vH = distH / totalFlightTime;
+    // the air slows the ball as it flies (bballVel *= 0.998 per 1/60 s): throw it a little harder to land on the rim
+    const drag = -60 * Math.log(0.998);
+    const vH = (distH * drag) / (1 - Math.exp(-drag * totalFlightTime));
     const nx = distH > 0.001 ? dx / distH : facingX;
     const nz = distH > 0.001 ? dz / distH : facingZ;
 
@@ -8738,6 +8743,8 @@ export function startPlaceholderScene(
   // Resetting the balls (stepping on the vent or pressing B) asks for confirmation first
   /** Put the balls back: "soccer" = only the soccer ball (the field's reset grate), "all" = the basketball too */
   function doBallReset(fromNetwork = false, which: "soccer" | "all" = "all"): void {
+    touchedByMe.soccer = false;
+    if (which === "all") touchedByMe.basket = false;
     if (mp && !fromNetwork) mp.emit("world:balls:reset", { which });
     ballSync.soccer.own = !mp;
     ballSync.soccer.ownerId = null;
@@ -8777,6 +8784,10 @@ export function startPlaceholderScene(
   type BallSync = { own: boolean; ownerId: string | null; target: THREE.Vector3; vel: THREE.Vector3; held: boolean; hasState: boolean; lastSend: number; lastClaim: number };
   const newBallSync = (): BallSync => ({ own: !mp, ownerId: null, target: new THREE.Vector3(), vel: new THREE.Vector3(), held: false, hasState: false, lastSend: 0, lastClaim: 0 });
   const ballSync = { soccer: newBallSync(), basket: newBallSync() };
+  /** This player was the last to kick the soccer ball / shoot the basketball (for the optional objectives) */
+  const touchedByMe = { soccer: false, basket: false };
+  /** A basket or goal counts for this player's optional objective if they sent the ball there themselves */
+  const myScore = (which: "soccer" | "basket"): boolean => touchedByMe[which] && (!mp || ballSync[which].own);
   let carSendTimer = 0;
 
   /** Take over simulating a ball (called when this player touches it) */
@@ -8876,6 +8887,7 @@ export function startPlaceholderScene(
     if (!b) return;
     b.ownerId = d.owner;
     b.own = d.owner === mp!.id;
+    if (!b.own) touchedByMe[d.ball] = false; // someone else has the ball now
     if (!b.own && d.ball === "basket" && bballHeld) {
       bballHeld = false; // someone took the ball away
     }
@@ -9407,6 +9419,7 @@ export function startPlaceholderScene(
       const cdist = Math.hypot(cdx, cdz);
       if (cdist < 2.6 && ballPos.y <= 1.5) {
         claimBall("soccer");
+        touchedByMe.soccer = true;
         const cnx = cdist > 0.0001 ? cdx / cdist : 1;
         const cnz = cdist > 0.0001 ? cdz / cdist : 0;
         const carFwdX = Math.cos(drivingCar.group.rotation.y);
@@ -9425,6 +9438,7 @@ export function startPlaceholderScene(
 
       if (distToPlayer < minBallDist && playerNearGround) {
         claimBall("soccer");
+        touchedByMe.soccer = true;
         const bnx = distToPlayer > 0.0001 ? bdx / distToPlayer : 0;
         const bnz = distToPlayer > 0.0001 ? bdz / distToPlayer : 1;
         const overlap = minBallDist - distToPlayer;
@@ -9534,6 +9548,7 @@ export function startPlaceholderScene(
         }
         triggerGoal("North Goal");
         mp?.emit("world:event", { type: "goal", text: "North Goal" });
+        if (myScore("soccer")) completeOptional("goal");
       }
     }
     if (ballPos.x > 24.5 && ballPos.x < 30.5 && ballPos.y < 2.5) {
@@ -9545,6 +9560,7 @@ export function startPlaceholderScene(
         }
         triggerGoal("South Goal");
         mp?.emit("world:event", { type: "goal", text: "South Goal" });
+        if (myScore("soccer")) completeOptional("goal");
       }
     }
 
@@ -9697,6 +9713,8 @@ export function startPlaceholderScene(
     } else {
       // 3) Free Flight / Ground Physics
       lastBballY = bballPos.y;
+      lastBballX = bballPos.x;
+      lastBballZ = bballPos.z;
 
       // Gravity & air resistance
       bballVel.y -= BASKETBALL_GRAVITY * dt;
@@ -9704,7 +9722,8 @@ export function startPlaceholderScene(
       bballVel.z *= Math.pow(0.998, dt * 60);
 
       bballPos.x += bballVel.x * dt;
-      bballPos.y += bballVel.y * dt;
+      // exact under gravity whatever the frame rate (a slow frame used to drop the ball short of the rim)
+      bballPos.y += (bballVel.y + 0.5 * BASKETBALL_GRAVITY * dt) * dt;
       bballPos.z += bballVel.z * dt;
 
       // Ball rotation & spin integration
@@ -9800,13 +9819,18 @@ export function startPlaceholderScene(
 
         // Basket scoring detection (ball passes downward through the rim circle)
         if (lastBballY >= 3.05 && bballPos.y < 3.05 && bballVel.y < 0) {
-          const sDist = Math.hypot(bballPos.x - h.rimX, bballPos.z - h.rimZ);
+          // where the ball crossed the rim's height between the two frames (a slow frame rate can move it a long way)
+          const f = (lastBballY - 3.05) / Math.max(1e-6, lastBballY - bballPos.y);
+          const crossX = lastBballX + (bballPos.x - lastBballX) * f;
+          const crossZ = lastBballZ + (bballPos.z - lastBballZ) * f;
+          const sDist = Math.hypot(crossX - h.rimX, crossZ - h.rimZ);
           if (sDist < 0.18) {
             // SWISH!
             const isThreePointer = Math.hypot(player.position.x - h.rimX, player.position.z - h.rimZ) > 7.0;
             const bucketText = isThreePointer ? "🏀 THREE-POINTER! 🏀" : (sDist < 0.10 ? "🏀 SWISH! PERFECT BUCKET! 🏀" : "🏀 BUCKET! +2 PTS 🏀");
             triggerBucket(bucketText);
             mp?.emit("world:event", { type: "bucket", text: bucketText });
+            if (myScore("basket")) completeOptional("basket");
             // Net dampening
             bballVel.y *= 0.60;
             bballVel.x *= 0.35;
@@ -10139,6 +10163,15 @@ export function startPlaceholderScene(
     setPlayer: (x: number, z: number, y?: number) => { player.position.x = x; player.position.z = z; if (y !== undefined) player.position.y = y; },
     setCamera: (angle: number, elev: number, dist: number) => { camAngle = angle; camElevation = elev; camDistance = dist; },
     setPlayerVisible: (v: boolean) => { player.visible = v; },
+    /** Testing aid: where the basketball is and whether the player holds it */
+    bballInfo: () => ({ x: bballPos.x, y: bballPos.y, z: bballPos.z, held: bballHeld, rotY: player.rotation.y, px: player.position.x, pz: player.position.z }),
+    /** Testing aid: put a ball somewhere (still), e.g. setBall("soccer", x, y, z) */
+    setBall: (which: "soccer" | "basket", x: number, y: number, z: number) => {
+      const pos = which === "soccer" ? ballPos : bballPos;
+      const vel = which === "soccer" ? ballVel : bballVel;
+      pos.set(x, y, z);
+      vel.set(0, 0, 0);
+    },
     /** Fixed camera at (x, y, z) looking at (tx, ty, tz); call with no arguments to go back to the normal camera */
     lookFrom: (...v: number[]) => { debugCam = v.length === 6 ? v : null; },
   };
