@@ -21,6 +21,7 @@ import daniPortrait from "./assets/dani_portrait.png";
 import somozaPortrait from "./assets/somoza_portrait.png";
 import weberPortrait from "./assets/weber_portrait.png";
 import dominguezPortrait from "./assets/dominguez_portrait.png";
+import larkPortrait from "./assets/lark_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -53,6 +54,10 @@ export interface NpcDef {
   chatFirst?: boolean;
   /** No floating name tag above the head (generic, unnamed characters) */
   noNameTag?: boolean;
+  /** Standing height (e.g. on a stage); default 0 */
+  y?: number;
+  /** Classroom teacher: how much further from the whiteboard (toward the class) than the usual 1.3 m */
+  offsetZ?: number;
   /** A special standing pose (applied after the animation every frame): "keyboard" = playing a keyboard in front */
   pose?: "keyboard";
   /** Something held in the right hand */
@@ -1291,7 +1296,84 @@ export const NPC_DOMINGUEZ: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ];
+/**
+ * Mr. Lark, the theater teacher, on the stage at the front of the theater (in front of the whiteboard). Matches his
+ * portrait: short curly brown hair, light stubble, a white collared shirt with a black vest.
+ */
+export const NPC_LARK: NpcDef = {
+  id: "npc-lark",
+  room: "classroom",
+  classroomId: "theater",
+  x: 0, // set from the classroom's whiteboard
+  z: 0,
+  offsetZ: 0.9, // toward the front of the stage
+  y: 0.45, // standing on the stage
+  rotY: 0, // facing the audience
+  talkRange: 2.4,
+  chatFirst: true,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mr. Lark",
+    title: "Theater Teacher",
+    noHomeroom: true,
+    gender: "masculine",
+    look: "masc-suit", // the jacket is his vest (white shirt sleeves), the shirt his white collar
+    outfitColor: "#18181b",
+    hairStyle: "m-beach", // short and tousled
+    hairColor: "#7a4a26",
+    facialHair: "beard", // light stubble
+    skinTone: "#F1C6A6",
+    glasses: "none",
+    shoes: "dress",
+    shoeColor: "#1f1f24",
+    partColors: { White: "#f4f4f2", Tie: "#f4f4f2", "Legs:Suit": "#2b2d33" },
+    polkaDots: { parts: ["Body:Suit"], base: "#18181b", dot: "#f1f1ef", shape: "sleeves" },
+  },
+  portrait: larkPortrait,
+  // SAMPLE TEXT: replace with Mr. Lark's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Welcome to the Theater! I'm Mr. Lark, the theater teacher. Have a seat, rehearsal is about to begin.",
+          "See the colored tape on the stage? Those are our spike marks: every actor knows exactly where to stand.",
+        ],
+        options: [
+          { label: "What happens in the Theater?", next: "about" },
+          { label: "What are the tape marks for?", next: "tape" },
+          { label: "Thanks, Mr. Lark!", next: "bye" },
+        ],
+      },
+      about: {
+        paragraphs: [
+          "(Sample text) Our students rehearse plays, practice public speaking, and put on shows for the whole school. It's a great place to try something new.",
+          "Theater is wonderful for English learners: they practice speaking, listening, and expression, all with a script to support them.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Lark!", next: "bye" },
+        ],
+      },
+      tape: {
+        paragraphs: [
+          "(Sample text) Each color is a different actor or a different scene. When the lights go down, you find your color and hit your mark.",
+          "Upstage is the back, downstage is the front, and stage left is the actor's left. Check the poster on the wall!",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Lark!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Break a leg out there! \uD83C\uDFAD"],
+        options: [{ label: "See you, Mr. Lark!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.

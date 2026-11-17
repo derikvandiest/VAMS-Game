@@ -7484,7 +7484,7 @@ export function startPlaceholderScene(
 
   // NPCs: in the MPR (they hide and show with the room) or outdoors on the campus
   /** Non-homeroom rooms that can still be entered (no assignment inside) */
-  const ENTERABLE_ROOMS = new Set(["music"]);
+  const ENTERABLE_ROOMS = new Set(["music", "theater"]);
   /** Turn an arm bone so its child (the next joint) points along a world direction (used for NPC arm poses) */
   const aimBone = (bone: THREE.Object3D, child: THREE.Object3D, dirW: THREE.Vector3): void => {
     bone.updateWorldMatrix(true, true);
@@ -7505,9 +7505,9 @@ export function startPlaceholderScene(
     if (inst) {
       // in front of the whiteboard, facing the class
       def.x = inst.whiteboard.x;
-      def.z = inst.whiteboard.z + 1.3;
+      def.z = inst.whiteboard.z + 1.3 + (def.offsetZ ?? 0);
     }
-    npcRig.player.position.set(def.x, 0, def.z);
+    npcRig.player.position.set(def.x, def.y ?? 0, def.z); // y: standing on a stage
     npcRig.player.rotation.y = def.rotY;
     const solid = { x: def.x, z: def.z, w: 0.7, d: 0.7, yBase: 0, yTop: 2.6 };
     if (def.room === "classroom") {
@@ -8426,7 +8426,7 @@ export function startPlaceholderScene(
             const d = Math.hypot(player.position.x - inst.campusDoor.x, player.position.z - inst.campusDoor.z);
             if (d <= 2.4) {
               if (cId === "eld") openEldDoor();
-              else if (DOOR_TALK[cId]) showDialog(DOOR_TALK[cId].speaker, DOOR_TALK[cId].tree); // Theater / Music room: their teachers greet you at the door
+              else if (DOOR_TALK[cId]) showDialog(DOOR_TALK[cId].speaker, DOOR_TALK[cId].tree); // a closed room whose teacher greets you at the door
               else if (roomById(cId)?.type === "stamp" || ENTERABLE_ROOMS.has(cId)) enterClassroom(cId); // the Learning Center stays closed (the hint says so)
               return;
             }

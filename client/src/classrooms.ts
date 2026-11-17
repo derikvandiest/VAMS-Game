@@ -921,11 +921,29 @@ function subjectPosterTexture(subject: string, accent: string): THREE.CanvasText
     ctx.lineWidth = 14; ctx.strokeStyle = accent; ctx.strokeRect(7, 7, 498, 586);
     ctx.fillStyle = "#ffffff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.font = "900 46px Arial Black, Arial, sans-serif";
-    const title = subject === "Music" ? "NOTE VALUES" : subject === "Science" ? "PERIODIC TABLE" : subject === "Math" ? "MATH TALK" : subject === "English" ? "READING STRATEGIES" : subject === "Humanities" ? "HISTORY TIMELINE" : "ACADEMIC TALK";
+    const title = subject === "Theater" ? "STAGE AREAS" : subject === "Music" ? "NOTE VALUES" : subject === "Science" ? "PERIODIC TABLE" : subject === "Math" ? "MATH TALK" : subject === "English" ? "READING STRATEGIES" : subject === "Humanities" ? "HISTORY TIMELINE" : "ACADEMIC TALK";
     ctx.font = `900 ${title.length > 14 ? 38 : 46}px Arial Black, Arial, sans-serif`;
     ctx.fillText(title, 256, 50);
     ctx.textAlign = "left"; ctx.fillStyle = "#1f2937";
-    if (subject === "Music") {
+    if (subject === "Theater") {
+      // the stage seen from above: the 9 areas, with the audience at the bottom
+      const gx = 40, gy = 130, gw = 432, gh = 330;
+      const labels = [["UR", "UC", "UL"], ["R", "C", "L"], ["DR", "DC", "DL"]];
+      for (let r2 = 0; r2 < 3; r2++) for (let c = 0; c < 3; c++) {
+        ctx.fillStyle = (r2 + c) % 2 ? "#fde7ea" : "#fff7f8";
+        ctx.fillRect(gx + (c * gw) / 3, gy + (r2 * gh) / 3, gw / 3, gh / 3);
+        ctx.strokeStyle = accent; ctx.lineWidth = 3;
+        ctx.strokeRect(gx + (c * gw) / 3, gy + (r2 * gh) / 3, gw / 3, gh / 3);
+        ctx.fillStyle = "#1f2937"; ctx.font = "900 40px Arial Black, Arial"; ctx.textAlign = "center";
+        ctx.fillText(labels[r2][c], gx + ((c + 0.5) * gw) / 3, gy + ((r2 + 0.5) * gh) / 3 + 14);
+      }
+      ctx.textAlign = "center"; ctx.fillStyle = accent; ctx.font = "bold 26px Arial";
+      ctx.fillText("UPSTAGE", 256, gy - 14);
+      ctx.fillText("↓ AUDIENCE ↓", 256, gy + gh + 40);
+      ctx.font = "20px Arial"; ctx.fillStyle = "#1f2937";
+      ctx.fillText("Stage left & right are the ACTOR's left & right", 256, gy + gh + 80);
+      ctx.textAlign = "left";
+    } else if (subject === "Music") {
       // a staff with the note values and their beats
       const notes: Array<[string, string, boolean, boolean, number]> = [["Whole", "4 beats", false, false, 0], ["Half", "2 beats", false, true, 0], ["Quarter", "1 beat", true, true, 0], ["Eighth", "1/2 beat", true, true, 1]];
       notes.forEach(([name, beats, filled, stem, flags], i) => {
@@ -1149,6 +1167,8 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
 
   // 1) FLOOR (the music room has gray carpet)
   const isMusic = roomData.id === "music";
+  const isTheater = roomData.id === "theater";
+  const noShelves = isMusic || isTheater; // these rooms use the west wall for guitars / costumes
   const floorMat = new THREE.MeshStandardMaterial({
     map: isMusic ? carpetTexture() : makeClassroomFloorTexture(roomData),
     roughness: isMusic ? 0.95 : 0.45,
@@ -1388,7 +1408,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     group.add(g);
   }
   // subject poster left of the whiteboard
-  wallPanel(subjectPosterTexture(isMusic ? "Music" : roomData.subject ?? "", accentHex), "N", worldX - 4.85, 2.15, 1.5, 1.76);
+  wallPanel(subjectPosterTexture(isMusic ? "Music" : isTheater ? "Theater" : roomData.subject ?? "", accentHex), "N", worldX - 4.85, 2.15, 1.5, 1.76);
   // academic-talk sentence frames (west wall, front) and student work (west wall, above the laptop cart)
   wallPanel(bulletinTexture("talk", "ACADEMIC TALK", accentHex, lightHex, index + 1), "W", worldZ - 4.15, 1.75, 2.7, 1.35);
   wallPanel(bulletinTexture("work", "STUDENT WORK", accentHex, lightHex, index + 101), "W", worldZ + 2.1, 2.55, 2.8, 1.4);
@@ -2105,35 +2125,165 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     }
   }
 
+  /**
+   * The theater: a raised stage across the front (the whiteboard stays above it), red side curtains and a valance,
+   * spike tape on the stage floor marking actors' positions (colored X's, a center line, a glow-tape edge), a taped
+   * acting box on the floor in front, stage-light trees at the front corners, audience chairs in rows facing the stage,
+   * and a costume rack with a prop trunk along the west wall.
+   */
+  function buildTheaterRoom(): void {
+    const SX = worldX - 0.6, SW = 7.0; // stage centre x and width
+    const Z0 = minZ + 0.15, Z1 = minZ + 3.3; // back and front edge of the stage
+    const SH = 0.45; // stage height
+    const SZ = (Z0 + Z1) / 2, SD = Z1 - Z0;
+    const deckMat = new THREE.MeshStandardMaterial({ color: 0x2a2320, roughness: 0.75 }); // painted black-brown deck
+    const fasciaMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
+    const velvet = new THREE.MeshStandardMaterial({ color: 0x7a0f1c, roughness: 0.9 });
+    const black = new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.5, metalness: 0.3 });
+
+    // --- the stage deck, front fascia, nosing and steps (stage right, in front) ---
+    {
+      const st = new THREE.Group();
+      part(st, deckMat, SW, 0.06, SD, SX, SH - 0.03, SZ);
+      part(st, fasciaMat, SW, SH - 0.06, 0.04, SX, (SH - 0.06) / 2, Z1 - 0.02);
+      part(st, fasciaMat, 0.04, SH - 0.06, SD, SX - SW / 2 + 0.02, (SH - 0.06) / 2, SZ);
+      part(st, fasciaMat, 0.04, SH - 0.06, SD, SX + SW / 2 - 0.02, (SH - 0.06) / 2, SZ);
+      part(st, woodEdgeMat, SW + 0.02, 0.03, 0.06, SX, SH - 0.015, Z1); // nosing
+      // two steps up at stage right (the audience's left... the actor's right = the room's west side)
+      for (let k = 0; k < 2; k++) {
+        const h = (SH * (k + 1)) / 3;
+        part(st, deckMat, 1.0, h, 0.32, SX - SW / 2 + 0.75, h / 2, Z1 + 0.16 + (1 - k) * 0.32);
+      }
+      group.add(st);
+      solids.push({ x: SX, z: SZ, w: SW, d: SD, yBase: 0, yTop: SH });
+    }
+
+    // --- spike tape on the stage: colored X marks, a center line, glow tape along the edge ---
+    {
+      const tapeColors = [0xfacc15, 0xf472b6, 0x38bdf8, 0x4ade80, 0xffffff, 0xfb923c];
+      const tapeMats = tapeColors.map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6 }));
+      const tape = new THREE.Group();
+      const y = SH + 0.004;
+      const strip = (m: THREE.Material, x: number, z: number, len: number, rot: number, w = 0.05, yy = y) => {
+        const s = new THREE.Mesh(new THREE.PlaneGeometry(len, w), m);
+        s.rotation.x = -Math.PI / 2;
+        s.rotation.z = rot;
+        s.position.set(x, yy, z);
+        s.receiveShadow = true;
+        tape.add(s);
+      };
+      const cross = (m: THREE.Material, x: number, z: number, yy = y) => {
+        strip(m, x, z, 0.32, Math.PI / 4, 0.05, yy);
+        strip(m, x, z, 0.32, -Math.PI / 4, 0.05, yy);
+      };
+      // actors' marks spread over the nine stage areas
+      const marks: Array<[number, number]> = [[-2.4, 0.9], [-0.9, 0.6], [1.2, 0.8], [-1.8, 1.9], [0.4, 1.7], [2.1, 1.9], [-2.6, 2.7], [-0.5, 2.6], [1.6, 2.7]];
+      marks.forEach(([mx, mz], i) => cross(tapeMats[i % tapeMats.length], SX + mx, Z0 + mz));
+      // a dashed center line from upstage to downstage, and glow tape along the front edge
+      for (let z = Z0 + 0.3; z < Z1 - 0.2; z += 0.4) strip(tapeMats[4], SX, z, 0.22, Math.PI / 2, 0.035);
+      strip(new THREE.MeshStandardMaterial({ color: 0xd9ffd0, emissive: 0x7cff6b, emissiveIntensity: 0.35 }), SX, Z1 - 0.05, SW - 0.1, 0, 0.04);
+      // a taped acting box on the classroom floor in front of the stage, with its own marks
+      const fy = 0.006, bx = SX, bz = Z1 + 1.35, bw = 3.6, bd = 1.6;
+      strip(tapeMats[0], bx, bz - bd / 2, bw, 0, 0.05, fy);
+      strip(tapeMats[0], bx, bz + bd / 2, bw, 0, 0.05, fy);
+      strip(tapeMats[0], bx - bw / 2, bz, bd, Math.PI / 2, 0.05, fy);
+      strip(tapeMats[0], bx + bw / 2, bz, bd, Math.PI / 2, 0.05, fy);
+      cross(tapeMats[1], bx - 0.9, bz, fy);
+      cross(tapeMats[2], bx + 0.9, bz, fy);
+      group.add(tape);
+    }
+
+    // --- red velvet side curtains (legs) and a valance above the whiteboard ---
+    {
+      const legGeo = new THREE.CylinderGeometry(0.09, 0.09, 3.35, 8, 1, true);
+      for (const side of [-1, 1]) {
+        const x0 = SX + side * (SW / 2 - 0.35);
+        for (let k = 0; k < 6; k++) {
+          const fold = new THREE.Mesh(legGeo, velvet);
+          fold.position.set(x0 - side * k * 0.11, SH + 1.67, Z0 + 0.25 + (k % 2) * 0.05);
+          fold.castShadow = true;
+          group.add(fold);
+        }
+      }
+      const val = new THREE.Group();
+      for (let k = 0; k < 40; k++) {
+        const f = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.55, 8, 1, true), velvet);
+        f.position.set(SX - SW / 2 + 0.1 + (k * (SW - 0.2)) / 39, 3.62, minZ + 0.22 + (k % 2) * 0.05);
+        val.add(f);
+      }
+      part(val, new THREE.MeshStandardMaterial({ color: 0xd4a72c, metalness: 0.7, roughness: 0.3 }), SW, 0.05, 0.05, SX, 3.33, minZ + 0.3); // gold trim
+      group.add(val);
+    }
+
+    // --- stage-light trees at the front corners of the stage, aimed at it ---
+    for (const side of [-1, 1]) {
+      const lt = new THREE.Group();
+      lt.position.set(SX + side * (SW / 2 + 0.55), 0, Z1 + 0.5);
+      for (let k = 0; k < 3; k++) {
+        const a = (k / 3) * Math.PI * 2;
+        const leg = part(lt, black, 0.025, 0.6, 0.025, Math.sin(a) * 0.22, 0.25, Math.cos(a) * 0.22, UC);
+        leg.rotation.set(Math.cos(a) * 0.7, 0, -Math.sin(a) * 0.7);
+      }
+      part(lt, black, 0.04, 2.3, 0.04, 0, 1.25, 0, UC);
+      part(lt, black, 0.7, 0.04, 0.04, 0, 2.35, 0, UC).rotation.z = Math.PI / 2;
+      for (const off of [-0.3, 0.3]) {
+        const can = new THREE.Group();
+        can.position.set(off, 2.25, 0);
+        part(can, black, 0.16, 0.26, 0.16, 0, 0, 0, UC);
+        const lens = new THREE.Mesh(new THREE.CircleGeometry(0.07, 16), new THREE.MeshStandardMaterial({ color: 0xfff3c4, emissive: 0xffd77a, emissiveIntensity: 0.9 }));
+        lens.position.y = -0.131;
+        lens.rotation.x = Math.PI / 2;
+        can.add(lens);
+        can.rotation.set(-0.9, side * 0.6, 0); // tilted down toward the stage
+        lt.add(can);
+      }
+      group.add(lt);
+      solids.push({ x: SX + side * (SW / 2 + 0.55), z: Z1 + 0.5, w: 0.5, d: 0.5, yBase: 0, yTop: 2.5 });
+    }
+
+    // --- audience: three rows of chairs facing the stage ---
+    for (let row = 0; row < 3; row++) {
+      const z = worldZ + 1.2 + row * 1.2;
+      for (let c = -2; c <= 2; c++) addStudentChair(SX + c * 0.95 + (row % 2 ? 0.45 : 0), z, Math.PI);
+    }
+
+    // --- costume rack and prop trunk along the west wall ---
+    {
+      const rack = new THREE.Group();
+      const rx = minX + 0.55, rz0 = worldZ - 2.2, rz1 = worldZ + 0.6;
+      for (const z of [rz0, rz1]) {
+        part(rack, metalGrayMat, 0.03, 1.7, 0.03, rx, 0.85, z, UC);
+        part(rack, metalGrayMat, 0.5, 0.03, 0.03, rx, 0.05, z, UC).rotation.y = Math.PI / 2;
+      }
+      part(rack, metalGrayMat, 0.025, rz1 - rz0, 0.025, rx, 1.7, (rz0 + rz1) / 2, UC).rotation.x = Math.PI / 2;
+      const costumeColors = [0x7a0f1c, 0x1e3a8a, 0x166534, 0xfacc15, 0x6b21a8, 0x111111, 0xf5f5f4, 0xb45309, 0xdb2777, 0x0f766e];
+      const n = 11;
+      for (let k = 0; k < n; k++) {
+        const z = rz0 + 0.15 + (k * (rz1 - rz0 - 0.3)) / (n - 1);
+        const m = new THREE.MeshStandardMaterial({ color: costumeColors[k % costumeColors.length], roughness: 0.85 });
+        const long = k % 3 === 0;
+        part(rack, m, 0.42, long ? 1.15 : 0.75, 0.07, rx, 1.62 - (long ? 1.15 : 0.75) / 2, z); // garment
+        part(rack, metalGrayMat, 0.36, 0.02, 0.02, rx, 1.64, z); // hanger
+      }
+      group.add(rack);
+      solids.push({ x: rx, z: (rz0 + rz1) / 2, w: 0.6, d: rz1 - rz0 + 0.2, yBase: 0, yTop: 1.8 });
+      // prop trunk (south of the rack) with a crown and a sword on top
+      const tr = new THREE.Group();
+      tr.position.set(minX + 0.5, 0, worldZ + 2.0);
+      part(tr, new THREE.MeshStandardMaterial({ color: 0x5b3a1e, roughness: 0.6 }), 0.6, 0.5, 1.0, 0, 0.25, 0);
+      for (const z of [-0.35, 0.35]) part(tr, metalGrayMat, 0.62, 0.52, 0.04, 0, 0.26, z);
+      part(tr, new THREE.MeshStandardMaterial({ color: 0xd4a72c, metalness: 0.7, roughness: 0.3 }), 0.16, 0.08, 0.16, 0.05, 0.54, -0.2, UC);
+      part(tr, metalGrayMat, 0.03, 0.02, 0.7, -0.05, 0.51, 0.15);
+      group.add(tr);
+      solids.push({ x: minX + 0.5, z: worldZ + 2.0, w: 0.7, d: 1.1, yBase: 0, yTop: 0.6 });
+    }
+  }
+
   // Room-specific layouts for all classrooms
   if (roomData.id === "music") {
     buildMusicRoom();
   } else if (roomData.id === "theater") {
-    // Raised mini rehearsal stage + Director table
-    const stageMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.5 });
-    const stageMesh = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.28, 3.2), stageMat);
-    stageMesh.position.set(worldX - 0.4, 0.14, minZ + 2.2);
-    stageMesh.receiveShadow = true;
-    group.add(stageMesh);
-
-    solids.push({
-      x: worldX - 0.4,
-      z: minZ + 2.2,
-      w: 6.3,
-      d: 3.3,
-      yBase: 0,
-      yTop: 0.3,
-    });
-
-    // Theater masks banner
-    const maskMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4, metalness: 0.6 });
-    const maskMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.04, 16), maskMat);
-    maskMesh.rotation.x = Math.PI / 2;
-    maskMesh.position.set(worldX - 3.2, 2.5, minZ + 0.12);
-    group.add(maskMesh);
-
-    // Director's desk and chair facing rehearsal stage (North)
-    addStudentDesk(worldX, worldZ + 2.6, Math.PI);
+    buildTheaterRoom();
   } else if (roomData.grade === 5 || roomData.id === "eld") {
     // Grade 5 & ELD: Collaborative table pods with wide peripheral aisles
     const podCenters = [
@@ -2181,7 +2331,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
   // Open bookcase on the West wall (shelves face the room, +x), filled with books and a few bins
   const bkX = minX + 0.33;
   const bkZ = worldZ - 1.2;
-  if (!isMusic) {
+  if (!noShelves) {
     const bc = new THREE.Group();
     bc.position.set(bkX, 0, bkZ);
     const H = 1.95, D = 0.4, W = 1.8;
@@ -2221,7 +2371,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     bc.add(globe);
     group.add(bc);
   }
-  if (!isMusic) solids.push({
+  if (!noShelves) solids.push({
     x: bkX,
     z: bkZ,
     w: 0.5,
@@ -2272,7 +2422,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
   // Black laptop cart along the West wall (south of the bookcase): Chromebooks standing in its slots
   const lcX = minX + 0.42;
   const lcZ = worldZ + 1.8;
-  if (!isMusic) {
+  if (!noShelves) {
     const black = new THREE.MeshStandardMaterial({ color: 0x17181b, roughness: 0.55, metalness: 0.3 });
     const steel = new THREE.MeshStandardMaterial({ color: 0x9aa1aa, roughness: 0.35, metalness: 0.8 });
     const shell = new THREE.MeshStandardMaterial({ color: 0x3a3d43, roughness: 0.5, metalness: 0.4 });
@@ -2403,7 +2553,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     exitDoorX,
     exitDoorZ,
     whiteboard: { x: worldX - 0.3, z: minZ + 0.11, w: wbWidth },
-    laptopCart: isMusic ? { x: 1e6, z: 1e6 } : { x: lcX + 0.95, z: lcZ }, // no laptop cart in the music room
+    laptopCart: noShelves ? { x: 1e6, z: 1e6 } : { x: lcX + 0.95, z: lcZ }, // no laptop cart in the music room / theater
     campusDoor,
   };
 
