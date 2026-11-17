@@ -6564,9 +6564,9 @@ export function startPlaceholderScene(
   // awning (layout.json `tables`). Decorative in the prototype (no
   // collision, like the parked cars) - furnished interiors arrive at
   // Milestone 7.
-  const tableTopMaterial = new THREE.MeshStandardMaterial({ color: 0x12321c, roughness: 0.7 }); // deep dark forest green
+  const tableTopMaterial = new THREE.MeshStandardMaterial({ color: 0x26385f, roughness: 0.7 }); // navy, a touch lighter than the umbrellas
   const tablePoleMaterial = new THREE.MeshStandardMaterial({ color: 0x4a4f57, roughness: 0.7, metalness: 0.3 });
-  const chairMaterial = new THREE.MeshStandardMaterial({ color: 0x12321c, roughness: 0.7 }); // deep dark forest green
+  const chairMaterial = new THREE.MeshStandardMaterial({ color: 0x26385f, roughness: 0.7 }); // navy, a touch lighter than the umbrellas
   const umbrellaMaterials = ["#1b2a4e"].map( // all the lunch-table umbrellas are dark navy blue
     (hex) => new THREE.MeshStandardMaterial({ color: hex, roughness: 0.8 })
   );
