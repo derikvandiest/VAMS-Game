@@ -219,30 +219,6 @@ function makeWhiteboardTexture(room: ClassroomData): THREE.CanvasTexture {
     ctx.font = "bold 32px system-ui";
     ctx.fillStyle = "#ef4444";
     ctx.fillText("y = ½x + 2", cx + 50, cy - 90);
-  } else if (room.id === "8th-usc-science") {
-    // Mr. Drori teaches space science
-    ctx.fillText("• Model the scale of the solar system", 60, 310);
-    ctx.fillText("• Explain how gravity keeps planets and moons in orbit", 60, 370);
-    ctx.fillText("• Compare planets using NASA data in lab journals", 60, 430);
-
-    // Solar system strip: the sun, orbits and the eight planets
-    ctx.fillStyle = "#0b1026";
-    ctx.fillRect(60, 490, 880, 170);
-    const starRng = rng(42);
-    ctx.fillStyle = "#ffffff";
-    for (let s = 0; s < 70; s++) ctx.fillRect(60 + starRng() * 880, 490 + starRng() * 170, 2, 2);
-    ctx.fillStyle = "#fbbf24";
-    ctx.beginPath(); ctx.arc(60, 575, 70, -Math.PI / 2, Math.PI / 2); ctx.fill();
-    const planets: Array<[number, number, string]> = [[175, 7, "#a8a29e"], [235, 11, "#fcd34d"], [300, 12, "#3b82f6"], [360, 9, "#ef4444"], [480, 30, "#d6a77a"], [610, 25, "#e7c98a"], [730, 18, "#7dd3fc"], [850, 17, "#3b5bdb"]];
-    ctx.strokeStyle = "rgba(255,255,255,0.18)";
-    ctx.lineWidth = 2;
-    for (const [px] of planets) { ctx.beginPath(); ctx.arc(60, 575, px - 60, -0.5, 0.5); ctx.stroke(); }
-    for (const [px, r, c] of planets) { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(px, 575, r, 0, Math.PI * 2); ctx.fill(); }
-    ctx.strokeStyle = "#f5deb3"; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.ellipse(610, 575, 44, 9, -0.2, 0, Math.PI * 2); ctx.stroke(); // Saturn's rings
-    ctx.font = "26px system-ui";
-    ctx.fillStyle = "#e0e7ff";
-    ctx.fillText("Our Solar System (sizes not to scale... obviously)", 150, 645);
   } else if (room.subject === "Science") {
     ctx.fillText("• Model the phases of cellular respiration and photosynthesis", 60, 310);
     ctx.fillText("• Safely conduct chemical reaction observations at lab sinks", 60, 370);

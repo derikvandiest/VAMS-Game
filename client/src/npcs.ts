@@ -19,7 +19,6 @@ import guerreroPortrait from "./assets/guerrero_portrait.png";
 import nayfeldPortrait from "./assets/nayfeld_portrait.png";
 import daniPortrait from "./assets/dani_portrait.png";
 import somozaPortrait from "./assets/somoza_portrait.png";
-import droriPortrait from "./assets/drori_portrait.png";
 import weberPortrait from "./assets/weber_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
@@ -1147,77 +1146,6 @@ export const NPC_SOMOZA: NpcDef = {
 };
 
 /**
- * Mr. Drori, the 8th grade USC science teacher, standing in front of the whiteboard in his classroom (talk to him for
- * the assignment). Teaches mostly space science. Dry, very smart, sarcastic, and he speaks in memes. Matches his portrait: short
- * dark crew cut, a reddish-brown goatee and moustache, fair skin, a navy varsity jacket with gray sleeves over a
- * light gray button-up jersey.
- */
-const DRORI_NAVY = "#27306a";
-const DRORI_JERSEY = "#c9c9d6";
-export const NPC_DRORI: NpcDef = {
-  id: "npc-drori",
-  room: "classroom",
-  classroomId: "8th-usc-science",
-  x: 0, // set from the classroom's whiteboard
-  z: 0,
-  rotY: 0, // facing the class
-  talkRange: 2.2,
-  chatFirst: true,
-  profile: {
-    ...getDefaultProfile(),
-    name: "Mr. Drori",
-    title: "8th Grade Science Teacher",
-    noHomeroom: true,
-    gender: "masculine",
-    look: "masc-suit", // the jacket is his varsity jacket, the shirt his jersey
-    outfitColor: DRORI_NAVY,
-    noHair: true,
-    extraHair: "buzz", // short crew cut
-    hairColor: "#4a2c1a",
-    facialHair: "van-dyke", // moustache and goatee, clean cheeks
-    skinTone: "#EDBE9C",
-    glasses: "none",
-    shoes: "sneakers",
-    shoeColor: "#1f1f24",
-    partColors: { White: DRORI_JERSEY, Tie: DRORI_JERSEY, "Legs:Suit": "#2a2f3a" },
-    polkaDots: { parts: ["Body:Suit"], base: DRORI_NAVY, dot: "#a9adb6", shape: "sleeves" },
-  },
-  portrait: droriPortrait,
-  // SAMPLE TEXT: replace with Mr. Drori's real dialogue
-  dialog: {
-    start: "root",
-    nodes: {
-      root: {
-        paragraphs: [
-          "(Sample text) Hi, I'm Mr. Drori. I teach 8th grade science here in USC, mostly space. Yes, the whole universe. No, it doesn't fit in one unit.",
-          "Your assignment's ready whenever you are. Take your time; the universe has been waiting 13.8 billion years.",
-        ],
-        options: [
-          { label: "Show me the assignment!", action: "open-assignment" },
-          { label: "What are your students learning?", next: "learn" },
-          { label: "Thanks, Mr. Drori!", next: "bye" },
-        ],
-      },
-      learn: {
-        paragraphs: [
-          "(Sample text) The scale of the solar system. If the sun were a basketball, Earth would be a peppercorn about 26 meters away. My students' reaction: \u201Cwait, that's ILLEGAL.\u201D",
-          "Then gravity and orbits. They compare real NASA data and defend their claims with sentence frames, like tiny astrophysicists with very strong opinions about Pluto.",
-        ],
-        options: [
-          { label: "Show me the assignment!", action: "open-assignment" },
-          { label: "I have another question", next: "root" },
-          { label: "Thanks, Mr. Drori!", next: "bye" },
-        ],
-      },
-      bye: {
-        paragraphs: ["(Sample text) To infinity and... well, the next classroom. Good luck out there. \uD83D\uDE80"],
-        options: [{ label: "See you, Mr. Drori!" }],
-      },
-    },
-  },
-};
-
-/**
  * Mrs. Weber, the 7th grade USC English teacher, standing in front of the whiteboard in her classroom (talk to her for
  * the assignment). Matches her portrait: long, wavy dark-blonde hair with a center part, fair skin, a gray knit
  * crewneck sweater.
@@ -1286,7 +1214,7 @@ export const NPC_WEBER: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_DRORI, NPC_WEBER];
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.
