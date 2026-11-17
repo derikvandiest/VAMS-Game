@@ -342,11 +342,12 @@ export function collectPencil(id: string): boolean {
 // ---------------------------------------------------------------------------------------------------------------
 // The other optional objectives: make a basket, score a soccer goal, fill your Stanley cup
 // ---------------------------------------------------------------------------------------------------------------
-export type OptionalId = "basket" | "goal" | "cup";
+export type OptionalId = "basket" | "goal" | "cup" | "trash";
 export const OPTIONAL: Array<{ id: OptionalId; title: string; todo: string; done: string }> = [
   { id: "basket", title: "Make a basket", todo: "Make 1 basket at the basketball court", done: "Basket made 🏀" },
   { id: "goal", title: "Score a goal", todo: "Score a goal at the soccer field", done: "Goal scored ⚽" },
   { id: "cup", title: "Fill your Stanley cup", todo: "Fill up your Stanley cup at a drinking fountain", done: "Stanley cup filled 💧" },
+  { id: "trash", title: "Throw away some trash", todo: "Throw something away in a trash can", done: "Trash thrown away 🗑️" },
 ];
 
 /** Which of these optional objectives are done */
@@ -425,6 +426,7 @@ export function discardItem(id: string): boolean {
   const name = itemById(id)?.name ?? "it";
   if (removeItem(id, 1) === 0) return false;
   toast(`🗑️ You threw away the ${name}.`);
+  completeOptional("trash");
   return true;
 }
 

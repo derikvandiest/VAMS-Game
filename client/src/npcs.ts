@@ -32,6 +32,7 @@ import getisPortrait from "./assets/getis_portrait.png";
 import mrMartinezPortrait from "./assets/mrmartinez_portrait.png";
 import delmaPortrait from "./assets/delma_portrait.png";
 import raquelPortrait from "./assets/raquel_portrait.png";
+import aparicioPortrait from "./assets/aparicio_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -2069,7 +2070,74 @@ export const NPC_RAQUEL: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL];
+/**
+ * Ms. Aparicio, the 6th grade CSUN math teacher, standing in front of the whiteboard in her classroom (talk to her for
+ * the assignment). Matches her portrait: very long, wavy black hair with a center part, warm brown skin, a dark navy
+ * band tee.
+ */
+const APARICIO_NAVY = "#1c2333";
+export const NPC_APARICIO: NpcDef = {
+  id: "npc-aparicio",
+  room: "classroom",
+  classroomId: "6th-csun-math",
+  x: 0, // set from the classroom's whiteboard
+  z: 0,
+  rotY: 0, // facing the class
+  talkRange: 2.2,
+  chatFirst: true,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Ms. Aparicio",
+    title: "6th Grade Math Teacher",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-casual",
+    outfitColor: APARICIO_NAVY,
+    hairStyle: "f-witch", // center part, lengthened well past the shoulders
+    hairLength: 2.4,
+    hairColor: "#141217",
+    skinTone: "#B9805A",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#1f1f24",
+    partColors: { "Body:White": APARICIO_NAVY, "Legs:Orange": "#25272d" },
+  },
+  portrait: aparicioPortrait,
+  // SAMPLE TEXT: replace with Ms. Aparicio's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi, welcome in! I'm Ms. Aparicio, and I teach 6th grade math here in CSUN.",
+          "Your assignment is ready whenever you are. Make yourself comfortable!",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "What are your students learning?", next: "learn" },
+          { label: "Thanks, Ms. Aparicio!", next: "bye" },
+        ],
+      },
+      learn: {
+        paragraphs: [
+          "(Sample text) We're working with ratios and rates: comparing quantities in tables, tape diagrams, and real-life problems like recipes and unit prices.",
+          "My students explain their thinking to a partner with math sentence frames, so everyone, especially my English learners, builds the language of math.",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Aparicio!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Have a great day! Enjoy the rest of the classrooms."],
+        options: [{ label: "See you, Ms. Aparicio!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL, NPC_APARICIO];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.

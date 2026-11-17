@@ -65,6 +65,7 @@ export function openAgenda(playerName: string): void {
     basket: "Grab a basketball from the cart by the courts and shoot (E or click) until one goes in.",
     goal: "Kick the soccer ball into either goal on the field (hold Shift while running for a harder kick).",
     cup: "With your backpack, walk up to a drinking fountain and press E to fill your Stanley cup.",
+    trash: "Walk up to a trash can (blue ones by the lunch tables, red ones upstairs) and press E to throw something away, like a burrito wrapper from the food truck.",
   };
   const surveyDone = done.has("obj_survey");
   const today = new Date().toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
