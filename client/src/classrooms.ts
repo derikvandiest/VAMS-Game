@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import type { Solid, ChairSlot } from "./mpr";
 import classroomsData from "../../content/classrooms.json";
 import layoutData from "../../content/layout.json";
@@ -781,6 +782,257 @@ function getStudentBackGeometry(): THREE.BufferGeometry {
   return cachedBackGeo;
 }
 
+// ---------------------------------------------------------------------------
+// CLASSROOM DECOR: clock face, posters, bulletin boards, flag (canvas textures, cached)
+// ---------------------------------------------------------------------------
+
+/** Small deterministic random generator, so every visit to a room looks the same */
+function rng(seed: number): () => number {
+  let s = (seed * 2654435761) >>> 0 || 1;
+  return () => {
+    s ^= s << 13; s >>>= 0;
+    s ^= s >>> 17;
+    s ^= s << 5; s >>>= 0;
+    return s / 4294967296;
+  };
+}
+
+const hex = (c: number) => "#" + c.toString(16).padStart(6, "0");
+const texCache = new Map<string, THREE.CanvasTexture>();
+function canvasTex(key: string, w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void): THREE.CanvasTexture {
+  const have = texCache.get(key);
+  if (have) return have;
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  draw(c.getContext("2d")!);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  texCache.set(key, t);
+  return t;
+}
+
+function clockFaceTexture(): THREE.CanvasTexture {
+  return canvasTex("clock", 256, 256, (ctx) => {
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath(); ctx.arc(128, 128, 126, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#111827";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = "bold 30px Arial, sans-serif";
+    for (let i = 1; i <= 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      ctx.fillText(String(i), 128 + Math.sin(a) * 92, 128 - Math.cos(a) * 92);
+    }
+    for (let i = 0; i < 60; i++) {
+      const a = (i / 60) * Math.PI * 2, r0 = i % 5 ? 114 : 108;
+      ctx.lineWidth = i % 5 ? 2 : 4;
+      ctx.beginPath(); ctx.moveTo(128 + Math.sin(a) * r0, 128 - Math.cos(a) * r0); ctx.lineTo(128 + Math.sin(a) * 120, 128 - Math.cos(a) * 120); ctx.stroke();
+    }
+    const hand = (a: number, len: number, wid: number, col: string) => {
+      ctx.strokeStyle = col; ctx.lineWidth = wid; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(128, 128); ctx.lineTo(128 + Math.sin(a) * len, 128 - Math.cos(a) * len); ctx.stroke();
+    };
+    hand(((10 + 10 / 60) / 12) * Math.PI * 2, 58, 8, "#111827"); // 10:10
+    hand((10 / 60) * Math.PI * 2, 86, 5, "#111827");
+    hand((38 / 60) * Math.PI * 2, 94, 2, "#dc2626");
+    ctx.fillStyle = "#111827"; ctx.beginPath(); ctx.arc(128, 128, 7, 0, Math.PI * 2); ctx.fill();
+  });
+}
+
+function usFlagTexture(): THREE.CanvasTexture {
+  return canvasTex("flag", 380, 200, (ctx) => {
+    for (let i = 0; i < 13; i++) {
+      ctx.fillStyle = i % 2 ? "#ffffff" : "#b91c1c";
+      ctx.fillRect(0, (i * 200) / 13, 380, 200 / 13 + 1);
+    }
+    ctx.fillStyle = "#1e3a8a";
+    ctx.fillRect(0, 0, 152, (200 * 7) / 13);
+    ctx.fillStyle = "#ffffff";
+    for (let r = 0; r < 9; r++) for (let c = 0; c < (r % 2 ? 5 : 6); c++) {
+      ctx.beginPath(); ctx.arc(13 + c * 25 + (r % 2 ? 12 : 0), 9 + r * 11.5, 3, 0, Math.PI * 2); ctx.fill();
+    }
+  });
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxW: number, lh: number): number {
+  let line = "";
+  for (const word of text.split(" ")) {
+    const test = line ? line + " " + word : word;
+    if (ctx.measureText(test).width > maxW && line) { ctx.fillText(line, x, y); line = word; y += lh; }
+    else line = test;
+  }
+  if (line) ctx.fillText(line, x, y);
+  return y + lh;
+}
+
+/** The subject poster beside the whiteboard (periodic table, math talk, reading strategies, timeline) */
+function subjectPosterTexture(subject: string, accent: string): THREE.CanvasTexture {
+  return canvasTex(`poster-${subject}-${accent}`, 512, 600, (ctx) => {
+    ctx.fillStyle = "#fffdf7"; ctx.fillRect(0, 0, 512, 600);
+    ctx.fillStyle = accent; ctx.fillRect(0, 0, 512, 96);
+    ctx.lineWidth = 14; ctx.strokeStyle = accent; ctx.strokeRect(7, 7, 498, 586);
+    ctx.fillStyle = "#ffffff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = "900 46px Arial Black, Arial, sans-serif";
+    const title = subject === "Science" ? "PERIODIC TABLE" : subject === "Math" ? "MATH TALK" : subject === "English" ? "READING STRATEGIES" : subject === "Humanities" ? "HISTORY TIMELINE" : "ACADEMIC TALK";
+    ctx.font = `900 ${title.length > 14 ? 38 : 46}px Arial Black, Arial, sans-serif`;
+    ctx.fillText(title, 256, 50);
+    ctx.textAlign = "left"; ctx.fillStyle = "#1f2937";
+    if (subject === "Science") {
+      const cols = ["#fca5a5", "#fdba74", "#fde68a", "#86efac", "#93c5fd", "#c4b5fd", "#f9a8d4", "#a5f3fc"];
+      const layout = [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1], [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]];
+      const sz = 26, x0 = 22, y0 = 130;
+      for (let r = 0; r < 7; r++) for (let c = 0; c < 18; c++) {
+        if (r < 3 && !layout[r][c]) continue;
+        ctx.fillStyle = cols[c < 2 ? 0 : c < 12 ? 2 + (c % 2) : c < 17 ? 4 + (c % 2) : 7];
+        ctx.fillRect(x0 + c * sz, y0 + r * sz, sz - 2, sz - 2);
+      }
+      for (let r = 0; r < 2; r++) for (let c = 3; c < 17; c++) { ctx.fillStyle = cols[6]; ctx.fillRect(x0 + c * sz, y0 + 200 + r * sz, sz - 2, sz - 2); }
+      ctx.fillStyle = "#1f2937"; ctx.font = "bold 26px Arial";
+      wrapText(ctx, "Elements are organized by atomic number and properties.", 26, 430, 460, 34);
+      ctx.font = "22px Arial"; wrapText(ctx, "Talk frame: “I notice that ___ because ___.”", 26, 530, 460, 30);
+    } else if (subject === "Math") {
+      ctx.font = "bold 28px Arial";
+      let y = 145;
+      for (const s of ["I solved it by ___.", "My strategy was ___ because ___.", "I agree / disagree with ___ because ___.", "Another way to solve it is ___.", "Can you explain how you got ___?"]) {
+        ctx.fillStyle = accent; ctx.beginPath(); ctx.arc(36, y + 4, 9, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#1f2937"; y = wrapText(ctx, s, 56, y, 430, 34) + 18;
+      }
+      ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(30, 545); ctx.lineTo(482, 545); ctx.stroke();
+      ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
+      for (let i = -5; i <= 5; i++) { const x = 256 + i * 42; ctx.beginPath(); ctx.moveTo(x, 535); ctx.lineTo(x, 555); ctx.stroke(); ctx.fillText(String(i), x, 575); }
+    } else if (subject === "English") {
+      let y = 145;
+      for (const [h, s] of [["PREDICT", "What will happen next?"], ["CONNECT", "This reminds me of ___."], ["QUESTION", "I wonder why ___."], ["VISUALIZE", "I picture ___."], ["SUMMARIZE", "The main idea is ___."]]) {
+        ctx.fillStyle = accent; ctx.font = "900 30px Arial Black, Arial"; ctx.fillText(h, 30, y);
+        ctx.fillStyle = "#1f2937"; ctx.font = "26px Arial"; ctx.fillText(s, 30, y + 36); y += 88;
+      }
+    } else if (subject === "Humanities") {
+      ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(60, 130); ctx.lineTo(60, 570); ctx.stroke();
+      let y = 150;
+      for (const [d, s] of [["3000 BCE", "Writing begins in Mesopotamia"], ["500 BCE", "Democracy in Athens"], ["1215", "Magna Carta"], ["1776", "Declaration of Independence"], ["1965", "Voting Rights Act"]]) {
+        ctx.fillStyle = accent; ctx.beginPath(); ctx.arc(60, y + 10, 14, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#1f2937"; ctx.font = "bold 28px Arial"; ctx.fillText(d, 90, y);
+        ctx.font = "24px Arial"; ctx.fillText(s, 90, y + 32); y += 86;
+      }
+    } else {
+      ctx.font = "bold 28px Arial";
+      let y = 150;
+      for (const s of ["I think ___ because ___.", "I agree with ___ and ___.", "Can you say more about ___?", "In my own words, ___."]) { y = wrapText(ctx, s, 30, y, 450, 36) + 30; }
+    }
+  });
+}
+
+/** Cork bulletin board with a border in the homeroom colors: sentence frames or student work */
+function bulletinTexture(kind: "talk" | "work", title: string, accent: string, light: string, seed: number): THREE.CanvasTexture {
+  return canvasTex(`bb-${kind}-${title}-${accent}`, 768, 384, (ctx) => {
+    const r = rng(seed);
+    ctx.fillStyle = "#c08a55"; ctx.fillRect(0, 0, 768, 384);
+    for (let i = 0; i < 2500; i++) { ctx.fillStyle = r() > 0.5 ? "rgba(120,72,30,0.35)" : "rgba(230,190,140,0.35)"; ctx.fillRect(r() * 768, r() * 384, 2, 2); }
+    // scalloped border in the homeroom colors
+    for (let x = 0; x < 768; x += 32) for (const y of [0, 384]) { ctx.fillStyle = (x / 32) % 2 ? accent : light; ctx.beginPath(); ctx.arc(x + 16, y, 22, 0, Math.PI * 2); ctx.fill(); }
+    for (let y = 0; y < 384; y += 32) for (const x of [0, 768]) { ctx.fillStyle = (y / 32) % 2 ? accent : light; ctx.beginPath(); ctx.arc(x, y + 16, 22, 0, Math.PI * 2); ctx.fill(); }
+    // title banner
+    ctx.fillStyle = accent; ctx.fillRect(184, 34, 400, 58);
+    ctx.fillStyle = "#ffffff"; ctx.font = "900 34px Arial Black, Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(title, 384, 64);
+    const papers = ["#ffffff", "#fef9c3", "#dbeafe", "#dcfce7", "#fce7f3"];
+    if (kind === "talk") {
+      const frames = ["I agree with ___ because ___.", "I respectfully disagree...", "Can you say more about ___?", "Another example is ___.", "I'd like to add ___.", "So, you're saying ___?"];
+      frames.forEach((f, i) => {
+        const x = 52 + (i % 3) * 228, y = 118 + Math.floor(i / 3) * 124;
+        ctx.save(); ctx.translate(x + 100, y + 50); ctx.rotate((r() - 0.5) * 0.08);
+        ctx.fillStyle = papers[i % papers.length]; ctx.fillRect(-100, -50, 200, 100);
+        ctx.fillStyle = "#1f2937"; ctx.font = "bold 22px Arial"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+        wrapText(ctx, f, -88, -14, 180, 28);
+        ctx.fillStyle = "#dc2626"; ctx.beginPath(); ctx.arc(0, -44, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      });
+    } else {
+      for (let i = 0; i < 8; i++) {
+        const x = 50 + (i % 4) * 172, y = 112 + Math.floor(i / 4) * 128;
+        ctx.save(); ctx.translate(x + 70, y + 54); ctx.rotate((r() - 0.5) * 0.12);
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(-62, -54, 124, 108);
+        ctx.fillStyle = "#94a3b8"; for (let l = 0; l < 6; l++) ctx.fillRect(-50, -36 + l * 14, 60 + r() * 40, 4);
+        ctx.fillStyle = r() > 0.5 ? accent : "#16a34a"; ctx.font = "bold 22px Arial"; ctx.textAlign = "center"; ctx.fillText(r() > 0.5 ? "A+" : "★", 38, 40);
+        ctx.fillStyle = "#facc15"; ctx.beginPath(); ctx.arc(0, -50, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+    }
+  });
+}
+
+/** Homeroom identity poster: college name, mascot motto and grade */
+function homeroomPosterTexture(title: string, motto: string, sub: string, bg: string, fg: string): THREE.CanvasTexture {
+  return canvasTex(`hr-${title}-${sub}`, 512, 400, (ctx) => {
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, 512, 400);
+    ctx.strokeStyle = fg; ctx.lineWidth = 10; ctx.strokeRect(16, 16, 480, 368);
+    ctx.fillStyle = fg; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = "900 112px Arial Black, Arial"; ctx.fillText(title, 256, 140);
+    ctx.fillStyle = "#ffffff"; ctx.font = "bold 34px Arial"; ctx.fillText(motto, 256, 236);
+    ctx.font = "bold 28px Arial"; ctx.fillText(sub, 256, 300);
+    ctx.font = "26px Arial"; ctx.fillStyle = fg; ctx.fillText("★ COLLEGE BOUND ★", 256, 344);
+  });
+}
+
+/**
+ * Merge the static furniture into one mesh per material (from hundreds of small meshes to a few dozen draw calls).
+ * Wall-mounted pieces stay separate: the camera cut-away fades them together with their wall, using the same rule.
+ */
+function mergeStaticFurniture(group: THREE.Group, cx: number, cz: number, half: number, height: number): void {
+  group.updateMatrixWorld(true);
+  const buckets = new Map<THREE.Material, THREE.BufferGeometry[]>();
+  const merged: THREE.Object3D[] = [];
+  const box = new THREE.Box3();
+  const sz = new THREE.Vector3();
+  const c = new THREE.Vector3();
+  for (const child of group.children) {
+    if (child.userData.noMerge) continue;
+    box.setFromObject(child);
+    if (box.isEmpty()) continue;
+    box.getSize(sz);
+    box.getCenter(c);
+    const wallish =
+      (sz.y <= 0.3 && c.y > height - 0.5) ||
+      (sz.x <= 0.3 && sz.z > 0.8 && (Math.abs(c.x - (cx - half)) <= 0.25 || Math.abs(c.x - (cx + half)) <= 0.25)) ||
+      (sz.z <= 0.3 && sz.x > 0.8 && (Math.abs(c.z - (cz - half)) <= 0.25 || Math.abs(c.z - (cz + half)) <= 0.25));
+    if (wallish) continue;
+    let ok = true;
+    child.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if ((o as THREE.Light).isLight || (o as THREE.Sprite).isSprite || (m.isMesh && Array.isArray(m.material))) ok = false;
+    });
+    if (!ok) continue;
+    child.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      let g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
+      for (const name of Object.keys(g.attributes)) if (name !== "position" && name !== "normal" && name !== "uv") g.deleteAttribute(name);
+      if (!g.attributes.normal) g.computeVertexNormals();
+      if (!g.attributes.uv) g.setAttribute("uv", new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+      g.clearGroups();
+      g.applyMatrix4(m.matrixWorld);
+      const mat = m.material as THREE.Material;
+      const list = buckets.get(mat) ?? [];
+      list.push(g);
+      buckets.set(mat, list);
+    });
+    merged.push(child);
+  }
+  for (const o of merged) group.remove(o);
+  for (const [mat, geos] of buckets) {
+    const g = mergeGeometries(geos, false);
+    for (const x of geos) x.dispose();
+    if (!g) continue;
+    g.computeBoundingSphere();
+    const mesh = new THREE.Mesh(g, mat);
+    const transparent = (mat as THREE.MeshStandardMaterial).transparent;
+    mesh.castShadow = !transparent;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+  }
+}
+
 /**
  * Builds a single, self-contained classroom instance.
  */
@@ -881,7 +1133,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
 
   // 3) WALLS
   const valorRed = 0x991b1b; // Valor Academy logo crimson red
-  const wallPlasterMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.85 });
+  const wallPlasterMat = new THREE.MeshStandardMaterial({ color: 0xf3eee3, roughness: 0.9 }); // warm off-white paint
   const wallRedMat = new THREE.MeshStandardMaterial({ color: valorRed, roughness: 0.75 });
   const baseboardMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 });
   const wallCapMat = new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 0.5 }); // Oak wall cap trim
@@ -1042,14 +1294,69 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
   trayMesh.position.set(worldX - 0.3, 1.08, minZ + 0.16);
   group.add(trayMesh);
 
-  // Wall clock above the whiteboard
-  const clockMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.32, 0.32, 0.05, 24),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 })
+  // Wall clock above the teacher's desk: black rim, white face with numbers
+  {
+    const clock = new THREE.Group();
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.035, 8, 32), new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.4 }));
+    const face = new THREE.Mesh(new THREE.CircleGeometry(0.3, 32), new THREE.MeshStandardMaterial({ map: clockFaceTexture(), roughness: 0.5 }));
+    face.position.z = -0.005;
+    clock.add(rim, face);
+    clock.position.set(worldX + 3.8, 3.35, minZ + 0.14);
+    group.add(clock);
+  }
+
+  // ---- Wall decor (thin and flat on the walls, so the camera cut-away fades it with its wall) ----
+  const accentHex = hex(accentColor);
+  const lightHex = roomData.homeroom ? hex(COLLEGE_COLORS[roomData.homeroom].secondary) : "#ffffff";
+  const decorMat = (map: THREE.Texture) => new THREE.MeshStandardMaterial({ map, roughness: 0.8 });
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0x8a8f98, roughness: 0.4, metalness: 0.6 });
+  /** A framed flat panel on a wall. side: "N" north wall (faces +z), "W" west wall (faces +x), "E" east wall (faces -x) */
+  function wallPanel(map: THREE.Texture, side: "N" | "W" | "E", along: number, y: number, w: number, h: number): void {
+    const g = new THREE.Group();
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.08, h + 0.08, 0.03), frameMat);
+    const pic = new THREE.Mesh(new THREE.PlaneGeometry(w, h), decorMat(map));
+    pic.position.z = 0.017;
+    g.add(frame, pic);
+    if (side === "N") g.position.set(along, y, minZ + 0.12);
+    else if (side === "W") { g.position.set(minX + 0.12, y, along); g.rotation.y = Math.PI / 2; }
+    else { g.position.set(maxX - 0.12, y, along); g.rotation.y = -Math.PI / 2; }
+    group.add(g);
+  }
+  // subject poster left of the whiteboard
+  wallPanel(subjectPosterTexture(roomData.subject ?? "", accentHex), "N", worldX - 4.85, 2.15, 1.5, 1.76);
+  // academic-talk sentence frames (west wall, front) and student work (west wall, above the laptop cart)
+  wallPanel(bulletinTexture("talk", "ACADEMIC TALK", accentHex, lightHex, index + 1), "W", worldZ - 4.15, 1.75, 2.7, 1.35);
+  wallPanel(bulletinTexture("work", "STUDENT WORK", accentHex, lightHex, index + 101), "W", worldZ + 2.1, 2.55, 2.8, 1.4);
+  // homeroom identity poster (east wall, front)
+  wallPanel(
+    homeroomPosterTexture(pennantTitle, pennantMotto, roomData.grade ? `GRADE ${roomData.grade} · ${(roomData.subject ?? "").toUpperCase()}` : roomData.label.toUpperCase(), pennantBg, pennantFg),
+    "E", worldZ - 4.3, 2.2, 1.5, 1.17
   );
-  clockMesh.rotation.x = Math.PI / 2;
-  clockMesh.position.set(worldX + 3.8, 3.4, minZ + 0.12);
-  group.add(clockMesh);
+  // chair rail in the homeroom color along the side walls
+  {
+    const railMat = new THREE.MeshStandardMaterial({ color: accentColor, roughness: 0.5 });
+    for (const x of [minX + 0.115, maxX - 0.115]) {
+      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.07, CLASSROOM_SIZE - 0.2), railMat);
+      rail.position.set(x, 1.0, worldZ);
+      group.add(rail);
+    }
+  }
+  // US flag on an angled pole in the front corner
+  {
+    const flag = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 1.2, 8), new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.7, roughness: 0.3 }));
+    pole.position.y = 0.6;
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), pole.material);
+    tip.position.y = 1.22;
+    const cloth = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.36), new THREE.MeshStandardMaterial({ map: usFlagTexture(), side: THREE.DoubleSide, roughness: 0.9 }));
+    cloth.position.set(0, 0.92, 0.33);
+    cloth.rotation.y = Math.PI / 2;
+    const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1, 0.06), frameMat);
+    flag.add(pole, tip, cloth, bracket);
+    flag.position.set(maxX - 0.4, 2.55, minZ + 0.14);
+    flag.rotation.x = 0.75; // tilted out from the wall
+    group.add(flag);
+  }
 
   // 7) TEACHER WORKSTATION
   const tDeskX = worldX + 3.8;
@@ -1057,62 +1364,85 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
   const tDeskMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.6 });
   const tLegMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7, roughness: 0.3 });
 
-  // Desk top
-  const tDeskTop = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 0.9), tDeskMat);
-  tDeskTop.position.set(tDeskX, 0.76, tDeskZ);
-  tDeskTop.castShadow = true;
-  group.add(tDeskTop);
+  // Shared building blocks for furniture: one unit box / cylinder, scaled per piece (merged into few meshes later)
+  const UB = new THREE.BoxGeometry(1, 1, 1);
+  const UC = new THREE.CylinderGeometry(0.5, 0.5, 1, 12);
+  const part = (parent: THREE.Object3D, mat: THREE.Material, w: number, h: number, d: number, x: number, y: number, z: number, geo: THREE.BufferGeometry = UB): THREE.Mesh => {
+    const m = new THREE.Mesh(geo, mat);
+    m.scale.set(w, h, d);
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    parent.add(m);
+    return m;
+  };
+  const woodTopMat = new THREE.MeshStandardMaterial({ color: 0xa8743f, roughness: 0.55 });
+  const woodEdgeMat = new THREE.MeshStandardMaterial({ color: 0x5b3a1e, roughness: 0.6 });
+  const metalGrayMat = new THREE.MeshStandardMaterial({ color: 0xb7bcc4, roughness: 0.45, metalness: 0.5 });
+  const darkPlasticMat = new THREE.MeshStandardMaterial({ color: 0x1f2328, roughness: 0.55 });
+  const screenMat = new THREE.MeshStandardMaterial({ color: 0x1e3a5f, emissive: 0x3b82f6, emissiveIntensity: 0.55, roughness: 0.2 });
+  const paperMat = new THREE.MeshStandardMaterial({ color: 0xfafafa, roughness: 0.9 });
+  const accentMat = new THREE.MeshStandardMaterial({ color: accentColor, roughness: 0.5 });
 
-  // Desk modesty panel & legs
-  const tModesty = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.5, 0.04), tDeskMat);
-  tModesty.position.set(tDeskX, 0.46, tDeskZ - 0.4);
-  group.add(tModesty);
-  for (const lx of [-0.8, 0.8]) {
-    for (const lz of [-0.38, 0.38]) {
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.72), tLegMat);
-      leg.position.set(tDeskX + lx, 0.36, tDeskZ + lz);
-      group.add(leg);
+  // Teacher's desk: wood top, steel drawer pedestal, side panel, modesty panel
+  {
+    const d = new THREE.Group();
+    d.position.set(tDeskX, 0, tDeskZ);
+    part(d, woodTopMat, 1.8, 0.04, 0.9, 0, 0.75, 0);
+    part(d, woodEdgeMat, 1.82, 0.03, 0.92, 0, 0.72, 0);
+    part(d, metalGrayMat, 0.46, 0.7, 0.82, 0.62, 0.355, 0); // pedestal
+    for (let k = 0; k < 3; k++) {
+      part(d, metalGrayMat, 0.42, 0.2, 0.02, 0.62, 0.15 + k * 0.215, 0.415); // drawer fronts (toward the chair)
+      part(d, darkPlasticMat, 0.16, 0.02, 0.02, 0.62, 0.22 + k * 0.215, 0.43);
     }
+    part(d, metalGrayMat, 0.04, 0.7, 0.82, -0.86, 0.355, 0); // side panel
+    part(d, metalGrayMat, 1.3, 0.45, 0.03, -0.18, 0.46, -0.4); // modesty panel
+    // monitor, keyboard, mouse
+    part(d, darkPlasticMat, 0.22, 0.015, 0.16, -0.05, 0.775, -0.25);
+    part(d, darkPlasticMat, 0.04, 0.2, 0.03, -0.05, 0.87, -0.28);
+    part(d, darkPlasticMat, 0.6, 0.36, 0.03, -0.05, 1.08, -0.27);
+    part(d, screenMat, 0.56, 0.32, 0.005, -0.05, 1.08, -0.253);
+    part(d, darkPlasticMat, 0.44, 0.015, 0.14, -0.05, 0.778, 0.08);
+    part(d, darkPlasticMat, 0.05, 0.02, 0.08, 0.27, 0.78, 0.1);
+    // papers, binders, pencil cup with pencils, mug, apple
+    part(d, paperMat, 0.22, 0.04, 0.29, -0.62, 0.79, 0.1);
+    part(d, new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.9 }), 0.22, 0.012, 0.29, -0.6, 0.816, 0.08).rotation.y = 0.15;
+    part(d, accentMat, 0.06, 0.28, 0.24, -0.78, 0.91, -0.3);
+    part(d, new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6 }), 0.06, 0.28, 0.24, -0.71, 0.91, -0.3);
+    part(d, darkPlasticMat, 0.07, 0.1, 0.07, 0.45, 0.82, -0.28, UC);
+    const pencilMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.6 });
+    for (const [px, pz, t] of [[0.44, -0.29, 0.15], [0.46, -0.27, -0.12], [0.45, -0.26, 0.05]]) {
+      part(d, pencilMat, 0.01, 0.17, 0.01, px, 0.9, pz, UC).rotation.z = t;
+    }
+    part(d, accentMat, 0.085, 0.1, 0.085, 0.55, 0.82, 0.12, UC);
+    const apple = part(d, new THREE.MeshStandardMaterial({ color: 0xc81e1e, roughness: 0.4 }), 0.08, 0.075, 0.08, 0.32, 0.808, -0.05, new THREE.SphereGeometry(0.5, 12, 10));
+    apple.castShadow = true;
+    group.add(d);
   }
 
-  // Teacher Laptop
-  const laptopBase = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 0.02, 0.22),
-    new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.8, roughness: 0.3 })
-  );
-  laptopBase.position.set(tDeskX, 0.81, tDeskZ);
-  const laptopScreen = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 0.22, 0.02),
-    new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
-  );
-  laptopScreen.position.set(tDeskX, 0.92, tDeskZ - 0.1);
-  laptopScreen.rotation.x = -0.2;
-  group.add(laptopBase, laptopScreen);
-
-  // Graded papers stack & teacher mug
-  const paperStack = new THREE.Mesh(
-    new THREE.BoxGeometry(0.24, 0.05, 0.3),
-    new THREE.MeshStandardMaterial({ color: 0xfef08a })
-  );
-  paperStack.position.set(tDeskX - 0.55, 0.825, tDeskZ);
-  const mugMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.045, 0.04, 0.09, 12),
-    new THREE.MeshStandardMaterial({ color: accentColor })
-  );
-  mugMesh.position.set(tDeskX + 0.55, 0.845, tDeskZ);
-  group.add(paperStack, mugMesh);
-
-  // Teacher Chair
+  // Teacher's office chair: 5-star base on casters, gas lift, cushioned seat and back, armrests
   const tChairX = tDeskX;
   const tChairZ = tDeskZ + 0.65;
-  const chairMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
-  const tSeat = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.06, 0.46), chairMat);
-  tSeat.position.set(tChairX, 0.48, tChairZ);
-  const tBack = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.48, 0.06), chairMat);
-  tBack.position.set(tChairX, 0.74, tChairZ + 0.2);
-  const tChairPost = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.45), tLegMat);
-  tChairPost.position.set(tChairX, 0.24, tChairZ);
-  group.add(tSeat, tBack, tChairPost);
+  {
+    const ch = new THREE.Group();
+    ch.position.set(tChairX, 0, tChairZ);
+    const fabric = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.85 });
+    for (let k = 0; k < 5; k++) {
+      const a = (k / 5) * Math.PI * 2;
+      const leg = part(ch, darkPlasticMat, 0.05, 0.04, 0.3, Math.sin(a) * 0.15, 0.07, Math.cos(a) * 0.15);
+      leg.rotation.y = a;
+      part(ch, darkPlasticMat, 0.05, 0.05, 0.05, Math.sin(a) * 0.29, 0.03, Math.cos(a) * 0.29, UC);
+    }
+    part(ch, metalGrayMat, 0.05, 0.36, 0.05, 0, 0.26, 0, UC);
+    part(ch, fabric, 0.5, 0.08, 0.48, 0, 0.47, 0);
+    part(ch, darkPlasticMat, 0.06, 0.32, 0.04, 0, 0.62, 0.24);
+    part(ch, fabric, 0.46, 0.5, 0.07, 0, 0.92, 0.27).rotation.x = -0.08;
+    for (const sx of [-0.27, 0.27]) {
+      part(ch, darkPlasticMat, 0.03, 0.2, 0.03, sx, 0.6, 0.02);
+      part(ch, darkPlasticMat, 0.06, 0.03, 0.26, sx, 0.7, 0.02);
+    }
+    group.add(ch);
+  }
 
   // Register Teacher Chair
   chairs.push({
@@ -1161,12 +1491,27 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
   });
 
   // Proportional geometries for adult educator avatar
-  const tennisBallGeo = new THREE.SphereGeometry(0.046, 18, 14);
-  const chairTennisBallGeo = new THREE.SphereGeometry(0.040, 16, 12);
-  const deskLegGeo = new THREE.CylinderGeometry(0.020, 0.020, 0.67, 16);
-  const chairLegGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.44, 12);
+  const tennisBallGeo = new THREE.SphereGeometry(0.046, 12, 9);
+  const chairTennisBallGeo = new THREE.SphereGeometry(0.040, 12, 8);
+  const deskLegGeo = new THREE.CylinderGeometry(0.020, 0.020, 0.67, 10);
+  const chairLegGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.44, 8);
+  // built once per room and shared by every desk / chair
+  const waterfallGeo = new THREE.CylinderGeometry(0.028, 0.028, 0.52, 12);
+  const seatFrameGeo = new THREE.BoxGeometry(0.42, 0.025, 0.36);
+  const edgeTrimGeo = new THREE.CylinderGeometry(0.016, 0.016, 0.98, 10);
+  const collarGeo = new THREE.CylinderGeometry(0.045, 0.045, 0.010, 12);
+  const grommetGeo = new THREE.CylinderGeometry(0.028, 0.028, 0.016, 10);
+  const rimXGeo = new THREE.BoxGeometry(0.64, 0.012, 0.012);
+  const rimZGeo = new THREE.BoxGeometry(0.012, 0.012, 0.44);
+  const armGeo = new THREE.CylinderGeometry(0.007, 0.007, 0.03, 6);
+  const netBottomGeo = new THREE.PlaneGeometry(0.64, 0.44);
+  const netSideGeo = new THREE.PlaneGeometry(0.44, 0.07);
+  const netBackGeo = new THREE.PlaneGeometry(0.64, 0.07);
+  const netLipGeo = new THREE.PlaneGeometry(0.64, 0.028);
+  const ribGeo = new THREE.CylinderGeometry(0.003, 0.003, 0.44, 4);
+  const notebookColors = [0x0284c7, 0xdc2626, 0x16a34a, 0xf59e0b, 0x7c3aed].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6 }));
+  let deskCount = 0;
   const notebookGeo = new THREE.BoxGeometry(0.28, 0.022, 0.34);
-  const notebookMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.6 });
 
   /**
    * Adds the standardized school blue chair with 4 tubular legs and tennis balls.
@@ -1187,10 +1532,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     chairGroup.add(seatMesh);
 
     // Waterfall front lip curve at +Z (front of seat)
-    const waterfallFront = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.028, 0.028, 0.52, 14),
-      sChairBlueMat
-    );
+    const waterfallFront = new THREE.Mesh(waterfallGeo, sChairBlueMat);
     waterfallFront.rotation.z = Math.PI / 2;
     waterfallFront.position.set(0, 0.468, 0.24);
     chairGroup.add(waterfallFront);
@@ -1203,10 +1545,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     chairGroup.add(backMesh);
 
     // 3) Steel under-seat mounting frame
-    const seatFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(0.42, 0.025, 0.36),
-      tLegMat
-    );
+    const seatFrame = new THREE.Mesh(seatFrameGeo, tLegMat);
     seatFrame.position.set(0, 0.44, 0);
     chairGroup.add(seatFrame);
 
@@ -1222,7 +1561,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
       // Tennis ball resting on the floor
       const tBall = new THREE.Mesh(chairTennisBallGeo, tennisBallMat);
       tBall.position.set(lx, 0.040, lz);
-      tBall.rotation.y = Math.random() * Math.PI * 2;
+      tBall.rotation.y = (lx * 7 + lz * 13 + cx) % (Math.PI * 2);
       tBall.castShadow = true;
       chairGroup.add(tBall);
 
@@ -1268,10 +1607,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     deskGroup.add(deskTop);
 
     // Protective dark armor edge trim along student base edge
-    const edgeTrim = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.016, 0.016, 0.98, 14),
-      tLegMat
-    );
+    const edgeTrim = new THREE.Mesh(edgeTrimGeo, tLegMat);
     edgeTrim.rotation.z = Math.PI / 2;
     edgeTrim.position.set(0, 0.76, -0.38);
     deskGroup.add(edgeTrim);
@@ -1287,7 +1623,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
       // Blue Tennis Ball at the bottom of the leg
       const tennisBall = new THREE.Mesh(tennisBallGeo, tennisBallMat);
       tennisBall.position.set(lx, 0.046, lz);
-      tennisBall.rotation.y = Math.random() * Math.PI * 2;
+      tennisBall.rotation.y = (lx * 7 + lz * 13 + dx) % (Math.PI * 2);
       tennisBall.castShadow = true;
       deskGroup.add(tennisBall);
 
@@ -1297,18 +1633,12 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
       deskGroup.add(leg);
 
       // Steel mounting collar at desk underside
-      const collar = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.045, 0.045, 0.010, 12),
-        tLegMat
-      );
+      const collar = new THREE.Mesh(collarGeo, tLegMat);
       collar.position.set(lx, 0.735, lz);
       deskGroup.add(collar);
 
       // Rubber grommet where leg enters tennis ball
-      const grommet = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.028, 0.028, 0.016, 12),
-        tLegMat
-      );
+      const grommet = new THREE.Mesh(grommetGeo, tLegMat);
       grommet.position.set(lx, 0.07, lz);
       deskGroup.add(grommet);
     }
@@ -1320,65 +1650,50 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     const netBottomY = 0.645;
 
     // Rim perimeter tubes
-    const rimFront = new THREE.Mesh(new THREE.BoxGeometry(netFrameW, 0.012, 0.012), tLegMat);
+    const rimFront = new THREE.Mesh(rimXGeo, tLegMat);
     rimFront.position.set(0, rimY, -0.22);
-    const rimBack = new THREE.Mesh(new THREE.BoxGeometry(netFrameW, 0.012, 0.012), tLegMat);
+    const rimBack = new THREE.Mesh(rimXGeo, tLegMat);
     rimBack.position.set(0, rimY, 0.22);
-    const rimLeft = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, netFrameD), tLegMat);
+    const rimLeft = new THREE.Mesh(rimZGeo, tLegMat);
     rimLeft.position.set(-netFrameW / 2, rimY, 0);
-    const rimRight = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, netFrameD), tLegMat);
+    const rimRight = new THREE.Mesh(rimZGeo, tLegMat);
     rimRight.position.set(netFrameW / 2, rimY, 0);
     deskGroup.add(rimFront, rimBack, rimLeft, rimRight);
 
     // 4 suspension arms attaching drawer to desk underside
     for (const sx of [-netFrameW / 2 + 0.03, netFrameW / 2 - 0.03]) {
       for (const sz of [-0.18, 0.18]) {
-        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.03), tLegMat);
+        const arm = new THREE.Mesh(armGeo, tLegMat);
         arm.position.set(sx, 0.73, sz);
         deskGroup.add(arm);
       }
     }
 
     // Net Basket: Bottom wire net shelf
-    const netBottom = new THREE.Mesh(
-      new THREE.PlaneGeometry(netFrameW, netFrameD),
-      netDrawerMat
-    );
+    const netBottom = new THREE.Mesh(netBottomGeo, netDrawerMat);
     netBottom.rotation.x = Math.PI / 2;
     netBottom.position.set(0, netBottomY, 0);
     deskGroup.add(netBottom);
 
     // Net basket walls (left, right, rear)
-    const netLeft = new THREE.Mesh(
-      new THREE.PlaneGeometry(netFrameD, rimY - netBottomY),
-      netDrawerMat
-    );
+    const netLeft = new THREE.Mesh(netSideGeo, netDrawerMat);
     netLeft.rotation.y = Math.PI / 2;
     netLeft.position.set(-netFrameW / 2, (rimY + netBottomY) / 2, 0);
 
-    const netRight = new THREE.Mesh(
-      new THREE.PlaneGeometry(netFrameD, rimY - netBottomY),
-      netDrawerMat
-    );
+    const netRight = new THREE.Mesh(netSideGeo, netDrawerMat);
     netRight.rotation.y = -Math.PI / 2;
     netRight.position.set(netFrameW / 2, (rimY + netBottomY) / 2, 0);
 
-    const netBack = new THREE.Mesh(
-      new THREE.PlaneGeometry(netFrameW, rimY - netBottomY),
-      netDrawerMat
-    );
+    const netBack = new THREE.Mesh(netBackGeo, netDrawerMat);
     netBack.position.set(0, (rimY + netBottomY) / 2, 0.22);
 
     // Front retaining wire lip facing student (open top for notebooks)
-    const netFrontLip = new THREE.Mesh(
-      new THREE.PlaneGeometry(netFrameW, 0.028),
-      netDrawerMat
-    );
+    const netFrontLip = new THREE.Mesh(netLipGeo, netDrawerMat);
     netFrontLip.position.set(0, netBottomY + 0.014, -0.22);
 
     // Bottom wire support ribs
     for (let r = -0.24; r <= 0.24; r += 0.08) {
-      const rib = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, netFrameD), tLegMat);
+      const rib = new THREE.Mesh(ribGeo, tLegMat);
       rib.rotation.x = Math.PI / 2;
       rib.position.set(r, netBottomY + 0.003, 0);
       deskGroup.add(rib);
@@ -1387,7 +1702,7 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     deskGroup.add(netLeft, netRight, netBack, netFrontLip);
 
     // Student notebook tucked inside net drawer
-    const notebook = new THREE.Mesh(notebookGeo, notebookMat);
+    const notebook = new THREE.Mesh(notebookGeo, notebookColors[deskCount++ % notebookColors.length]);
     notebook.position.set(0.04, netBottomY + 0.015, -0.04);
     notebook.rotation.y = 0.06;
     deskGroup.add(notebook);
@@ -1411,31 +1726,51 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     });
   }
 
-  // If Science room, add a dedicated perimeter demonstration lab bench along the East wall
+  // If Science room: a lab bench along the East wall (cabinets, black epoxy top, sink, faucet, glassware, microscope)
   if (roomData.subject === "Science") {
     const labX = maxX - 0.75;
     const labZ = worldZ - 0.8;
-    const labBench = new THREE.Mesh(
-      new THREE.BoxGeometry(1.2, 0.84, 2.6),
-      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.2 })
-    );
-    labBench.position.set(labX, 0.42, labZ);
-    labBench.castShadow = true;
-    group.add(labBench);
-
-    // Sink basin & gooseneck faucet
-    const sink = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.04, 0.5), tLegMat);
-    sink.position.set(labX, 0.84, labZ);
-    const faucet = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.3), pushBarMat);
-    faucet.position.set(labX - 0.2, 0.99, labZ);
-    group.add(sink, faucet);
-
-    // Glass beakers & science supplies
-    const beaker1 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.12, 12), doorGlassMat);
-    beaker1.position.set(labX, 0.90, labZ - 0.7);
-    const beaker2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.10, 12), doorGlassMat);
-    beaker2.position.set(labX, 0.89, labZ + 0.7);
-    group.add(beaker1, beaker2);
+    const lab = new THREE.Group();
+    lab.position.set(labX, 0, labZ);
+    const cabinetMat = new THREE.MeshStandardMaterial({ color: 0xdfe3e8, roughness: 0.6 });
+    const epoxyMat = new THREE.MeshStandardMaterial({ color: 0x111418, roughness: 0.25, metalness: 0.1 });
+    const steelMat = new THREE.MeshStandardMaterial({ color: 0xc9ced6, roughness: 0.2, metalness: 0.9 });
+    const glassMat = new THREE.MeshStandardMaterial({ color: 0xcfeefc, transparent: true, opacity: 0.4, roughness: 0.05 });
+    part(lab, darkPlasticMat, 1.0, 0.1, 2.5, 0.05, 0.05, 0); // toe kick
+    part(lab, cabinetMat, 1.1, 0.72, 2.56, 0, 0.45, 0);
+    part(lab, epoxyMat, 1.2, 0.05, 2.6, 0, 0.835, 0);
+    for (let k = 0; k < 4; k++) {
+      const z = -0.96 + k * 0.64;
+      part(lab, cabinetMat, 0.02, 0.6, 0.6, -0.56, 0.44, z); // door (faces the room, -x)
+      part(lab, steelMat, 0.02, 0.14, 0.02, -0.575, 0.62, z + (k % 2 ? -0.22 : 0.22));
+    }
+    part(lab, steelMat, 0.44, 0.012, 0.4, 0, 0.862, 0); // sink rim
+    part(lab, new THREE.MeshStandardMaterial({ color: 0x2a2f36, roughness: 0.3, metalness: 0.6 }), 0.36, 0.006, 0.32, 0, 0.866, 0);
+    part(lab, steelMat, 0.035, 0.36, 0.035, 0.22, 1.04, 0, UC); // gooseneck faucet
+    const arc = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.017, 6, 12, Math.PI), steelMat);
+    arc.position.set(0.12, 1.22, 0);
+    lab.add(arc);
+    part(lab, steelMat, 0.03, 0.08, 0.03, 0.02, 1.18, 0, UC);
+    // glassware
+    part(lab, glassMat, 0.1, 0.14, 0.1, -0.2, 0.93, -0.75, UC);
+    part(lab, glassMat, 0.08, 0.11, 0.08, -0.05, 0.915, -0.85, UC);
+    const flask = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.16, 12), glassMat);
+    flask.position.set(-0.25, 0.94, -0.45);
+    lab.add(flask);
+    part(lab, new THREE.MeshStandardMaterial({ color: 0x22c55e, transparent: true, opacity: 0.75 }), 0.085, 0.05, 0.085, -0.2, 0.885, -0.75, UC);
+    // test tube rack
+    part(lab, woodTopMat, 0.1, 0.06, 0.3, -0.25, 0.89, 0.55);
+    for (let k = 0; k < 4; k++) part(lab, glassMat, 0.025, 0.14, 0.025, -0.25, 0.95, 0.43 + k * 0.08, UC);
+    // microscope
+    {
+      const blackM = darkPlasticMat;
+      part(lab, blackM, 0.16, 0.03, 0.2, -0.2, 0.875, 0.95);
+      part(lab, blackM, 0.04, 0.24, 0.05, -0.12, 1.0, 0.95);
+      const tube = part(lab, metalGrayMat, 0.05, 0.18, 0.05, -0.2, 1.08, 0.95, UC);
+      tube.rotation.z = 0.35;
+      part(lab, blackM, 0.1, 0.015, 0.1, -0.2, 0.95, 0.95);
+    }
+    group.add(lab);
 
     solids.push({
       x: labX,
@@ -1556,49 +1891,95 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     }
   }
 
-  // 9) BOOKSHELVES & WALL STORAGE (West wall & East wall)
-  const bkMat = new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.6 });
-  const bookColors = [0xef4444, 0x3b82f6, 0x10b981, 0xf59e0b, 0x8b5cf6, 0xec4899];
+  // 9) BOOKSHELVES & WALL STORAGE
+  const r = rng(index * 31 + 7);
+  const bookMats = [0xb91c1c, 0x1d4ed8, 0x15803d, 0xd97706, 0x7c3aed, 0xdb2777, 0x0f766e, 0x334155, 0xf5f5f4, 0xea580c].map(
+    (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 })
+  );
+  const shelfWoodMat = new THREE.MeshStandardMaterial({ color: 0xc89a62, roughness: 0.6 });
 
-  // Tall Bookcase along West wall
-  const bkX = minX + 0.45;
+  // Open bookcase on the West wall (shelves face the room, +x), filled with books and a few bins
+  const bkX = minX + 0.33;
   const bkZ = worldZ - 1.2;
-  const bookcase = new THREE.Mesh(new THREE.BoxGeometry(0.65, 2.4, 1.8), bkMat);
-  bookcase.position.set(bkX, 1.2, bkZ);
-  bookcase.castShadow = true;
-  group.add(bookcase);
-
-  // Books on shelves
-  for (let s = 0; s < 3; s++) {
-    const sy = 0.6 + s * 0.7;
-    for (let b = 0; b < 6; b++) {
-      const bColor = bookColors[(s + b) % bookColors.length];
-      const bookMesh = new THREE.Mesh(
-        new THREE.BoxGeometry(0.35, 0.26, 0.08),
-        new THREE.MeshStandardMaterial({ color: bColor })
-      );
-      bookMesh.position.set(bkX, sy, bkZ - 0.6 + b * 0.22);
-      group.add(bookMesh);
+  {
+    const bc = new THREE.Group();
+    bc.position.set(bkX, 0, bkZ);
+    const H = 1.95, D = 0.4, W = 1.8;
+    part(bc, shelfWoodMat, D, H, 0.03, 0, H / 2, -W / 2); // sides
+    part(bc, shelfWoodMat, D, H, 0.03, 0, H / 2, W / 2);
+    part(bc, woodEdgeMat, 0.02, H, W, -D / 2 + 0.01, H / 2, 0); // back
+    const shelfYs = [0.06, 0.52, 0.98, 1.44, H - 0.015];
+    for (const y of shelfYs) part(bc, shelfWoodMat, D, 0.03, W - 0.03, 0, y, 0);
+    for (let s = 0; s < 4; s++) {
+      const y0 = shelfYs[s] + 0.015;
+      if (s === 0) {
+        // bottom shelf: colored book bins
+        for (let k = 0; k < 4; k++) {
+          const bin = part(bc, bookMats[(index + k) % 5], 0.32, 0.26, 0.38, 0.02, y0 + 0.13, -0.66 + k * 0.44);
+          bin.receiveShadow = true;
+        }
+        continue;
+      }
+      let z = -W / 2 + 0.04;
+      while (z < W / 2 - 0.08) {
+        if (r() < 0.07) { z += 0.12 + r() * 0.15; continue; } // gap
+        const th = 0.025 + r() * 0.045;
+        const h = 0.22 + r() * 0.16;
+        const d = 0.2 + r() * 0.1;
+        const b = part(bc, bookMats[Math.floor(r() * bookMats.length)], d, h, th, D / 2 - 0.015 - d / 2, y0 + h / 2, z + th / 2);
+        if (r() < 0.06 && z > -W / 2 + 0.3) { b.rotation.x = 0.25; b.position.y -= 0.01; }
+        z += th + 0.004;
+      }
     }
+    // a stack of books lying on top and a globe
+    for (let k = 0; k < 3; k++) part(bc, bookMats[(k * 3 + index) % bookMats.length], 0.28 - k * 0.02, 0.05, 0.2 - k * 0.01, 0.02, H + 0.025 + k * 0.05, 0.5);
+    part(bc, darkPlasticMat, 0.12, 0.02, 0.12, 0.02, H + 0.01, -0.45, UC);
+    part(bc, metalGrayMat, 0.02, 0.18, 0.02, 0.02, H + 0.1, -0.45, UC);
+    const globe = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), new THREE.MeshStandardMaterial({ color: 0x2b7bb9, roughness: 0.5 }));
+    globe.position.set(0.02, H + 0.27, -0.45);
+    globe.castShadow = true;
+    bc.add(globe);
+    group.add(bc);
   }
   solids.push({
     x: bkX,
     z: bkZ,
-    w: 0.75,
+    w: 0.5,
     d: 1.9,
     yBase: 0,
     yTop: 2.5,
   });
 
-  // Student Cubbies along South wall
+  // Student cubbies along the South wall: open wood cubbies (facing the room) with bins and backpacks
   const cubbyX = maxX - 2.2;
   const cubbyZ = maxZ - 0.35;
-  const cubbyMesh = new THREE.Mesh(
-    new THREE.BoxGeometry(2.4, 1.1, 0.5),
-    new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.7 })
-  );
-  cubbyMesh.position.set(cubbyX, 0.55, cubbyZ);
-  group.add(cubbyMesh);
+  {
+    const cb = new THREE.Group();
+    cb.position.set(cubbyX, 0, cubbyZ);
+    const W = 2.4, H = 1.05, D = 0.45, cols = 6, rows = 3;
+    const cw = W / cols, rh = (H - 0.06) / rows;
+    part(cb, woodEdgeMat, W, H, 0.02, 0, H / 2, D / 2 - 0.01); // back
+    for (let k = 0; k <= cols; k++) part(cb, shelfWoodMat, 0.025, H, D, -W / 2 + k * cw, H / 2, 0);
+    for (let k = 0; k <= rows; k++) part(cb, shelfWoodMat, W + 0.025, 0.025, D, 0, 0.05 + k * rh, 0);
+    part(cb, darkPlasticMat, W, 0.05, D - 0.04, 0, 0.025, 0.02); // base
+    const packColors = [0x111827, 0x6b7280, 0x1d4ed8, 0xb91c1c, accentColor].map((c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.8 }));
+    for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
+      const x = -W / 2 + (col + 0.5) * cw;
+      const y0 = 0.05 + row * rh + 0.0125;
+      const pick = r();
+      if (pick < 0.35) part(cb, row === 0 ? accentMat : bookMats[(col + row) % bookMats.length], cw - 0.07, rh * 0.6, D - 0.08, x, y0 + rh * 0.3, 0.0); // bin
+      else if (pick < 0.65) {
+        const m = packColors[Math.floor(r() * packColors.length)];
+        part(cb, m, cw - 0.12, rh * 0.75, 0.22, x, y0 + rh * 0.375, 0.06); // backpack
+        part(cb, m, cw - 0.18, rh * 0.3, 0.06, x, y0 + rh * 0.25, -0.07); // front pocket
+      } else if (pick < 0.8) for (let k = 0; k < 3; k++) part(cb, bookMats[Math.floor(r() * bookMats.length)], 0.04, rh * 0.7, 0.28, x - 0.08 + k * 0.05, y0 + rh * 0.35, 0.02);
+    }
+    // supplies on top: a tray of markers and a tissue box
+    part(cb, accentMat, 0.4, 0.06, 0.25, -0.7, H + 0.03, 0);
+    part(cb, new THREE.MeshStandardMaterial({ color: 0x93c5fd, roughness: 0.7 }), 0.24, 0.1, 0.13, 0.5, H + 0.05, 0);
+    part(cb, paperMat, 0.06, 0.04, 0.04, 0.5, H + 0.12, 0);
+    group.add(cb);
+  }
   solids.push({
     x: cubbyX,
     z: cubbyZ,
@@ -1666,44 +2047,63 @@ export function buildClassroom(roomId: string, index: number): ClassroomInstance
     solids.push({ x: lcX, z: lcZ, w: 0.7, d: 1.35, yBase: 0, yTop: 1.2 });
   }
 
-  // Trash & Recycle Bins near door
-  const trashBin = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.18, 0.15, 0.45, 12),
-    new THREE.MeshStandardMaterial({ color: 0x475569 })
-  );
-  trashBin.position.set(exitDoorX + 1.2, 0.225, maxZ - 0.35);
-  const recycleBin = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 0.45, 0.28),
-    new THREE.MeshStandardMaterial({ color: 0x2563eb })
-  );
-  recycleBin.position.set(exitDoorX + 1.6, 0.225, maxZ - 0.35);
-  group.add(trashBin, recycleBin);
+  // Trash & recycle bins by the door
+  {
+    const bins = new THREE.Group();
+    bins.position.set(exitDoorX + 1.4, 0, maxZ - 0.38);
+    const trash = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.15, 0.55, 16, 1, true), new THREE.MeshStandardMaterial({ color: 0x4b5563, roughness: 0.6, side: THREE.DoubleSide }));
+    trash.position.set(-0.24, 0.275, 0);
+    trash.castShadow = true;
+    const bag = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.012, 6, 20), darkPlasticMat);
+    bag.rotation.x = Math.PI / 2;
+    bag.position.set(-0.24, 0.55, 0);
+    const bottom = new THREE.Mesh(new THREE.CircleGeometry(0.15, 16), darkPlasticMat);
+    bottom.rotation.x = -Math.PI / 2;
+    bottom.position.set(-0.24, 0.01, 0);
+    const blue = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.55 });
+    part(bins, blue, 0.36, 0.58, 0.3, 0.2, 0.29, 0);
+    part(bins, new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.5 }), 0.38, 0.03, 0.32, 0.2, 0.595, 0);
+    part(bins, paperMat, 0.16, 0.16, 0.005, 0.2, 0.34, -0.153); // recycle label
+    bins.add(trash, bag, bottom);
+    group.add(bins);
+  }
 
   // 10) COLLEGE PENNANT / MOTTO BANNER on East Wall
   const pennantTex = makePennantTexture(pennantTitle, pennantMotto, pennantBg, pennantFg);
   const pennantMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(2.4, 0.9),
-    new THREE.MeshStandardMaterial({ map: pennantTex, transparent: true, side: THREE.DoubleSide })
+    new THREE.MeshStandardMaterial({ map: pennantTex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide })
   );
   pennantMesh.rotation.y = -Math.PI / 2;
   pennantMesh.position.set(maxX - 0.11, 2.6, worldZ - 1.2);
   group.add(pennantMesh);
 
-  // 11) WINDOWS with daytime sky glow on East wall
-  const winFrameMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4 });
+  // 11) WINDOWS on the East wall: aluminum frame, center mullion, sill, half-raised blinds, daylight glass
+  const winFrameMat = new THREE.MeshStandardMaterial({ color: 0xcbd2da, roughness: 0.35, metalness: 0.5 });
   const winGlassMat = new THREE.MeshStandardMaterial({
-    color: 0xbae6fd,
-    emissive: 0x38bdf8,
-    emissiveIntensity: 0.35,
+    color: 0xcfe9fb,
+    emissive: 0x7cc4f0,
+    emissiveIntensity: 0.45,
     roughness: 0.1,
   });
+  const blindMat = new THREE.MeshStandardMaterial({ color: 0xf1f1ee, roughness: 0.6 });
   for (const wz of [worldZ + 1.5, worldZ + 3.8]) {
-    const winFrame = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.8, 1.6), winFrameMat);
-    winFrame.position.set(maxX - 0.08, 2.5, wz);
-    const winGlass = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.6, 1.4), winGlassMat);
-    winGlass.position.set(maxX - 0.08, 2.5, wz);
-    group.add(winFrame, winGlass);
+    const win = new THREE.Group();
+    win.position.set(maxX - 0.1, 2.3, wz);
+    part(win, winGlassMat, 0.02, 1.6, 1.4, 0.03, 0, 0);
+    part(win, winFrameMat, 0.06, 0.08, 1.56, 0, 0.82, 0);
+    part(win, winFrameMat, 0.06, 0.08, 1.56, 0, -0.82, 0);
+    part(win, winFrameMat, 0.06, 1.72, 0.08, 0, 0, -0.74);
+    part(win, winFrameMat, 0.06, 1.72, 0.08, 0, 0, 0.74);
+    part(win, winFrameMat, 0.05, 1.6, 0.04, 0, 0, 0);
+    part(win, shelfWoodMat, 0.16, 0.04, 1.62, -0.06, -0.88, 0); // sill
+    for (let k = 0; k < 9; k++) part(win, blindMat, 0.035, 0.012, 1.42, -0.05, 0.76 - k * 0.04, 0); // blinds stacked at the top
+    part(win, blindMat, 0.05, 0.03, 1.46, -0.05, 0.4, 0); // bottom rail
+    group.add(win);
   }
+
+  // Merge the static furniture into a few big meshes (far fewer draw calls)
+  mergeStaticFurniture(group, worldX, worldZ, half, CLASSROOM_HEIGHT);
 
   // Hide by default until entered
   group.visible = false;

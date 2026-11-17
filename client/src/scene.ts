@@ -7830,7 +7830,7 @@ export function startPlaceholderScene(
       faceMrVanDiest();
       camElevation = 7.5;
       camDistance = 12.0;
-      renderer.setClearColor(0x0f172a, 1);
+      renderer.setClearColor(0x0f172a, 1); (scene.background as THREE.Color).set(0x1b2233); // indoors: dark backdrop around the open-top room
     });
   }
 
@@ -7852,7 +7852,7 @@ export function startPlaceholderScene(
       camAngle = NORTH_UP_ANGLE;
       camElevation = CAM_HEIGHT;
       camDistance = CAM_DISTANCE;
-      renderer.setClearColor(0x9ec7e8, 1);
+      renderer.setClearColor(0x9ec7e8, 1); (scene.background as THREE.Color).set(0x9ec7e8);
     });
   }
 
@@ -7881,7 +7881,7 @@ export function startPlaceholderScene(
       camAngle = 0.35; // Look down into classroom
       camElevation = 6.2;
       camDistance = 9.5;
-      renderer.setClearColor(0x0f172a, 1);
+      renderer.setClearColor(0x0f172a, 1); (scene.background as THREE.Color).set(0x1b2233); // indoors: dark backdrop around the open-top room
     });
   }
 
@@ -7911,7 +7911,7 @@ export function startPlaceholderScene(
       camAngle = NORTH_UP_ANGLE;
       camElevation = CAM_HEIGHT;
       camDistance = CAM_DISTANCE;
-      renderer.setClearColor(0x9ec7e8, 1);
+      renderer.setClearColor(0x9ec7e8, 1); (scene.background as THREE.Color).set(0x9ec7e8);
     });
   }
 
@@ -7930,7 +7930,7 @@ export function startPlaceholderScene(
     faceMrVanDiest();
     camElevation = 7.5;
     camDistance = 12.0;
-    renderer.setClearColor(0x0f172a, 1);
+    renderer.setClearColor(0x0f172a, 1); (scene.background as THREE.Color).set(0x1b2233); // indoors: dark backdrop around the open-top room
   } else if (paramRoom && allClassroomIds.includes(paramRoom)) {
     const inst = getClassroom(paramRoom);
     if (inst) {
@@ -7949,7 +7949,7 @@ export function startPlaceholderScene(
       camAngle = 0.35;
       camElevation = 6.2;
       camDistance = 9.5;
-      renderer.setClearColor(0x0f172a, 1);
+      renderer.setClearColor(0x0f172a, 1); (scene.background as THREE.Color).set(0x1b2233); // indoors: dark backdrop around the open-top room
     }
   } else if (initialSpawn && !isNaN(initialSpawn.x) && !isNaN(initialSpawn.z)) {
     player.position.set(initialSpawn.x, initialSpawn.y || 0, initialSpawn.z);
