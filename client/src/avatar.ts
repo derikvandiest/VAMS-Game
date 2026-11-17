@@ -410,12 +410,15 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
   }
 
   /** Printed patterns drawn in the shader from the model-space position (the outfit models have no texture UVs) */
-  function addPolkaDots(std: THREE.MeshStandardMaterial, base: string, dot: string, accent = dot, shape: "dots" | "diamonds" | "ribs" | "plaid" | "sleeves" | "stripes" | "hstripes" = "dots", sleeveX = 1): void {
+  function addPolkaDots(std: THREE.MeshStandardMaterial, base: string, dot: string, accent = dot, shape: "dots" | "diamonds" | "ribs" | "plaid" | "sleeves" | "stripes" | "hstripes" | "tweed" = "dots", sleeveX = 1): void {
     std.color.set(base);
     const dotColor = new THREE.Color(dot);
     const accentColor = new THREE.Color(accent);
     const body =
-      shape === "hstripes"
+      shape === "tweed"
+        ? // boucle tweed: fine random flecks of the dot and accent colors in a woven grid
+          "vec2 c = floor(uv * vec2(150.0, 190.0)); float h = fract(sin(dot(c, vec2(12.9898, 78.233))) * 43758.5453); float h2 = fract(sin(dot(c, vec2(39.346, 11.135))) * 24634.6345); diffuseColor.rgb = mix(diffuseColor.rgb, polkaColor, step(0.8, h) * 0.85); diffuseColor.rgb = mix(diffuseColor.rgb, polkaAccent, step(0.85, h2) * 0.7);"
+        : shape === "hstripes"
         ? // horizontal stripes (a striped button-up): thin light stripes in the dot color across the base
           "float st = fract(vPolkaPos.y * 30.0); float m = smoothstep(0.55, 0.62, st) - smoothstep(0.80, 0.87, st); diffuseColor.rgb = mix(diffuseColor.rgb, polkaColor, m);"
         : shape === "stripes"

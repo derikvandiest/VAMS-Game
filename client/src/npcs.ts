@@ -33,6 +33,7 @@ import mrMartinezPortrait from "./assets/mrmartinez_portrait.png";
 import delmaPortrait from "./assets/delma_portrait.png";
 import raquelPortrait from "./assets/raquel_portrait.png";
 import aparicioPortrait from "./assets/aparicio_portrait.png";
+import carreraPortrait from "./assets/carrera_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -2137,7 +2138,82 @@ export const NPC_APARICIO: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL, NPC_APARICIO];
+/**
+ * Ms. Carrera, the 7th grade IET, sitting on the blue bench between the 7th grade UCLA and LMU doors (the bench at
+ * z = 20 against the west building, facing the walkway). Matches her portrait: long wavy brown hair with caramel ends
+ * and a side part, fair skin, a pink tweed jacket over a black top.
+ */
+export const NPC_CARRERA: NpcDef = {
+  id: "npc-carrera",
+  room: "campus",
+  x: -13.67, // the bench seat nearer the 7th UCLA door (seat x -13.45, z 19.5)
+  z: 19.5,
+  rotY: Math.PI / 2, // facing the walkway
+  seatY: 0.4,
+  talkRange: 2.4,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Ms. Carrera",
+    title: "7th Grade IET",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-suit", // the jacket is her pink tweed jacket, the shirt her black top
+    outfitColor: "#e8a7b4",
+    hairStyle: "f-witch", // lengthened well past the shoulders
+    hairLength: 2.3,
+    hairColor: "#3f2617",
+    hairTips: "#7d5232", // caramel toward the ends
+    skinTone: "#EDC2A4",
+    glasses: "none",
+    shoes: "dress",
+    shoeColor: "#1f1f24",
+    partColors: { "Body:White": "#1c1d22", "Legs:Black": "#25272d" },
+    polkaDots: { parts: ["Body:Black"], base: "#e8a7b4", dot: "#3a3036", accent: "#f7f1ef", shape: "tweed" },
+  },
+  portrait: carreraPortrait,
+  // SAMPLE TEXT: replace with Ms. Carrera's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi there! I'm Ms. Carrera, the 7th grade IET. Just taking a quick break between classes.",
+          "Have you visited the 7th grade classrooms yet? They're all right here on this walkway.",
+        ],
+        options: [
+          { label: "What does an IET do?", next: "role" },
+          { label: "Any tips for the 7th grade rooms?", next: "tips" },
+          { label: "Thanks, Ms. Carrera!", next: "bye" },
+        ],
+      },
+      role: {
+        paragraphs: [
+          "(Sample text) I'm an Inclusion / Education Specialist Teacher: I support our students with IEPs, co-teach with the general education teachers, and make sure every lesson is accessible.",
+          "Scaffolds that help my students, like visuals, sentence frames and chunked directions, help our English learners too. Good support is good teaching for everyone!",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Carrera!", next: "bye" },
+        ],
+      },
+      tips: {
+        paragraphs: [
+          "(Sample text) Look for how each teacher builds in partner talk. And watch for the small supports on the walls and whiteboards: they make a big difference!",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Carrera!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Enjoy your visits! See you around."],
+        options: [{ label: "See you, Ms. Carrera!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL, NPC_APARICIO, NPC_CARRERA];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.
