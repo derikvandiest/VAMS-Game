@@ -22,6 +22,7 @@ import somozaPortrait from "./assets/somoza_portrait.png";
 import weberPortrait from "./assets/weber_portrait.png";
 import dominguezPortrait from "./assets/dominguez_portrait.png";
 import larkPortrait from "./assets/lark_portrait.png";
+import gilletPortrait from "./assets/gillet_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -1375,7 +1376,73 @@ export const NPC_LARK: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK];
+/**
+ * Ms. Gillet, the 6th grade USC English teacher, standing in front of the whiteboard in her classroom (talk to her for
+ * the assignment). Matches her portrait: long, wavy honey-blonde hair with a center part, fair skin, a black hoodie.
+ */
+const GILLET_BLACK = "#1c1d21";
+export const NPC_GILLET: NpcDef = {
+  id: "npc-gillet",
+  room: "classroom",
+  classroomId: "6th-usc-english",
+  x: 0, // set from the classroom's whiteboard
+  z: 0,
+  rotY: 0, // facing the class
+  talkRange: 2.2,
+  chatFirst: true,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Ms. Gillet",
+    title: "6th Grade English Teacher",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-casual",
+    outfitColor: GILLET_BLACK,
+    hairStyle: "f-witch", // center part, lengthened below the shoulders
+    hairLength: 2.0,
+    hairColor: "#b48a56", // honey blonde
+    skinTone: "#F3C8AE",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#1f1f24",
+    partColors: { "Body:White": GILLET_BLACK, "Legs:Orange": "#2a3142" },
+  },
+  portrait: gilletPortrait,
+  // SAMPLE TEXT: replace with Ms. Gillet's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi, welcome! I'm Ms. Gillet, and I teach 6th grade English here in USC.",
+          "Your assignment is ready whenever you are. Come on in!",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "What are your students learning?", next: "learn" },
+          { label: "Thanks, Ms. Gillet!", next: "bye" },
+        ],
+      },
+      learn: {
+        paragraphs: [
+          "(Sample text) We're reading closely and looking at how characters change over the course of a story. My students back up their ideas with evidence from the text.",
+          "Lots of partner talk with sentence frames, so every student, especially my English learners, has a voice in our discussions.",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Gillet!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Have a great day! Enjoy visiting the other classrooms."],
+        options: [{ label: "See you, Ms. Gillet!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLET];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.
