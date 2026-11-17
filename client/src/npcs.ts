@@ -1146,8 +1146,8 @@ export const NPC_SOMOZA: NpcDef = {
 };
 
 /**
- * Mr. Drori, standing outside next to the 8th grade USC classroom door (x = 6.2 on the north building, wall z = -2),
- * between the benches. Sarcastic, smart, a little grumpy, and he speaks in memes. Matches his portrait: short
+ * Mr. Drori, the 8th grade USC science teacher, standing in front of the whiteboard in his classroom (talk to him for
+ * the assignment). Dry, very smart, sarcastic, and he speaks in memes. Matches his portrait: short
  * dark crew cut, a reddish-brown goatee and moustache, fair skin, a navy varsity jacket with gray sleeves over a
  * light gray button-up jersey.
  */
@@ -1155,15 +1155,17 @@ const DRORI_NAVY = "#27306a";
 const DRORI_JERSEY = "#c9c9d6";
 export const NPC_DRORI: NpcDef = {
   id: "npc-drori",
-  room: "campus",
-  x: 8.45,
-  z: -0.6,
-  rotY: 0.35, // looking out over the walkway
-  talkRange: 1.5, // close, so E at the classroom door still opens the door
+  room: "classroom",
+  classroomId: "8th-usc-science",
+  x: 0, // set from the classroom's whiteboard
+  z: 0,
+  rotY: 0, // facing the class
+  talkRange: 2.2,
+  chatFirst: true,
   profile: {
     ...getDefaultProfile(),
     name: "Mr. Drori",
-    title: "8th Grade Teacher",
+    title: "8th Grade Science Teacher",
     noHomeroom: true,
     gender: "masculine",
     look: "masc-suit", // the jacket is his varsity jacket, the shirt his jersey
@@ -1186,48 +1188,50 @@ export const NPC_DRORI: NpcDef = {
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Oh look. Another PD day. *This is fine.*",
-          "I'm Mr. Drori. Yes, I'm standing outside my classroom. No, I'm not hiding from the coffee line. ...Okay, I'm a little bit hiding from the coffee line.",
+          "(Sample text) Ah, a visitor. Welcome to 8th grade science, where we follow the evidence. Even when the evidence says it's a PD day.",
+          "I'm Mr. Drori. The assignment's ready whenever you are. No pressure. Well, some pressure. That's physics.",
         ],
         options: [
-          { label: "How's your day going?", next: "day" },
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "What are your students working on?", next: "work" },
           { label: "Any advice for today?", next: "advice" },
-          { label: "Why are you so grumpy?", next: "grumpy" },
-          { label: "Have a good one, Mr. Drori!", next: "bye" },
+          { label: "How do you feel about PD days?", next: "pd" },
+          { label: "Thanks, Mr. Drori!", next: "bye" },
         ],
       },
-      day: {
+      work: {
         paragraphs: [
-          "(Sample text) Let me check my status bar... Mood: buffering. Caffeine: critically low. Patience: it's over... nine.",
-          "But hey, the kids are learning, so... *task failed successfully.*",
+          "(Sample text) Photosynthesis and cellular respiration. Plants turn sunlight into sugar, and my students turn sugar into chaos. Conservation of energy, technically.",
+          "They run the lab, record the data, and argue about it with sentence frames like actual scientists. The arguing is my favorite part. Allegedly it's educational.",
         ],
         options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
           { label: "I have another question", next: "root" },
-          { label: "Have a good one, Mr. Drori!", next: "bye" },
+          { label: "Thanks, Mr. Drori!", next: "bye" },
         ],
       },
       advice: {
         paragraphs: [
-          "(Sample text) One does not simply *walk* into 16 classrooms without a plan. Check your map. Press M. It's not rocket science. (That's next unit.)",
-          "And grab a backpack in the MPR. Carrying everything in your arms? Ain't nobody got time for that.",
+          "(Sample text) One does not simply walk into 16 classrooms without a plan. The map is on M. Revolutionary technology, I know.",
+          "Also, get a backpack from the MPR. Carrying everything in your arms is a bold strategy, Cotton. Let's see if it pays off.",
         ],
         options: [
           { label: "I have another question", next: "root" },
-          { label: "Have a good one, Mr. Drori!", next: "bye" },
+          { label: "Thanks, Mr. Drori!", next: "bye" },
         ],
       },
-      grumpy: {
+      pd: {
         paragraphs: [
-          "(Sample text) Grumpy? Me? I'm not grumpy. This is just my face when someone says \u201Cquick meeting.\u201D",
-          "Fine. Deep down I love this job. The kids are brilliant. But if you tell anyone, I'll deny it. *Surprised face.*",
+          "(Sample text) I have a hypothesis: the snacks are the real professional development. Peer review is ongoing.",
+          "Honestly though? Watching my colleagues teach is the best part. Don't quote me. I have a reputation to maintain.",
         ],
         options: [
           { label: "Your secret is safe with me", next: "root" },
-          { label: "Have a good one, Mr. Drori!", next: "bye" },
+          { label: "Thanks, Mr. Drori!", next: "bye" },
         ],
       },
       bye: {
-        paragraphs: ["(Sample text) Yeah, yeah. Go be productive or whatever. *Insert thumbs-up meme here.* \uD83D\uDC4D"],
+        paragraphs: ["(Sample text) Go forth and learn things. I'll be here, being right about stuff. \uD83D\uDC4D"],
         options: [{ label: "See you, Mr. Drori!" }],
       },
     },
