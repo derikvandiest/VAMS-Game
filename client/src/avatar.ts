@@ -1086,6 +1086,34 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     };
     const objs = (n: string) => slots.get(n)?.objs ?? [];
     recolor([...objs("hair"), ...objs("extraHair")], base);
+    // NPCs: the hair fades to another color toward the ends (measured on each hair mesh, top to bottom)
+    for (const root of objs("hair")) root.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      const mat = m.material as THREE.MeshStandardMaterial;
+      if (!p.hairTips) {
+        if (mat.userData.tips) { mat.onBeforeCompile = () => {}; mat.userData.tips = false; mat.needsUpdate = true; }
+        return;
+      }
+      m.geometry.computeBoundingBox();
+      const bb = m.geometry.boundingBox!;
+      const h = bb.max.y - bb.min.y;
+      const tip = new THREE.Color(p.hairTips);
+      const y0 = bb.min.y + h * 0.5; // the fade starts halfway down
+      const y1 = bb.min.y + h * 0.08; // and is complete near the ends
+      mat.onBeforeCompile = (sh) => {
+        sh.uniforms.tipColor = { value: tip };
+        sh.vertexShader = sh.vertexShader
+          .replace("#include <common>", "#include <common>\nvarying float vTipY;")
+          .replace("#include <begin_vertex>", "#include <begin_vertex>\nvTipY = position.y;");
+        sh.fragmentShader = sh.fragmentShader
+          .replace("#include <common>", "#include <common>\nvarying float vTipY;\nuniform vec3 tipColor;")
+          .replace("#include <color_fragment>", `#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, tipColor, 0.9 * (1.0 - smoothstep(${y1.toFixed(4)}, ${y0.toFixed(4)}, vTipY)));`);
+      };
+      mat.customProgramCacheKey = () => `hairtips-${y0.toFixed(3)}-${y1.toFixed(3)}`;
+      mat.userData.tips = true;
+      mat.needsUpdate = true;
+    });
     if (p.beardColor) {
       const b = new THREE.Color(p.beardColor);
       recolor(objs("facial"), { ...base, hair: b, hairDark: b.clone().multiplyScalar(0.8) });

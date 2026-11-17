@@ -42,7 +42,7 @@ import {
 } from "./classrooms";
 import { createAvatarRig, GAME_AVATAR_SCALE, AvatarRig } from "./avatar";
 import { openMap } from "./map";
-import { equipBackpack, backpackColor, fillWaterBottle, countItem, takePencilPouch, pencilQuest, collectPencil, borrowChromebook, returnChromebook, completeOptional, takeHandout } from "./inventory";
+import { equipBackpack, backpackColor, fillWaterBottle, countItem, takePencilPouch, pencilQuest, collectPencil, borrowChromebook, returnChromebook, completeOptional, takeHandout, takeFood, takeNewBottle, discardItem } from "./inventory";
 import { loadCharacterProfile, onProfileChange } from "./profile";
 import { initSettingsModal } from "./settings";
 
@@ -7074,6 +7074,269 @@ export function startPlaceholderScene(
     buildingSolids.push({ x: TX, z: TZ, w: 1.95, d: 0.88, yBase: 0, yTop: 1.5 });
   }
 
+  // --- Trash cans: round bins with a black bag folded over the rim. Blue by the lunch tables (one at each end, on the
+  // field side), red upstairs (outside the elevator, and in the middle of the 6th and 5th grade wings). Press E at one
+  // to throw something away (e.g. your Stanley cup: Delma at the food truck gives out new ones).
+  const trashBins: Array<{ x: number; z: number; y: number }> = [];
+  {
+    const bagMat = new THREE.MeshStandardMaterial({ color: 0x121214, roughness: 0.55, side: THREE.DoubleSide });
+    const binGeo = new THREE.CylinderGeometry(0.3, 0.26, 0.85, 24, 1, true);
+    const ribGeo = new THREE.TorusGeometry(0.293, 0.012, 6, 28);
+    const rimGeo = new THREE.TorusGeometry(0.305, 0.022, 8, 28);
+    const flapGeo = new THREE.CylinderGeometry(0.312, 0.306, 0.11, 24, 1, true);
+    const linerGeo = new THREE.CylinderGeometry(0.285, 0.25, 0.8, 24, 1, true);
+    const bottomGeo = new THREE.CircleGeometry(0.26, 24);
+    const addTrashBin = (x: number, z: number, y: number, color: number): void => {
+      const g = new THREE.Group();
+      g.position.set(x, y, z);
+      const shell = new THREE.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.1, side: THREE.DoubleSide });
+      const body = new THREE.Mesh(binGeo, shell);
+      body.position.y = 0.425;
+      const bottom = new THREE.Mesh(bottomGeo, shell);
+      bottom.rotation.x = -Math.PI / 2;
+      bottom.position.y = 0.01;
+      for (const ry of [0.22, 0.62]) {
+        const rib = new THREE.Mesh(ribGeo, shell);
+        rib.rotation.x = Math.PI / 2;
+        rib.position.y = ry;
+        g.add(rib);
+      }
+      const liner = new THREE.Mesh(linerGeo, bagMat); // the black bag inside
+      liner.position.y = 0.45;
+      const rim = new THREE.Mesh(rimGeo, bagMat); // the bag folded over the rim
+      rim.rotation.x = Math.PI / 2;
+      rim.position.y = 0.85;
+      const flap = new THREE.Mesh(flapGeo, bagMat); // and hanging down outside
+      flap.position.y = 0.8;
+      g.add(body, bottom, liner, rim, flap);
+      g.traverse((o) => { o.castShadow = true; o.receiveShadow = true; });
+      scene.add(g);
+      buildingSolids.push({ x, z, w: 0.62, d: 0.62, yBase: y, yTop: y + 1.0 });
+      trashBins.push({ x, z, y });
+    };
+    const BLUE = 0x1d4ed8;
+    const RED = 0xb91c1c;
+    // lunch tables (x -3.6 / 1.6, z 16.5 to 36.5): one at each end, on the field side
+    addTrashBin(4.1, 13.6, 0, BLUE);
+    addTrashBin(4.1, 39.4, 0, BLUE);
+    // upstairs: outside the elevator (upper door at x -6.8 on the north walkway)
+    addTrashBin(-8.75, 0.25, floor2, RED);
+    // the middle of the 6th grade wing (west building walkway, doors at z 9.3 - 31.7) and, symmetrically, the 5th grade
+    // wing (north building walkway, doors at x 10.3 - 32.7): both against the building wall
+    addTrashBin(-13.55, 20.5, floor2, RED);
+    addTrashBin(21.5, -1.55, floor2, RED);
+  }
+  /** The trash can the player is standing at (same floor), if any */
+  const nearTrash = (): boolean =>
+    !inMprRoom && !currentClassroom && !drivingCar && !seatedChair &&
+    trashBins.some((b) => Math.abs(player.position.y - b.y) < 1 && Math.hypot(player.position.x - b.x, player.position.z - b.z) <= 1.4);
+  /** Throw something away: a list of what the player carries that can go in the trash */
+  function openTrashDialog(): void {
+    const throwable: Array<[string, string]> = [
+      ["water-bottle-full", "your Stanley cup"],
+      ["water-bottle-empty", "your Stanley cup"],
+      ["burrito", "the burrito"],
+      ["burrito-vegan", "the vegan burrito"],
+      ["community-handout", "Mr. Martinez's handout"],
+    ];
+    const have = throwable.filter(([id]) => countItem(id) > 0);
+    showDialog(
+      { name: "Trash can", title: "Keep Valor clean!" },
+      {
+        start: "r",
+        nodes: {
+          r: have.length
+            ? {
+                paragraphs: ["What would you like to throw away?"],
+                options: [...have.map(([id, label]) => ({ label: `Throw away ${label}`, action: `trash:${id}` })), { label: "Never mind" }],
+              }
+            : { paragraphs: ["You don't have anything to throw away."], options: [{ label: "Okay" }] },
+        },
+      },
+      undefined,
+      (event) => {
+        if (event.startsWith("trash:")) discardItem(event.slice(6));
+      }
+    );
+  }
+
+  // --- The food truck by the MPR: Delma (Dean of Operations) and Raquel (assistant) hand out burritos at two white folding
+  // tables next to Mr. Martinez's table, with the truck parked behind them against the south brick wall.
+  {
+    const tex = (w: number, h: number, draw: (c: CanvasRenderingContext2D) => void): THREE.CanvasTexture => {
+      const cv = document.createElement("canvas");
+      cv.width = w;
+      cv.height = h;
+      draw(cv.getContext("2d")!);
+      const t = new THREE.CanvasTexture(cv);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.anisotropy = 4;
+      return t;
+    };
+    const white = new THREE.MeshStandardMaterial({ color: 0xf4f4f1, roughness: 0.6 });
+    const gray = new THREE.MeshStandardMaterial({ color: 0x8b9099, roughness: 0.4, metalness: 0.6 });
+    const foil = new THREE.MeshStandardMaterial({ color: 0xd9dde2, roughness: 0.25, metalness: 0.85 });
+    const veganWrap = new THREE.MeshStandardMaterial({ color: 0x4caf50, roughness: 0.7 });
+    const trayMat = new THREE.MeshStandardMaterial({ color: 0x9aa0a8, roughness: 0.3, metalness: 0.7 });
+    const tentCard = (text: string, sub: string, col: string): THREE.MeshStandardMaterial =>
+      new THREE.MeshStandardMaterial({
+        roughness: 0.8,
+        side: THREE.DoubleSide,
+        map: tex(256, 128, (c) => {
+          c.fillStyle = "#fff"; c.fillRect(0, 0, 256, 128);
+          c.fillStyle = col; c.fillRect(0, 0, 256, 18); c.fillRect(0, 110, 256, 18);
+          c.fillStyle = "#1f2937"; c.textAlign = "center"; c.font = "900 40px Arial Black, Arial"; c.fillText(text, 128, 66);
+          c.font = "bold 20px Arial"; c.fillStyle = col; c.fillText(sub, 128, 96);
+        }),
+      });
+    const classicCard = tentCard("BURRITOS", "Classic · Burrito clásico", "#b45309");
+    const veganCard = tentCard("VEGAN 🌱", "Vegano · No animal products", "#15803d");
+
+    const buildTable = (TX: number, TZ: number): void => {
+      const g = new THREE.Group();
+      g.position.set(TX, 0, TZ);
+      const add = (m: THREE.Mesh, x: number, y: number, z: number): THREE.Mesh => {
+        m.position.set(x, y, z);
+        m.castShadow = true;
+        m.receiveShadow = true;
+        g.add(m);
+        return m;
+      };
+      add(new THREE.Mesh(new THREE.BoxGeometry(1.83, 0.045, 0.76), white), 0, 0.74, 0);
+      add(new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.03, 0.78), white), 0, 0.71, 0);
+      for (const sx of [-0.72, 0.72]) {
+        for (const sz of [-0.3, 0.3]) add(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.7, 8), gray), sx, 0.35, sz);
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.6, 8), gray), sx, 0.1, 0).rotation.x = Math.PI / 2;
+      }
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 1.44, 8), gray), 0, 0.62, 0).rotation.z = Math.PI / 2;
+      // two trays: classic (foil) and vegan (foil with a green paper band), with a tent card in front of each
+      for (const [tx, vegan] of [[-0.45, false], [0.45, true]] as const) {
+        add(new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.03, 0.38), trayMat), tx, 0.778, 0.05);
+        for (let r = 0; r < 2; r++) {
+          for (let k = 0; k < 3; k++) {
+            const bx = tx - 0.2 + k * 0.2, bz = -0.04 + r * 0.17;
+            const b = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.042, 0.13, 4, 10), foil), bx, 0.835, bz);
+            b.rotation.x = Math.PI / 2;
+            if (vegan) {
+              const band = add(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.05, 12), veganWrap), bx, 0.835, bz);
+              band.rotation.x = Math.PI / 2;
+            }
+          }
+        }
+        const card = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.13), vegan ? veganCard : classicCard);
+        card.position.set(tx, 0.84, -0.27);
+        card.rotation.set(-0.25, Math.PI, 0); // facing the players in front of the table
+        g.add(card);
+      }
+      // napkins and salsa bottles
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.05, 0.16), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 })), 0, 0.787, -0.22);
+      for (const [sx, col] of [[-0.08, 0xc62828], [0.08, 0x2e7d32]] as const) {
+        add(new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.16, 10), new THREE.MeshStandardMaterial({ color: col, roughness: 0.4 })), sx, 0.84, 0.25);
+      }
+      scene.add(g);
+      buildingSolids.push({ x: TX, z: TZ, w: 1.95, d: 0.88, yBase: 0, yTop: 1.2 });
+    };
+    // two tables side by side, just east of Mr. Martinez's (x -10.4 to -8.6), a little in front of the truck
+    buildTable(-6.85, 60.6); // Delma
+    buildTable(-4.95, 60.6); // Raquel
+
+    // the food truck, parked behind them along the south brick wall (face at z = 65.17), serving window toward the tables
+    const CX = -4.2, CZ = 63.55;
+    const t = new THREE.Group();
+    t.position.set(CX, 0, CZ);
+    const paint = new THREE.MeshStandardMaterial({ color: 0x0f766e, roughness: 0.45, metalness: 0.2 });
+    const dark = new THREE.MeshStandardMaterial({ color: 0x1f2328, roughness: 0.6 });
+    const glass = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.1, metalness: 0.5 });
+    const steel = new THREE.MeshStandardMaterial({ color: 0xc9ced6, roughness: 0.25, metalness: 0.85 });
+    const part = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number): THREE.Mesh => {
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(x, y, z);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      t.add(m);
+      return m;
+    };
+    part(new THREE.BoxGeometry(5.9, 0.25, 2.0), dark, 0, 0.5, 0); // chassis
+    part(new THREE.BoxGeometry(4.6, 2.5, 2.3), paint, -0.7, 1.85, 0); // kitchen box
+    part(new THREE.BoxGeometry(1.4, 1.9, 2.2), paint, 2.3, 1.55, 0); // cab
+    part(new THREE.BoxGeometry(0.06, 0.8, 1.9), glass, 3.0, 2.0, 0); // windshield
+    part(new THREE.BoxGeometry(0.7, 0.6, 0.04), glass, 2.35, 2.05, -1.11); // cab side window
+    part(new THREE.BoxGeometry(0.2, 0.25, 2.1), dark, 3.05, 0.75, 0); // bumper
+    for (const [lx, lz] of [[-1.9, 1.0], [-1.9, -1.0], [2.2, 1.0], [2.2, -1.0]]) {
+      const w = part(new THREE.CylinderGeometry(0.42, 0.42, 0.28, 18), dark, lx, 0.42, lz);
+      w.rotation.x = Math.PI / 2;
+      const hub = part(new THREE.CylinderGeometry(0.18, 0.18, 0.3, 12), steel, lx, 0.42, lz);
+      hub.rotation.x = Math.PI / 2;
+    }
+    part(new THREE.BoxGeometry(0.8, 0.3, 0.8), steel, -1.5, 3.25, 0.2); // roof vent
+    // the side facing the tables: painted graphics, the serving window with a counter and a striped awning, a menu
+    const sideZ = -1.16;
+    const side = new THREE.Mesh(
+      new THREE.PlaneGeometry(4.6, 2.5),
+      new THREE.MeshStandardMaterial({
+        roughness: 0.5,
+        map: tex(1024, 556, (c) => {
+          c.fillStyle = "#0f766e"; c.fillRect(0, 0, 1024, 556);
+          c.fillStyle = "#facc15"; c.fillRect(0, 470, 1024, 26);
+          c.fillStyle = "#f97316"; c.fillRect(0, 500, 1024, 26);
+          c.fillStyle = "#fff"; c.font = "900 92px Arial Black, Arial"; c.textAlign = "left";
+          c.fillText("VALOR", 40, 120);
+          c.fillStyle = "#facc15"; c.fillText("EATS", 40, 215);
+          c.fillStyle = "#e0f2f1"; c.font = "bold 34px Arial"; c.fillText("Burritos · Agua fresca", 44, 270);
+          // a big burrito
+          c.save(); c.translate(150, 380); c.rotate(-0.25);
+          c.fillStyle = "#e9c46a"; c.beginPath(); c.ellipse(0, 0, 120, 52, 0, 0, Math.PI * 2); c.fill();
+          c.fillStyle = "#d9dde2"; c.beginPath(); c.ellipse(40, 0, 80, 54, 0, 0, Math.PI * 2); c.fill();
+          c.fillStyle = "#43a047"; c.beginPath(); c.ellipse(-92, -6, 22, 30, 0, 0, Math.PI * 2); c.fill();
+          c.fillStyle = "#c62828"; c.beginPath(); c.arc(-100, 10, 9, 0, Math.PI * 2); c.fill();
+          c.restore();
+        }),
+      })
+    );
+    side.rotation.y = Math.PI;
+    side.position.set(-0.7, 1.85, sideZ);
+    t.add(side);
+    // serving window (dark kitchen inside, warm light), counter shelf, awning, menu board
+    const winX = -1.0; // the painted name is on the cab end of the side, the window and menu toward the back
+    part(new THREE.BoxGeometry(1.9, 1.0, 0.02), new THREE.MeshStandardMaterial({ color: 0x3a2a1c, emissive: 0x6b4423, emissiveIntensity: 0.35 }), winX, 2.05, sideZ - 0.01);
+    part(new THREE.BoxGeometry(2.05, 0.06, 1.12), steel, winX, 2.58, sideZ - 0.02).scale.set(1, 1, 0.08); // top trim
+    part(new THREE.BoxGeometry(2.1, 0.06, 0.38), steel, winX, 1.52, sideZ - 0.19); // counter
+    const awning = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.3, 0.8),
+      new THREE.MeshStandardMaterial({
+        side: THREE.DoubleSide,
+        roughness: 0.8,
+        map: tex(256, 64, (c) => { for (let k = 0; k < 8; k++) { c.fillStyle = k % 2 ? "#ffffff" : "#ef4444"; c.fillRect(k * 32, 0, 32, 64); } }),
+      })
+    );
+    awning.position.set(winX, 2.92, sideZ - 0.33);
+    awning.rotation.set(-Math.PI / 2 + 0.45, 0, 0); // sloping down and out
+    awning.castShadow = true;
+    t.add(awning);
+    const menu = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.9, 1.1),
+      new THREE.MeshStandardMaterial({
+        roughness: 0.6,
+        map: tex(360, 440, (c) => {
+          c.fillStyle = "#1f2937"; c.fillRect(0, 0, 360, 440);
+          c.strokeStyle = "#facc15"; c.lineWidth = 8; c.strokeRect(8, 8, 344, 424);
+          c.fillStyle = "#facc15"; c.font = "900 46px Arial Black, Arial"; c.textAlign = "center"; c.fillText("MENU", 180, 70);
+          c.fillStyle = "#fff"; c.font = "bold 30px Arial"; c.textAlign = "left";
+          c.fillText("🌯 Classic Burrito", 30, 150); c.font = "22px Arial"; c.fillStyle = "#cbd5e1"; c.fillText("Burrito clásico", 66, 182);
+          c.fillStyle = "#86efac"; c.font = "bold 30px Arial"; c.fillText("🌱 Vegan Burrito", 30, 250);
+          c.font = "22px Arial"; c.fillStyle = "#cbd5e1"; c.fillText("Burrito vegano", 66, 282);
+          c.fillStyle = "#fff"; c.font = "bold 28px Arial"; c.fillText("🥤 Agua fresca", 30, 350);
+          c.fillStyle = "#facc15"; c.font = "bold 24px Arial"; c.textAlign = "center"; c.fillText("FREE for Valor staff!", 180, 412);
+        }),
+      })
+    );
+    menu.rotation.y = Math.PI;
+    menu.position.set(-2.52, 2.0, sideZ - 0.015);
+    t.add(menu);
+    scene.add(t);
+    buildingSolids.push({ x: CX, z: CZ, w: 6.1, d: 2.4, yBase: 0, yTop: 3.4 });
+  }
+
   // --- Black music stands in a row on the upper walkway, against the wall just outside the music room door
   {
     const black = new THREE.MeshStandardMaterial({ color: 0x15171b, roughness: 0.45, metalness: 0.6 });
@@ -7899,6 +8162,32 @@ export function startPlaceholderScene(
         if (event === "reset-balls") doBallReset();
         // Mr. Ipina opens the campus map for you
         if (event === "open-map") setTimeout(() => openMap(), 0);
+        // Delma and Raquel at the food truck: burritos (classic or vegan); Delma also replaces a thrown-away Stanley cup
+        if (event === "give-burrito" || event === "give-burrito-vegan" || event === "give-bottle") {
+          const r = event === "give-bottle" ? takeNewBottle() : takeFood(event === "give-burrito" ? "burrito" : "burrito-vegan");
+          const es = n.def.id === "npc-raquel"; // Raquel only speaks Spanish
+          const msg: Record<string, string> = es
+            ? {
+                "no-backpack": "¡Ay, necesitas una mochila para llevarlo! Hay mochilas en la entrada del MPR. Luego regresa, ¿sí?",
+                has: "¡Ya tienes uno! Cómetelo primero (haz clic en él en tu mochila) y luego te doy otro.",
+                full: "Tu mochila está llena. Haz un poco de espacio y regresa.",
+                ok: event === "give-burrito-vegan" ? "¡Aquí tienes tu burrito vegano! ¡Buen provecho!" : "¡Aquí tienes tu burrito! ¡Buen provecho!",
+              }
+            : event === "give-bottle"
+              ? {
+                  "no-backpack": "You'll need a backpack first! Grab one from the hooks just inside the MPR doors.",
+                  has: "You still have your Stanley cup! If you'd like a new one, throw yours away in a trash can and come back.",
+                  full: "Your backpack is full! Make some room and I'll give you a new one.",
+                  ok: "Here's a brand-new Stanley cup. Fill it up at a drinking fountain and stay hydrated!",
+                }
+              : {
+                  "no-backpack": "You'll need a backpack to carry it! Grab one from the hooks just inside the MPR doors, then come back.",
+                  has: "You've already got one! Eat that one first (click it in your backpack), then come back for another.",
+                  full: "Your backpack is full! Make some room and come back.",
+                  ok: event === "give-burrito-vegan" ? "Here's your vegan burrito: beans, rice, grilled veggies and salsa. Enjoy!" : "Here's your burrito. Enjoy, and don't forget the salsa!",
+                };
+          setTimeout(() => showDialog({ name: n.def.profile.name, title: n.def.profile.title, portrait: n.def.portrait }, { start: "r", nodes: { r: { paragraphs: [msg[r]], options: [{ label: es ? "¡Gracias!" : "Thanks!" }] } } }), 0);
+        }
         // Mr. Martinez hands out his Community Schools handout (it goes in the backpack)
         if (event === "give-handout") {
           const r = takeHandout();
@@ -8648,6 +8937,10 @@ export function startPlaceholderScene(
       }
       if (drinkTimer > 0) {
         stopDrinking();
+        return;
+      }
+      if (nearTrash()) {
+        openTrashDialog();
         return;
       }
       if (nearFountain()) {
@@ -10200,6 +10493,8 @@ export function startPlaceholderScene(
         hintText = "Press E to pick up the sharpened pencil ✏️";
       } else if (nearLaptopCart()) {
         hintText = countItem("chromebook") > 0 ? "Press E to return the Chromebook to the cart 💻" : "Press E to take a Chromebook from the laptop cart 💻";
+      } else if (nearTrash()) {
+        hintText = "Press E to throw something away 🗑️";
       } else if (nearFountain()) {
         hintText = countItem("water-bottle-empty") > 0 ? "Press E to drink and fill your Stanley cup 💧" : "Press E to take a drink 💧";
       } else if (nearBallCart() && !bballHeld) {

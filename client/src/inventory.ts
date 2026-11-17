@@ -392,6 +392,43 @@ function renderOptional(): void {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// The food truck by the MPR (Delma and Raquel): burritos, a replacement Stanley cup; throwing things away
+// ---------------------------------------------------------------------------------------------------------------
+export type GiveResult = "ok" | "no-backpack" | "has" | "full";
+
+/** Receive a burrito (or the vegan one) from Delma or Raquel: one of each at a time */
+export function takeFood(id: "burrito" | "burrito-vegan"): GiveResult {
+  if (!state.backpack) return "no-backpack";
+  if (countItem(id) > 0) return "has";
+  if (addItem(id, 1) === 0) return "full";
+  toast(id === "burrito" ? "🌯 A warm burrito! Click it in your backpack to eat it." : "🌱 A vegan burrito! Click it in your backpack to eat it.");
+  return "ok";
+}
+
+/** Eat a burrito (clicking it in the backpack) */
+function eatBurrito(id: string): void {
+  if (removeItem(id, 1) === 0) return;
+  toast(id === "burrito" ? "🌯 Mmm, delicious! Thanks, Delma and Raquel!" : "🌱 Mmm, the vegan burrito is delicious! Thanks, Delma and Raquel!");
+}
+
+/** A brand-new Stanley cup from Delma, for players who threw theirs away */
+export function takeNewBottle(): GiveResult {
+  if (!state.backpack) return "no-backpack";
+  if (countItem("water-bottle-empty") + countItem("water-bottle-full") > 0) return "has";
+  if (addItem("water-bottle-empty", 1) === 0) return "full";
+  toast("🥤 A brand-new Stanley cup! Fill it up at a drinking fountain.");
+  return "ok";
+}
+
+/** Throw an item away in a trash can */
+export function discardItem(id: string): boolean {
+  const name = itemById(id)?.name ?? "it";
+  if (removeItem(id, 1) === 0) return false;
+  toast(`🗑️ You threw away the ${name}.`);
+  return true;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // Mr. Martinez's Community Schools handout
 // ---------------------------------------------------------------------------------------------------------------
 /** Receive the handout from Mr. Martinez (it needs a backpack to carry it; one copy is enough) */
@@ -794,6 +831,7 @@ function onPointerUp(e: PointerEvent): void {
     if (clicked === "chromebook") openChromebook(loadCharacterProfile().name); // open the laptop at its login screen
     if (clicked === "student-agenda") openAgenda(loadCharacterProfile().name); // every objective, in detail
     if (clicked === "community-handout") openHandout(); // Mr. Martinez's handout
+    if (clicked === "burrito" || clicked === "burrito-vegan") eatBurrito(clicked);
     return;
   }
   const target = e.type === "pointerup" ? targetSlot(e) : null;

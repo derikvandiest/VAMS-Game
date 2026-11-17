@@ -61,6 +61,21 @@
       "icon": "📄",
       "description": "\"Partners in Learning\" from Mr. Martinez, the Community Schools Manager: how schools can leverage families and the community to help multilingual learners. Click it to read it (you can print it or save it as a PDF).",
       "stack": 1
+    },
+    {
+      "id": "burrito",
+      "name": "Burrito",
+      "icon": "🌯",
+      "description": "A warm burrito from the food truck by the MPR, wrapped in foil (from Delma or Raquel). Click it to eat it.",
+      "stack": 1
+    },
+    {
+      "id": "burrito-vegan",
+      "name": "Vegan Burrito",
+      "icon": "🌯",
+      "badge": "🌱",
+      "description": "The vegan option from the food truck by the MPR: beans, rice, grilled veggies and salsa, no animal products. Click it to eat it.",
+      "stack": 1
     }
   ]
 }

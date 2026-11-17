@@ -30,6 +30,8 @@ import traePortrait from "./assets/trae_portrait.png";
 import bakooPortrait from "./assets/bakoo_portrait.png";
 import getisPortrait from "./assets/getis_portrait.png";
 import mrMartinezPortrait from "./assets/mrmartinez_portrait.png";
+import delmaPortrait from "./assets/delma_portrait.png";
+import raquelPortrait from "./assets/raquel_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -1938,7 +1940,136 @@ export const NPC_MARTINEZ_CS: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS];
+/**
+ * Delma, the Dean of Operations, behind her white folding table in front of the food truck by the MPR (scene.ts),
+ * handing out burritos (classic or vegan). She also gives a brand-new Stanley cup to players who threw theirs away.
+ * Matches her portrait: long straight black hair with a center part fading to deep red at the ends, medium tan skin,
+ * a black polo.
+ */
+export const NPC_DELMA: NpcDef = {
+  id: "npc-delma",
+  room: "campus",
+  x: -6.85, // behind her table (table centre z = 60.6), the truck behind her
+  z: 61.45,
+  rotY: Math.PI, // facing the players in front of the tables
+  talkRange: 2.3,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Delma",
+    title: "Dean of Operations",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-casual",
+    outfitColor: "#1b1c20",
+    hairStyle: "f-witch", // center part, lengthened past the shoulders
+    hairLength: 2.0,
+    hairColor: "#18131a",
+    hairTips: "#7a2a26", // deep red ombre toward the ends
+    skinTone: "#D9A47E",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#1f1f24",
+    partColors: { "Body:White": "#1b1c20", "Legs:Orange": "#25272d" },
+  },
+  portrait: delmaPortrait,
+  // SAMPLE TEXT: replace with Delma's real words
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi! I'm Delma, the Dean of Operations. Welcome to the food truck!",
+          "We've got warm burritos today, and a vegan option too. What can I get you?",
+        ],
+        options: [
+          { label: "Can I have a burrito?", action: "give-burrito" },
+          { label: "Can I have the vegan burrito?", action: "give-burrito-vegan" },
+          { label: "I need a new water bottle", action: "give-bottle" },
+          { label: "What does a Dean of Operations do?", next: "role" },
+          { label: "Thanks, Delma!", next: "bye" },
+        ],
+      },
+      role: {
+        paragraphs: [
+          "(Sample text) I keep the campus running: facilities, safety, schedules, lunch, supplies, and events like today. If it needs to happen on campus, it probably comes through me!",
+          "And if you ever lose your Stanley cup or throw it away, come see me: I've got new ones.",
+        ],
+        options: [
+          { label: "Can I have a burrito?", action: "give-burrito" },
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Delma!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Enjoy the rest of your day! Come back if you get hungry."],
+        options: [{ label: "See you, Delma!" }],
+      },
+    },
+  },
+};
+
+/**
+ * Raquel, an assistant, at the second white table in front of the food truck (next to Delma). She only speaks
+ * Spanish, and she hands out burritos too. Matches her portrait: long wavy black hair, light-medium skin, a black tee.
+ */
+export const NPC_RAQUEL: NpcDef = {
+  id: "npc-raquel",
+  room: "campus",
+  x: -4.95, // behind her table (table centre z = 60.6)
+  z: 61.45,
+  rotY: Math.PI,
+  talkRange: 2.3,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Raquel",
+    title: "Asistente",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-casual",
+    outfitColor: "#1b1c20",
+    hairStyle: "f-witch", // lengthened to the chest
+    hairLength: 1.9,
+    hairColor: "#151217",
+    skinTone: "#E3B08C",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#1f1f24",
+    partColors: { "Body:White": "#1b1c20", "Legs:Orange": "#25272d" },
+  },
+  portrait: raquelPortrait,
+  // SAMPLE TEXT (in Spanish: Raquel only speaks Spanish): replace with Raquel's real words
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Texto de muestra) ¡Hola! Soy Raquel. ¡Bienvenido al camión de comida!",
+          "Tenemos burritos calientitos, y también hay opción vegana. ¿Qué te doy?",
+        ],
+        options: [
+          { label: "¿Me da un burrito, por favor?", action: "give-burrito" },
+          { label: "¿Tiene la opción vegana?", action: "give-burrito-vegan" },
+          { label: "¿Qué hay en el burrito vegano?", next: "vegan" },
+          { label: "¡Gracias, Raquel!", next: "bye" },
+        ],
+      },
+      vegan: {
+        paragraphs: ["(Texto de muestra) El burrito vegano tiene frijoles, arroz, verduras asadas y salsa. ¡Nada de carne ni de queso, y está bien rico!"],
+        options: [
+          { label: "¿Me da uno vegano, por favor?", action: "give-burrito-vegan" },
+          { label: "Tengo otra pregunta", next: "root" },
+          { label: "¡Gracias, Raquel!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Texto de muestra) ¡De nada! ¡Que te vaya muy bien!"],
+        options: [{ label: "¡Adiós, Raquel!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.
