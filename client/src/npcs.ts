@@ -1188,22 +1188,19 @@ export const NPC_DRORI: NpcDef = {
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Ah, a visitor. Welcome to 8th grade science. We mostly study space here, which is fitting, because it's also where my students' minds go during lab cleanup.",
-          "I'm Mr. Drori. The assignment's ready whenever you are. Take your time. The universe has been waiting 13.8 billion years; it can wait a few more minutes.",
+          "(Sample text) Hi, I'm Mr. Drori. I teach 8th grade science here in USC, mostly space. Yes, the whole universe. No, it doesn't fit in one unit.",
+          "Your assignment's ready whenever you are. Take your time; the universe has been waiting 13.8 billion years.",
         ],
         options: [
           { label: "Show me the assignment!", action: "open-assignment" },
           { label: "What are your students learning?", next: "learn" },
-          { label: "What's your favorite planet?", next: "planet" },
-          { label: "Any advice for today?", next: "advice" },
-          { label: "How do you feel about PD days?", next: "pd" },
           { label: "Thanks, Mr. Drori!", next: "bye" },
         ],
       },
       learn: {
         paragraphs: [
-          "(Sample text) Right now? The scale of the solar system. If the sun were a basketball, Earth would be a peppercorn about 26 meters away. My students' reaction: \u201Cwait, that's ILLEGAL.\u201D",
-          "Then we talk gravity and orbits. They compare real NASA data and defend their claims with sentence frames, like tiny astrophysicists with strong opinions about Pluto.",
+          "(Sample text) The scale of the solar system. If the sun were a basketball, Earth would be a peppercorn about 26 meters away. My students' reaction: \u201Cwait, that's ILLEGAL.\u201D",
+          "Then gravity and orbits. They compare real NASA data and defend their claims with sentence frames, like tiny astrophysicists with very strong opinions about Pluto.",
         ],
         options: [
           { label: "Show me the assignment!", action: "open-assignment" },
@@ -1211,38 +1208,8 @@ export const NPC_DRORI: NpcDef = {
           { label: "Thanks, Mr. Drori!", next: "bye" },
         ],
       },
-      planet: {
-        paragraphs: [
-          "(Sample text) Saturn. It has rings, 274 moons at last count (astronomers keep finding more; very rude of them), and it's less dense than water, so in theory it would float in a big enough bathtub. Iconic behavior.",
-          "And yes, I have opinions about Pluto. No, you're not ready for them. Pluto is a dwarf planet. I have accepted it. Pluto has not.",
-        ],
-        options: [
-          { label: "I have another question", next: "root" },
-          { label: "Thanks, Mr. Drori!", next: "bye" },
-        ],
-      },
-      advice: {
-        paragraphs: [
-          "(Sample text) One does not simply walk into 16 classrooms without a plan. Press M for the map. It's less advanced than a star chart, but it'll do.",
-          "And grab a backpack in the MPR. Carrying everything in your arms is a bold strategy, Cotton. Let's see if it pays off.",
-        ],
-        options: [
-          { label: "I have another question", next: "root" },
-          { label: "Thanks, Mr. Drori!", next: "bye" },
-        ],
-      },
-      pd: {
-        paragraphs: [
-          "(Sample text) My working hypothesis is that the snacks are the real professional development. Peer review is ongoing.",
-          "Honestly though, watching my colleagues teach is the best part. Don't quote me. I have a reputation to maintain.",
-        ],
-        options: [
-          { label: "Your secret is safe with me", next: "root" },
-          { label: "Thanks, Mr. Drori!", next: "bye" },
-        ],
-      },
       bye: {
-        paragraphs: ["(Sample text) To infinity and... well, the next classroom. Go learn things. \uD83D\uDE80"],
+        paragraphs: ["(Sample text) To infinity and... well, the next classroom. Good luck out there. \uD83D\uDE80"],
         options: [{ label: "See you, Mr. Drori!" }],
       },
     },
