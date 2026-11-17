@@ -7221,6 +7221,7 @@ export function startPlaceholderScene(
   // --- Camera: orbits the player at a fixed distance ----------------------
   const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 260);
   let camAngle = DEFAULT_CAM_ANGLE; // orbit angle (radians)
+  let debugCam: number[] | null = null; // testing aid: a fixed camera (see window.__debug.lookFrom)
   let camElevation = CAM_HEIGHT; // camera height (adjustable by dragging)
   let camDistance = CAM_DISTANCE; // camera distance (adjustable by scrolling)
 
@@ -10045,6 +10046,11 @@ export function startPlaceholderScene(
     // Aim at the character's chest when close, the feet-to-head middle when far
     const aimY = drivingCar ? 0.9 : 1.1 + 0.4 * Math.min(1, camDistance / 14);
     camera.lookAt(focusX, focusY + aimY, focusZ);
+    if (debugCam) {
+      // testing aid (window.__debug.lookFrom): a fixed camera for close-up screenshots
+      camera.position.set(debugCam[0], debugCam[1], debugCam[2]);
+      camera.lookAt(debugCam[3], debugCam[4], debugCam[5]);
+    }
 
     // Rotate the compass needle so "N" always points toward north (the buses) on screen.
     if (compassNeedle) {
@@ -10125,6 +10131,8 @@ export function startPlaceholderScene(
     setPlayer: (x: number, z: number, y?: number) => { player.position.x = x; player.position.z = z; if (y !== undefined) player.position.y = y; },
     setCamera: (angle: number, elev: number, dist: number) => { camAngle = angle; camElevation = elev; camDistance = dist; },
     setPlayerVisible: (v: boolean) => { player.visible = v; },
+    /** Fixed camera at (x, y, z) looking at (tx, ty, tz); call with no arguments to go back to the normal camera */
+    lookFrom: (...v: number[]) => { debugCam = v.length === 6 ? v : null; },
   };
 
   function stop(): void {

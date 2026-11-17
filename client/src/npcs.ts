@@ -1319,9 +1319,11 @@ export const NPC_LARK: NpcDef = {
     gender: "masculine",
     look: "masc-suit", // the jacket is his vest (white shirt sleeves), the shirt his white collar
     outfitColor: "#18181b",
-    hairStyle: "m-beach", // short and tousled
+    hairStyle: "m-suit", // short neat sides under the curls
+    extraHair: "curlyTop", // the curly top with curls over the forehead
     hairColor: "#7a4a26",
     facialHair: "beard", // light stubble
+    beardColor: "#a77b58", // lighter than his hair, so it reads as stubble
     skinTone: "#F1C6A6",
     glasses: "none",
     shoes: "dress",

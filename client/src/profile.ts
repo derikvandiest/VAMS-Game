@@ -63,6 +63,8 @@ export interface CharacterProfile {
   extraHair?: "locs" | "curls" | "braid" | "buzz" | "scalp" | "curlyTop" | "locsWrap" | "shoulder" | "curlyBob";
   /** NPCs only: no hairstyle at all (the baked and borrowed hair are hidden), e.g. under a "buzz" cut */
   noHair?: boolean;
+  /** NPCs only: a different color for the facial hair (e.g. lighter stubble); default = the hair color */
+  beardColor?: string;
   /** NPCs only: lengthen the modelled hair below the ears by this factor (e.g. 1.8 = down past the shoulders) */
   hairLength?: number;
   /** NPCs only: polka-dot pattern on the named model materials */
@@ -194,6 +196,7 @@ export function sanitizeProfile(raw: unknown): CharacterProfile {
       ? { extraHair: p.extraHair as NonNullable<CharacterProfile["extraHair"]> }
       : {}),
     ...(npc && p.noHair === true ? { noHair: true } : {}),
+    ...(npc && typeof p.beardColor === "string" && /^#[0-9a-f]{6}$/i.test(p.beardColor) ? { beardColor: p.beardColor } : {}),
     ...(npc && typeof p.hairLength === "number" && p.hairLength > 1 && p.hairLength <= 3 ? { hairLength: p.hairLength } : {}),
     ...(npc && p.polkaDots && typeof p.polkaDots === "object" ? { polkaDots: p.polkaDots as CharacterProfile["polkaDots"] } : {}),
   };

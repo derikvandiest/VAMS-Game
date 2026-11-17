@@ -1078,7 +1078,11 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
       skinDark: skin.clone().multiplyScalar(0.85),
     };
     const objs = (n: string) => slots.get(n)?.objs ?? [];
-    recolor([...objs("hair"), ...objs("facial"), ...objs("extraHair")], base);
+    recolor([...objs("hair"), ...objs("extraHair")], base);
+    if (p.beardColor) {
+      const b = new THREE.Color(p.beardColor);
+      recolor(objs("facial"), { ...base, hair: b, hairDark: b.clone().multiplyScalar(0.8) });
+    } else recolor(objs("facial"), base);
     recolor(objs("legfill"), { skin: base.skin ?? skin });
     recolor(objs("shoes"), { ...base, ...(p.shoeColor ? { shoe: new THREE.Color(p.shoeColor) } : {}) });
     recolor(objs("hat"), { accent: new THREE.Color(p.hatColor || shirtColorFor(p.homeroom)) });
