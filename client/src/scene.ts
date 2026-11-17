@@ -6592,8 +6592,22 @@ export function startPlaceholderScene(
     facingAngle: number;
     /** Ground-floor bench seats are not used from the walkway above; they stand up at a fixed spot in front */
     bench?: { exitX: number; exitZ: number };
+    /** A dedication shown while someone sits here (the orange memorial bench) */
+    memorial?: { line1: string; line2: string };
   };
   const chairSlots: ChairSlot[] = [];
+  // the memorial note shown while sitting on a dedicated bench
+  const memorialNote = document.createElement("div");
+  memorialNote.id = "memorial-note";
+  document.body.appendChild(memorialNote);
+  function showMemorial(m: ChairSlot["memorial"]): void {
+    if (!m) {
+      memorialNote.classList.remove("show");
+      return;
+    }
+    memorialNote.innerHTML = `<span class="mem-flower">🧡</span><div><div class="mem-l1">${m.line1}</div><div class="mem-l2">${m.line2}</div></div>`;
+    memorialNote.classList.add("show");
+  }
 
   tables.forEach((table, i) => {
     const group = new THREE.Group();
@@ -6783,7 +6797,7 @@ export function startPlaceholderScene(
     /** "west" = the west building's courtyard wall (facing east), "westOut" = its outside wall on the parking-lot
      *  sidewalk (facing west), "north" = the north building's wall (facing south), "breezeway" = the west building's
      *  end wall (z = -2) facing the entrance breezeway inside the gate (facing north) */
-    const addBench = (along: number, color: number, wall: "west" | "westOut" | "north" | "breezeway" = "west", len = BENCH_LEN): void => {
+    const addBench = (along: number, color: number, wall: "west" | "westOut" | "north" | "breezeway" = "west", len = BENCH_LEN, memorial?: ChairSlot["memorial"]): void => {
       const wood = new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
       const bench = new THREE.Group();
       const breeze = wall === "breezeway";
@@ -6824,10 +6838,12 @@ export function startPlaceholderScene(
               : out
                 ? { exitX: -31.1, exitZ: sz }
                 : { exitX: -12.7, exitZ: sz },
+          memorial,
         });
       }
     };
-    addBench(8.5, 0xf47a20); // orange, exactly midway between the 7th USC (3.5) and 7th UCLA (13.5) doors
+    // orange, exactly midway between the 7th USC (3.5) and 7th UCLA (13.5) doors: a memorial bench
+    addBench(8.5, 0xf47a20, "west", BENCH_LEN, { line1: "In memory of Ted Christiansen", line2: "ELA Teacher" });
     addBench(16.6, 0x2563eb); // two blue benches in a row (with a gap) between the 7th UCLA and 7th LMU doors
     addBench(20.0, 0x2563eb);
     // two more on the 7th USC classroom's outside wall inside the campus: the end wall facing the entrance
@@ -8510,6 +8526,7 @@ export function startPlaceholderScene(
 
   function standUp(): void {
     if (!seatedChair) return;
+    showMemorial(undefined);
     const cosF = Math.cos(seatedChair.facingAngle);
     const sinF = Math.sin(seatedChair.facingAngle);
     // Test multiple safe exit spots (behind chair, or stepping out to left/right aisle)
@@ -8566,6 +8583,7 @@ export function startPlaceholderScene(
       bballVel.set(0, 0, 0);
     }
     seatedChair = chair;
+    showMemorial(chair.memorial);
     // Align with chair seat and backrest
     const seatBackOffset = 0.08;
     const seatedX = chair.chairX - Math.sin(chair.facingAngle) * seatBackOffset;
@@ -10673,6 +10691,7 @@ export function startPlaceholderScene(
 
   function stop(): void {
     renderer.setAnimationLoop(null);
+    memorialNote.remove();
     window.removeEventListener("resize", resize);
     window.removeEventListener("eld-objective-complete", onObjectiveComplete);
     window.removeEventListener("eld-drink", onDrinkEvent);

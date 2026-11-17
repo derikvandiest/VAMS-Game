@@ -3017,3 +3017,16 @@ body {
 .ho-sources li { margin: 0 0 4px; }
 @media (max-width: 700px) { .ho-stats, .ho-two, .ho-pillars { grid-template-columns: 1fr; } .ho-paper { padding: 0 18px 20px; } .ho-head { margin: 0 -18px 14px; padding: 20px 18px 16px; } }
 @media print { .ho-paper { padding: 0 24px 20px; font-size: 12px; } .ho-head { margin: 0 -24px 14px; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .ho-pillars div, .ho-stat, .ho-try { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+/* the memorial note shown while sitting on the orange bench */
+#memorial-note {
+  position: fixed; left: 50%; top: 22%; transform: translate(-50%, -8px); z-index: 1200;
+  display: flex; align-items: center; gap: 14px; padding: 14px 24px;
+  background: rgba(17, 24, 39, 0.82); border: 1px solid rgba(244, 122, 32, 0.7); border-radius: 14px;
+  color: #fff7ed; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  opacity: 0; pointer-events: none; transition: opacity 0.6s ease, transform 0.6s ease;
+}
+#memorial-note.show { opacity: 1; transform: translate(-50%, 0); }
+#memorial-note .mem-flower { font-size: 26px; }
+#memorial-note .mem-l1 { font: 600 19px/1.25 Georgia, "Times New Roman", serif; letter-spacing: 0.2px; }
+#memorial-note .mem-l2 { font: italic 15px/1.3 Georgia, "Times New Roman", serif; color: #fdba74; margin-top: 2px; }
