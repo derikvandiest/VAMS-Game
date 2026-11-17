@@ -7666,6 +7666,8 @@ export function startPlaceholderScene(
         if (event === "reset-balls") doBallReset();
         // Mr. Ipina opens the campus map for you
         if (event === "open-map") setTimeout(() => openMap(), 0);
+        // A classroom teacher who chats first hands out the assignment from the dialogue
+        if (event === "open-assignment") setTimeout(() => openAssignment(), 0);
         // Ms. Castaneda runs the front entrance gate (the only way to open or close it)
         if (event === "gate-open" && !gateOpen) {
           gateOpen = true;
@@ -8327,7 +8329,7 @@ export function startPlaceholderScene(
       if (!inMprRoom && !currentClassroom && elevator.press(player.position.x, player.position.y, player.position.z)) return;
       const talkNpc = nearbyNpc();
       if (talkNpc) {
-        if (talkNpc.def.room === "classroom") openAssignment(); // the teacher hands out the assignment
+        if (talkNpc.def.room === "classroom" && !talkNpc.def.chatFirst) openAssignment(); // the teacher hands out the assignment
         else talkToNpc(talkNpc);
         return;
       }

@@ -18,6 +18,7 @@ import roldanPortrait from "./assets/roldan_portrait.png";
 import guerreroPortrait from "./assets/guerrero_portrait.png";
 import nayfeldPortrait from "./assets/nayfeld_portrait.png";
 import daniPortrait from "./assets/dani_portrait.png";
+import somozaPortrait from "./assets/somoza_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -46,6 +47,8 @@ export interface NpcDef {
   talkRange?: number;
   /** Sitting (on a bench or chair) with the seat at this height; x/z/rotY are then the seated position */
   seatY?: number;
+  /** Classroom teacher: show the dialogue first (an option with action "open-assignment" hands out the assignment) */
+  chatFirst?: boolean;
   /** No floating name tag above the head (generic, unnamed characters) */
   noNameTag?: boolean;
   /** Something held in the right hand */
@@ -1058,7 +1061,84 @@ export const NPC_NAYFELD: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD];
+/**
+ * Mr. Somoza, the 7th grade LMU humanities teacher, standing in front of the whiteboard in his classroom (talk to him
+ * for the assignment). Always excited: "Here we go!" Matches his portrait: black wide-brim hat, dark curly hair, a full
+ * dark curly beard, warm tan skin, an open gray-and-brown plaid flannel over a navy tee, jeans.
+ */
+const SOMOZA_NAVY = "#1d2433";
+export const NPC_SOMOZA: NpcDef = {
+  id: "npc-somoza",
+  room: "classroom",
+  classroomId: "7th-lmu-humanities",
+  x: 0, // set from the classroom's whiteboard
+  z: 0,
+  rotY: 0, // facing the class
+  talkRange: 2.2,
+  chatFirst: true,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mr. Somoza",
+    title: "7th Grade Humanities Teacher",
+    noHomeroom: true,
+    gender: "masculine",
+    look: "masc-suit", // the jacket is his open flannel, the shirt his navy tee
+    outfitColor: SOMOZA_NAVY,
+    hairStyle: "m-explorer",
+    hairColor: "#2a1a10", // dark brown
+    extraHair: "shoulder", // dark curls down to the collar under the hat
+    skinTone: "#D9A074", // warm tan
+    facialHair: "full-beard",
+    hat: "farmer",
+    hatColor: "#17171a", // black wide-brim hat
+    glasses: "none",
+    shoes: "boots",
+    shoeColor: "#3b2a1e",
+    partColors: { "Body:White": SOMOZA_NAVY, "Body:Tie": SOMOZA_NAVY, "Legs:Suit": "#3a4a63", "Hat:Beige": "#17171a", "Hat:Red": "#0d0d0f" },
+    polkaDots: { parts: ["Body:Suit"], base: "#8d8a84", dot: "#3a332d", accent: "#e4ddd0", shape: "plaid" },
+  },
+  portrait: somozaPortrait,
+  // SAMPLE TEXT: replace with Mr. Somoza's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Here we go! Welcome, welcome! I'm Mr. Somoza, and I teach 7th grade humanities here in LMU!",
+          "I am SO excited you're here today. History is full of amazing stories, and my students tell them best!",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "What are your students learning?", next: "learn" },
+          { label: "Why are you always so excited?", next: "excited" },
+          { label: "Thanks, Mr. Somoza!" },
+        ],
+      },
+      learn: {
+        paragraphs: [
+          "(Sample text) Right now we're traveling back in time to ancient civilizations! My students read primary sources, talk with partners using sentence frames, and then debate big questions.",
+          "Every student gets a voice, especially my English learners. Here we go!",
+        ],
+        options: [
+          { label: "Here we go! Show me the assignment!", action: "open-assignment" },
+          { label: "I have another question", next: "root" },
+        ],
+      },
+      excited: {
+        paragraphs: [
+          "(Sample text) Because every day is a new adventure! When the bell rings, I say “Here we go!” and my students say it right back.",
+          "Energy is contagious. Bring it, and your students will bring it too!",
+        ],
+        options: [
+          { label: "Here we go! Show me the assignment!", action: "open-assignment" },
+          { label: "I have another question", next: "root" },
+        ],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.

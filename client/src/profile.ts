@@ -65,7 +65,7 @@ export interface CharacterProfile {
   noHair?: boolean;
   /** NPCs only: polka-dot pattern on the named model materials */
   /** NPCs only: a printed pattern on the named model materials: dots, or diamonds (dot = diamond fill, accent = small squares) */
-  polkaDots?: { parts: string[]; base: string; dot: string; accent?: string; shape?: "dots" | "diamonds" | "ribs" };
+  polkaDots?: { parts: string[]; base: string; dot: string; accent?: string; shape?: "dots" | "diamonds" | "ribs" | "plaid" };
 }
 
 export const HOMEROOM_INFO: Record<Homeroom, { label: string; shirtColor: string; textHex: string }> = {

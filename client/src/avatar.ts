@@ -410,12 +410,15 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
   }
 
   /** Printed patterns drawn in the shader from the model-space position (the outfit models have no texture UVs) */
-  function addPolkaDots(std: THREE.MeshStandardMaterial, base: string, dot: string, accent = dot, shape: "dots" | "diamonds" | "ribs" = "dots"): void {
+  function addPolkaDots(std: THREE.MeshStandardMaterial, base: string, dot: string, accent = dot, shape: "dots" | "diamonds" | "ribs" | "plaid" = "dots"): void {
     std.color.set(base);
     const dotColor = new THREE.Color(dot);
     const accentColor = new THREE.Color(accent);
     const body =
-      shape === "ribs"
+      shape === "plaid"
+        ? // flannel: wide dark bands both ways (darker where they cross) and thin light stripes
+          "vec2 f = fract(uv * 7.0); float bx = 1.0 - smoothstep(0.34, 0.37, f.x); float by = 1.0 - smoothstep(0.34, 0.37, f.y); float tx = 1.0 - smoothstep(0.025, 0.045, abs(f.x - 0.68)); float ty = 1.0 - smoothstep(0.025, 0.045, abs(f.y - 0.68)); vec3 c = mix(diffuseColor.rgb, polkaColor, 0.55 * bx); c = mix(c, polkaColor, 0.55 * by); diffuseColor.rgb = mix(c, polkaAccent, 0.85 * max(tx, ty));"
+        : shape === "ribs"
         ? "float rib = abs(fract(uv.x * 46.0) - 0.5) * 2.0; float m = smoothstep(0.55, 0.95, rib); float tint = 0.5 + 0.5 * sin(vPolkaPos.y * 9.0 + vPolkaPos.x * 5.0); diffuseColor.rgb = mix(mix(diffuseColor.rgb, polkaAccent, 0.25 * tint), polkaColor, m * 0.55);"
         : shape === "diamonds"
         ? "vec2 cell = uv * 22.0; vec2 q = fract(cell) - 0.5; float dd = abs(q.x) + abs(q.y); float fill = 1.0 - smoothstep(0.36, 0.40, dd); vec2 k = fract(cell + 0.5) - 0.5; float sq = 1.0 - smoothstep(0.08, 0.11, max(abs(k.x), abs(k.y))); diffuseColor.rgb = mix(mix(diffuseColor.rgb, polkaColor, fill), polkaAccent, sq);"
@@ -995,6 +998,16 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     recolor(objs("legfill"), { skin: base.skin ?? skin });
     recolor(objs("shoes"), { ...base, ...(p.shoeColor ? { shoe: new THREE.Color(p.shoeColor) } : {}) });
     recolor(objs("hat"), { accent: new THREE.Color(p.hatColor || shirtColorFor(p.homeroom)) });
+    // NPCs: exact colors for a borrowed hat's materials, e.g. partColors { "Hat:Beige": "#17171a" }
+    if (p.partColors) {
+      for (const root of objs("hat")) root.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (!m.isMesh) return;
+        const mat = m.material as THREE.MeshStandardMaterial;
+        const c = p.partColors![`Hat:${mat.name}`];
+        if (c) mat.color.set(c);
+      });
+    }
     recolor(objs("glasses"), { accent: new THREE.Color(p.glassesColor) });
   }
 
