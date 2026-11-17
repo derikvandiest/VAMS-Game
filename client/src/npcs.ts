@@ -20,6 +20,7 @@ import nayfeldPortrait from "./assets/nayfeld_portrait.png";
 import daniPortrait from "./assets/dani_portrait.png";
 import somozaPortrait from "./assets/somoza_portrait.png";
 import droriPortrait from "./assets/drori_portrait.png";
+import weberPortrait from "./assets/weber_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -1216,7 +1217,76 @@ export const NPC_DRORI: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_DRORI];
+/**
+ * Mrs. Weber, the 7th grade USC English teacher, standing in front of the whiteboard in her classroom (talk to her for
+ * the assignment). Matches her portrait: long, wavy dark-blonde hair with a center part, fair skin, a gray knit
+ * crewneck sweater.
+ */
+const WEBER_GRAY = "#7f848b";
+export const NPC_WEBER: NpcDef = {
+  id: "npc-weber",
+  room: "classroom",
+  classroomId: "7th-usc-english",
+  x: 0, // set from the classroom's whiteboard
+  z: 0,
+  rotY: 0, // facing the class
+  talkRange: 2.2,
+  chatFirst: true,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mrs. Weber",
+    title: "7th Grade English Teacher",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-casual",
+    outfitColor: WEBER_GRAY,
+    hairStyle: "f-witch", // center part, lengthened below the shoulders
+    hairLength: 2.0,
+    hairColor: "#c9a160", // dark blonde
+    skinTone: "#F2C9AE",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#e9e9e6",
+    partColors: { "Legs:Orange": "#2f3546" },
+    // a soft knit texture on the sweater
+    polkaDots: { parts: ["Body:White"], base: WEBER_GRAY, dot: "#6f747b", accent: "#8b9097", shape: "ribs" },
+  },
+  portrait: weberPortrait,
+  // SAMPLE TEXT: replace with Mrs. Weber's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi there! I'm Mrs. Weber, and I teach 7th grade English here in USC. Welcome!",
+          "Your assignment is ready whenever you are. Make yourself at home.",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "What are your students learning?", next: "learn" },
+          { label: "Thanks, Mrs. Weber!", next: "bye" },
+        ],
+      },
+      learn: {
+        paragraphs: [
+          "(Sample text) We're looking at how authors develop a character's perspective over time. My students cite evidence from the text to back up their thinking.",
+          "Then we hold a Socratic seminar. Sentence frames help everyone join the conversation, especially my English learners.",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mrs. Weber!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Have a wonderful day! Enjoy the rest of the classrooms."],
+        options: [{ label: "See you, Mrs. Weber!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_DRORI, NPC_WEBER];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.

@@ -572,6 +572,50 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     return objs;
   }
 
+  /**
+   * NPCs: longer modelled hair. Strands reaching below about mouth level get (k - 1) x 16 cm more length, which drapes
+   * outward (forward over the chest in front, back over the shoulder blades behind) so it does not sink into the body.
+   */
+  function lengthenHair(objs: THREE.Object3D[] | null, k?: number): THREE.Object3D[] | null {
+    if (!objs || !k || k <= 1) return objs;
+    const box = measureHead();
+    if (!box) return objs;
+    const top = box.max.y;
+    const h = box.max.y - box.min.y;
+    const y0 = top - h * 0.55; // about ear level: hair above this keeps its shape
+    const zc = (box.min.z + box.max.z) / 2;
+    const xc = (box.min.x + box.max.x) / 2;
+    const hw = (box.max.x - box.min.x) / 2;
+    for (const o of objs) {
+      const mesh = o as THREE.Mesh;
+      const geo = mesh.geometry.clone();
+      const pos = geo.getAttribute("position");
+      for (let v = 0; v < pos.count; v++) {
+        const y = pos.getY(v);
+        if (y >= y0) continue;
+        const below = y0 - y;
+        // every strand that reaches below the line gets the same extra length (eased in just under the line), so
+        // short front strands grow as much as the long ones at the back
+        const s = Math.min(1, below / 0.05);
+        const extra = (k - 1) * 0.16 * s * s * (3 - 2 * s);
+        pos.setY(v, y - extra);
+        // drape: push away from the body's centre line, more the further down it hangs
+        const dz = pos.getZ(v) - zc;
+        const dx = pos.getX(v) - xc;
+        const out = Math.min(0.09, extra * 0.45);
+        // the side strands (level with the ears or in front) fall forward over the shoulders, the rest down the back
+        const side = Math.abs(dx) > hw * 0.55; // a strand at the side of the head, not down the middle of the back
+        pos.setZ(v, pos.getZ(v) + (side || dz > 0 ? out * 1.6 : -out));
+        pos.setX(v, pos.getX(v) + Math.sign(dx) * out * 0.6);
+      }
+      pos.needsUpdate = true;
+      geo.computeVertexNormals();
+      geo.computeBoundingSphere();
+      mesh.geometry = geo;
+    }
+    return objs;
+  }
+
   /** Bind-pose size of the head (skin meshes only), measured once per model. */
   function measureHead(): THREE.Box3 | null {
     if (headBox) return headBox;
@@ -971,8 +1015,8 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     const L = (id: string) => `${activeOutfitUrl}|${id}`;
 
     const hair = getHairStyle(p.hairStyle);
-    const hairObjs = setSlot("hair", hair.donor && !p.noHair ? L(hair.id) : "", () =>
-      cutRegion(borrow(hair.donor!, hair.parts ?? [], (i) => (i === 0 ? "hair" : "hairDark")), hair.cut)
+    const hairObjs = setSlot("hair", hair.donor && !p.noHair ? L(hair.id + (p.hairLength ? `@${p.hairLength}` : "")) : "", () =>
+      lengthenHair(cutRegion(borrow(hair.donor!, hair.parts ?? [], (i) => (i === 0 ? "hair" : "hairDark")), hair.cut), p.hairLength)
     );
     hideBakedHair = hairObjs.length > 0 || !!p.noHair;
     setSlot("extraHair", p.extraHair ? L(p.extraHair) : "", () =>
