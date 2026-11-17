@@ -6564,10 +6564,10 @@ export function startPlaceholderScene(
   // awning (layout.json `tables`). Decorative in the prototype (no
   // collision, like the parked cars) - furnished interiors arrive at
   // Milestone 7.
-  const tableTopMaterial = new THREE.MeshStandardMaterial({ color: 0x1f4d2b, roughness: 0.7 }); // dark forest green
+  const tableTopMaterial = new THREE.MeshStandardMaterial({ color: 0x12321c, roughness: 0.7 }); // deep dark forest green
   const tablePoleMaterial = new THREE.MeshStandardMaterial({ color: 0x4a4f57, roughness: 0.7, metalness: 0.3 });
-  const chairMaterial = new THREE.MeshStandardMaterial({ color: 0x1f4d2b, roughness: 0.7 }); // dark forest green
-  const umbrellaMaterials = ["#2f6fd0"].map( // all the lunch-table umbrellas are blue
+  const chairMaterial = new THREE.MeshStandardMaterial({ color: 0x12321c, roughness: 0.7 }); // deep dark forest green
+  const umbrellaMaterials = ["#1b2a4e"].map( // all the lunch-table umbrellas are dark navy blue
     (hex) => new THREE.MeshStandardMaterial({ color: hex, roughness: 0.8 })
   );
   const TABLE_HEIGHT = 1.1; // table-top surface height (player is ~2.4 tall)
