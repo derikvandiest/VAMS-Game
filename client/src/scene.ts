@@ -7683,9 +7683,10 @@ export function startPlaceholderScene(
     );
   }
 
-  // Register all 40 MPR teacher chairs
+  // Register the 40 MPR teacher chairs (except the ones the seated attendee NPCs are sitting on)
   for (const c of mprChairs) {
-    chairSlots.push(c);
+    const taken = npcList.some((n) => n.def.room === "mpr" && n.def.seatY !== undefined && Math.hypot(n.def.x - c.chairX, n.def.z - c.chairZ) < 0.3);
+    if (!taken) chairSlots.push(c);
   }
 
   let inMprRoom = false;
