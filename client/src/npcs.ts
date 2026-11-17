@@ -24,6 +24,7 @@ import dominguezPortrait from "./assets/dominguez_portrait.png";
 import larkPortrait from "./assets/lark_portrait.png";
 import gilletPortrait from "./assets/gillet_portrait.png";
 import noroPortrait from "./assets/norori_portrait.png";
+import ramirezPortrait from "./assets/ramirez_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -1512,7 +1513,76 @@ export const NPC_NORORI: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLET, NPC_NORORI];
+/**
+ * Mr. Ramirez, the 8th grade LMU history teacher, standing in front of the whiteboard in his classroom (talk to him for
+ * the assignment). Matches his portrait: black hair swept back with faded sides, thin silver rectangular glasses, a full
+ * trimmed beard, tan skin, a blue button-up shirt with a rust-colored print.
+ */
+const RAMIREZ_BLUE = "#466a8c";
+export const NPC_RAMIREZ: NpcDef = {
+  id: "npc-ramirez",
+  room: "classroom",
+  classroomId: "8th-lmu-humanities",
+  x: 0, // set from the classroom's whiteboard
+  z: 0,
+  rotY: 0, // facing the class
+  talkRange: 2.2,
+  chatFirst: true,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mr. Ramirez",
+    title: "8th Grade History Teacher",
+    noHomeroom: true,
+    gender: "masculine",
+    look: "masc-suit", // jacket + shirt + tie all printed as one button-up shirt
+    outfitColor: RAMIREZ_BLUE,
+    hairStyle: "m-king", // short, neat and full on top
+    hairColor: "#16151a",
+    facialHair: "beard",
+    skinTone: "#C98E66",
+    glasses: "rect",
+    glassesColor: "#9aa0a8", // thin silver frames
+    shoes: "dress",
+    shoeColor: "#2a1f19",
+    partColors: { "Legs:Suit": "#2b2f38" },
+    polkaDots: { parts: ["Body:Suit", "Body:White", "Body:Tie"], base: RAMIREZ_BLUE, dot: "#a5614c", accent: "#d8c7ad", shape: "diamonds" },
+  },
+  portrait: ramirezPortrait,
+  // SAMPLE TEXT: replace with Mr. Ramirez's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Welcome! I'm Mr. Ramirez, and I teach 8th grade history here in LMU.",
+          "Your assignment is ready whenever you are. Grab a seat and dive in!",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "What are your students learning?", next: "learn" },
+          { label: "Thanks, Mr. Ramirez!", next: "bye" },
+        ],
+      },
+      learn: {
+        paragraphs: [
+          "(Sample text) We're at the Constitutional Convention: how the founders debated, compromised, and built the government we still have today.",
+          "My students read primary sources and argue both sides with sentence frames. History is a conversation, and every student, especially my English learners, gets to join it.",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Ramirez!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Thanks for stopping by! Enjoy the rest of your visit."],
+        options: [{ label: "See you, Mr. Ramirez!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLET, NPC_NORORI, NPC_RAMIREZ];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.
