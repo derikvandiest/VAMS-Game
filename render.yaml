@@ -1,0 +1,17 @@
+# Render.com blueprint: "New > Blueprint" in the Render dashboard, pick this repository, and it sets everything up.
+# (Any host that runs Node or Docker works too — see DEPLOY.md.)
+services:
+  - type: web
+    name: eld-pd-game
+    runtime: node
+    plan: starter # multiplayer needs an always-on instance (the free plan sleeps when idle)
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: ADMIN_PASSWORD
+        generateValue: true

@@ -1,0 +1,10 @@
+node_modules
+dist
+.git
+.vscode
+.idea
+*.log
+.env
+# source art and unused files never ship with the website
+blender
+assets

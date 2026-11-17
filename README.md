@@ -110,6 +110,10 @@ Open **Terminal** (⌘+Space, type "Terminal"), `cd` into the project folder, an
 
 ---
 
+## Putting it on a website
+
+Run `npm run prod` to try the website version locally (http://localhost:3001). To publish it, see **[DEPLOY.md](DEPLOY.md)**.
+
 ## Troubleshooting
 
 | Problem | Fix |

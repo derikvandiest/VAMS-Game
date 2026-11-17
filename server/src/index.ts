@@ -18,10 +18,16 @@ import { Server } from "socket.io";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-/** Port can be overridden with an environment variable (see .env.example). */
+/** Port can be overridden with an environment variable (see .env.example). Hosts set PORT for you. */
 const PORT = Number(process.env.PORT) || 3001;
+/** Listen on every network interface so a hosting provider (or a Docker container) can reach the server. */
+const HOST = process.env.HOST || "0.0.0.0";
+const IS_PROD = process.env.NODE_ENV === "production";
 
 const app = express();
+// Behind a hosting provider's proxy / load balancer: trust its X-Forwarded-* headers (real client IP, https).
+app.set("trust proxy", 1);
+app.disable("x-powered-by");
 const httpServer = createServer(app);
 
 /** Socket.io automatically falls back to long-polling if WebSockets are blocked. */
@@ -30,16 +36,38 @@ const io = new Server(httpServer);
 // --- Serving the game -------------------------------------------------------
 // In production (`npm run build` then `npm start`) the browser files live in /dist.
 const distFolder = path.resolve(__dirname, "../../dist");
-app.use(express.static(distFolder));
+// Basic security headers for a public website.
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  next();
+});
+// Files Vite builds into /assets have a content hash in their name, so browsers may keep them for a year.
+app.use(
+  "/assets",
+  express.static(path.join(distFolder, "assets"), { immutable: true, maxAge: "365d", fallthrough: true })
+);
+// The 3D models and other public files change rarely: cache for a week (re-checked after that).
+app.use(
+  express.static(distFolder, {
+    maxAge: IS_PROD ? "7d" : 0,
+    setHeaders(res, filePath) {
+      // the page itself is never cached, so a new release is picked up right away
+      if (filePath.endsWith("index.html")) res.setHeader("Cache-Control", "no-cache");
+    },
+  })
+);
 
 // Health check so we (and the hosting provider) can confirm the server is alive.
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, players: io.engine.clientsCount });
+  res.json({ ok: true, players: io.engine.clientsCount, version: process.env.npm_package_version ?? "dev", uptime: Math.round(process.uptime()) });
 });
 
 // Any other page request gets the game's main page (a single-page app).
 app.use((req, res, next) => {
-  if (req.method !== "GET") return next();
+  if (req.method !== "GET" || req.path.startsWith("/api/") || path.extname(req.path)) return next(); // missing files stay 404s
+  res.setHeader("Cache-Control", "no-cache");
   res.sendFile(path.join(distFolder, "index.html"), (err) => {
     if (err) next(); // /dist not built yet — normal during development
   });
@@ -585,7 +613,18 @@ io.on("connection", (socket) => {
   });
 });
 
-httpServer.listen(PORT, () => {
-  console.log(`[server] ELD PD Game server running at http://localhost:${PORT}`);
-  console.log("[server] During development, open http://localhost:5173 instead.");
+httpServer.listen(PORT, HOST, () => {
+  console.log(`[server] ELD PD Game server running on port ${PORT}${IS_PROD ? " (production)" : ""}`);
+  if (!IS_PROD) console.log(`[server] Open http://localhost:${PORT} (built game) — or http://localhost:5173 during development.`);
 });
+
+// Hosts stop the server with SIGTERM when deploying a new version: finish open requests, tell players, then exit.
+function shutdown(signal: string): void {
+  console.log(`[server] ${signal} received, shutting down…`);
+  io.emit("server:shutdown");
+  io.close();
+  httpServer.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 5000).unref();
+}
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
