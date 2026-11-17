@@ -19,6 +19,7 @@ import guerreroPortrait from "./assets/guerrero_portrait.png";
 import nayfeldPortrait from "./assets/nayfeld_portrait.png";
 import daniPortrait from "./assets/dani_portrait.png";
 import somozaPortrait from "./assets/somoza_portrait.png";
+import droriPortrait from "./assets/drori_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -1144,7 +1145,96 @@ export const NPC_SOMOZA: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA];
+/**
+ * Mr. Drori, standing outside next to the 8th grade USC classroom door (x = 6.2 on the north building, wall z = -2),
+ * between the benches. Sarcastic, smart, a little grumpy, and he speaks in memes. Matches his portrait: short
+ * dark crew cut, a reddish-brown goatee and moustache, fair skin, a navy varsity jacket with gray sleeves over a
+ * light gray button-up jersey.
+ */
+const DRORI_NAVY = "#27306a";
+const DRORI_JERSEY = "#c9c9d6";
+export const NPC_DRORI: NpcDef = {
+  id: "npc-drori",
+  room: "campus",
+  x: 8.45,
+  z: -0.6,
+  rotY: 0.35, // looking out over the walkway
+  talkRange: 1.5, // close, so E at the classroom door still opens the door
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mr. Drori",
+    title: "8th Grade Teacher",
+    noHomeroom: true,
+    gender: "masculine",
+    look: "masc-suit", // the jacket is his varsity jacket, the shirt his jersey
+    outfitColor: DRORI_NAVY,
+    noHair: true,
+    extraHair: "buzz", // short crew cut
+    hairColor: "#4a2c1a",
+    facialHair: "van-dyke", // moustache and goatee, clean cheeks
+    skinTone: "#EDBE9C",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#1f1f24",
+    partColors: { White: DRORI_JERSEY, Tie: DRORI_JERSEY, "Legs:Suit": "#2a2f3a" },
+    polkaDots: { parts: ["Body:Suit"], base: DRORI_NAVY, dot: "#a9adb6", shape: "sleeves" },
+  },
+  portrait: droriPortrait,
+  // SAMPLE TEXT: replace with Mr. Drori's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Oh look. Another PD day. *This is fine.*",
+          "I'm Mr. Drori. Yes, I'm standing outside my classroom. No, I'm not hiding from the coffee line. ...Okay, I'm a little bit hiding from the coffee line.",
+        ],
+        options: [
+          { label: "How's your day going?", next: "day" },
+          { label: "Any advice for today?", next: "advice" },
+          { label: "Why are you so grumpy?", next: "grumpy" },
+          { label: "Have a good one, Mr. Drori!", next: "bye" },
+        ],
+      },
+      day: {
+        paragraphs: [
+          "(Sample text) Let me check my status bar... Mood: buffering. Caffeine: critically low. Patience: it's over... nine.",
+          "But hey, the kids are learning, so... *task failed successfully.*",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Have a good one, Mr. Drori!", next: "bye" },
+        ],
+      },
+      advice: {
+        paragraphs: [
+          "(Sample text) One does not simply *walk* into 16 classrooms without a plan. Check your map. Press M. It's not rocket science. (That's next unit.)",
+          "And grab a backpack in the MPR. Carrying everything in your arms? Ain't nobody got time for that.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Have a good one, Mr. Drori!", next: "bye" },
+        ],
+      },
+      grumpy: {
+        paragraphs: [
+          "(Sample text) Grumpy? Me? I'm not grumpy. This is just my face when someone says \u201Cquick meeting.\u201D",
+          "Fine. Deep down I love this job. The kids are brilliant. But if you tell anyone, I'll deny it. *Surprised face.*",
+        ],
+        options: [
+          { label: "Your secret is safe with me", next: "root" },
+          { label: "Have a good one, Mr. Drori!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Yeah, yeah. Go be productive or whatever. *Insert thumbs-up meme here.* \uD83D\uDC4D"],
+        options: [{ label: "See you, Mr. Drori!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_DRORI];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.

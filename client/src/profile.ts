@@ -27,7 +27,7 @@ export interface LookDef {
 }
 
 export interface HairStyleDef { id: string; name: string; gender: Gender | "both"; donor?: string; parts?: string[]; cut?: "beard" | "rest" | "rest-nape" | "rest-sideburns"; /** materials of a mohawk crest, removed under hats */ crest?: string[] }
-export interface FacialHairDef { id: string; name: string; /** only for NPCs, not offered to players */ npcOnly?: boolean; donor?: string; parts?: string[]; cut?: "beard" | "rest" | "rest-nape" | "rest-sideburns" }
+export interface FacialHairDef { id: string; name: string; /** only for NPCs, not offered to players */ npcOnly?: boolean; donor?: string; parts?: string[]; cut?: "beard" | "goatee" | "rest" | "rest-nape" | "rest-sideburns" }
 export interface HatDef { id: string; name: string; /** only for NPCs, not offered to players */ npcOnly?: boolean; donors?: Partial<Record<Gender, string>>; parts?: string[] }
 export interface GlassesDef { id: string; name: string; proc?: "round" | "rect"; /** only NPCs wear it (not offered in character creation) */ npcOnly?: boolean }
 export interface ShoeDef { id: string; name: string; /** shoes without donors (the model's own) are limited to these genders */ genders?: Gender[]; /** reaches the knee: no skin legs needed underneath */ tall?: boolean | Gender[]; donors?: Partial<Record<Gender, string>>; tint?: Partial<Record<Gender, string[]>> }
@@ -65,7 +65,7 @@ export interface CharacterProfile {
   noHair?: boolean;
   /** NPCs only: polka-dot pattern on the named model materials */
   /** NPCs only: a printed pattern on the named model materials: dots, or diamonds (dot = diamond fill, accent = small squares) */
-  polkaDots?: { parts: string[]; base: string; dot: string; accent?: string; shape?: "dots" | "diamonds" | "ribs" | "plaid" };
+  polkaDots?: { parts: string[]; base: string; dot: string; accent?: string; shape?: "dots" | "diamonds" | "ribs" | "plaid" | "sleeves"; sleeveStart?: number };
 }
 
 export const HOMEROOM_INFO: Record<Homeroom, { label: string; shirtColor: string; textHex: string }> = {

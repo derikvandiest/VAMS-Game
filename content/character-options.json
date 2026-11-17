@@ -415,6 +415,16 @@
       ],
       "cut": "beard",
       "npcOnly": true
+    },
+    {
+      "id": "van-dyke",
+      "name": "Moustache & Goatee",
+      "donor": "Male/Adventurer",
+      "parts": [
+        "Head:Hair"
+      ],
+      "cut": "goatee",
+      "npcOnly": true
     }
   ],
   "hats": [

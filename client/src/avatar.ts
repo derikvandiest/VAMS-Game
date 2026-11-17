@@ -410,12 +410,15 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
   }
 
   /** Printed patterns drawn in the shader from the model-space position (the outfit models have no texture UVs) */
-  function addPolkaDots(std: THREE.MeshStandardMaterial, base: string, dot: string, accent = dot, shape: "dots" | "diamonds" | "ribs" | "plaid" = "dots"): void {
+  function addPolkaDots(std: THREE.MeshStandardMaterial, base: string, dot: string, accent = dot, shape: "dots" | "diamonds" | "ribs" | "plaid" | "sleeves" = "dots", sleeveX = 1): void {
     std.color.set(base);
     const dotColor = new THREE.Color(dot);
     const accentColor = new THREE.Color(accent);
     const body =
-      shape === "plaid"
+      shape === "sleeves"
+        ? // varsity jacket: the arms (measured in the bind pose, arms out) in the dot color
+          "float sx = abs(vBindPos.x) / polkaSleeveX; float arm = smoothstep(0.98, 1.02, sx); diffuseColor.rgb = mix(diffuseColor.rgb, polkaColor, arm);"
+        : shape === "plaid"
         ? // flannel: wide dark bands both ways (darker where they cross) and thin light stripes
           "vec2 f = fract(uv * 7.0); float bx = 1.0 - smoothstep(0.34, 0.37, f.x); float by = 1.0 - smoothstep(0.34, 0.37, f.y); float tx = 1.0 - smoothstep(0.025, 0.045, abs(f.x - 0.68)); float ty = 1.0 - smoothstep(0.025, 0.045, abs(f.y - 0.68)); vec3 c = mix(diffuseColor.rgb, polkaColor, 0.55 * bx); c = mix(c, polkaColor, 0.55 * by); diffuseColor.rgb = mix(c, polkaAccent, 0.85 * max(tx, ty));"
         : shape === "ribs"
@@ -426,11 +429,12 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     std.onBeforeCompile = (sh) => {
       sh.uniforms.polkaColor = { value: dotColor };
       sh.uniforms.polkaAccent = { value: accentColor };
+      sh.uniforms.polkaSleeveX = { value: sleeveX };
       sh.vertexShader = sh.vertexShader
-        .replace("#include <common>", "#include <common>\nvarying vec3 vPolkaPos;\nvarying vec3 vPolkaN;")
-        .replace("#include <skinning_vertex>", "#include <skinning_vertex>\nvPolkaPos = transformed;\nvPolkaN = objectNormal;");
+        .replace("#include <common>", "#include <common>\nvarying vec3 vPolkaPos;\nvarying vec3 vPolkaN;\nvarying vec3 vBindPos;")
+        .replace("#include <skinning_vertex>", "#include <skinning_vertex>\nvPolkaPos = transformed;\nvPolkaN = objectNormal;\nvBindPos = position;");
       sh.fragmentShader = sh.fragmentShader
-        .replace("#include <common>", "#include <common>\nvarying vec3 vPolkaPos;\nvarying vec3 vPolkaN;\nuniform vec3 polkaColor;\nuniform vec3 polkaAccent;")
+        .replace("#include <common>", "#include <common>\nvarying vec3 vPolkaPos;\nvarying vec3 vPolkaN;\nuniform vec3 polkaColor;\nuniform vec3 polkaAccent;\nvarying vec3 vBindPos;\nuniform float polkaSleeveX;")
         .replace(
           "#include <color_fragment>",
           "#include <color_fragment>\n{ vec3 an = abs(normalize(vPolkaN)); vec2 uv = an.x > an.z ? vPolkaPos.zy : vPolkaPos.xy; " + body + " }"
@@ -484,7 +488,16 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
         } else if (matchesEntry(look.brows, meshName, name)) {
           std.color.copy(brows);
         }
-        if (p.polkaDots && p.polkaDots.parts.some((e) => (e.includes(":") ? matchesEntry([e], meshName, name) : e === name))) addPolkaDots(std, p.polkaDots.base, p.polkaDots.dot, p.polkaDots.accent, p.polkaDots.shape);
+        if (p.polkaDots && p.polkaDots.parts.some((e) => (e.includes(":") ? matchesEntry([e], meshName, name) : e === name))) {
+          // sleeves start a fixed fraction of the bind-pose arm span out from the middle
+          let sleeveX = 1;
+          if (p.polkaDots.shape === "sleeves") {
+            mesh.geometry.computeBoundingBox();
+            const bb = mesh.geometry.boundingBox!;
+            sleeveX = (bb.max.x - bb.min.x) * (p.polkaDots.sleeveStart ?? 0.17);
+          }
+          addPolkaDots(std, p.polkaDots.base, p.polkaDots.dot, p.polkaDots.accent, p.polkaDots.shape, sleeveX);
+        }
         return std;
       };
       mesh.material = Array.isArray(mesh.material) ? mesh.material.map(tint) : tint(mesh.material);
@@ -520,7 +533,8 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
    * Some donor hairstyles have a beard modelled into the same mesh. Keep only the beard triangles
    * (lower face, in front of the ears) or only everything else, so beards can be a separate option.
    */
-  function cutRegion(objs: THREE.Object3D[] | null, cut?: "beard" | "rest" | "rest-nape" | "rest-sideburns"): THREE.Object3D[] | null {
+  const GOATEE_HALF_WIDTH = 0.068; // how far out from the middle of the face a goatee reaches (model units)
+  function cutRegion(objs: THREE.Object3D[] | null, cut?: "beard" | "goatee" | "rest" | "rest-nape" | "rest-sideburns"): THREE.Object3D[] | null {
     if (!objs || !cut) return objs;
     for (const o of objs) {
       const mesh = o as THREE.Mesh;
@@ -544,6 +558,11 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
         const isBeard = y < 1.655 && z > 0.05;
         // the Punk's dark undercut band leaves a patch at the nape: drop it
         if (cut === "rest-nape" && /dark/i.test(matName) && y < 1.68 && z < 0.0) continue;
+        // a moustache and goatee: the beard without the cheeks and jaw sides
+        if (cut === "goatee") {
+          if (isBeard && x < GOATEE_HALF_WIDTH) keep.push(idx.getX(t), idx.getX(t + 1), idx.getX(t + 2));
+          continue;
+        }
         if (isBeard === (cut === "beard")) keep.push(idx.getX(t), idx.getX(t + 1), idx.getX(t + 2));
       }
       geo.setIndex(keep);
