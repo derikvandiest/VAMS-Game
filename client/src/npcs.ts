@@ -912,7 +912,7 @@ export const NPC_ROLDAN: NpcDef = {
 };
 
 /**
- * Mr. Guerrero, Assistant Principal for the upper school, standing between the 8th UCLA classroom and the field,
+ * Mr. Guerrero, Assistant Principal for the upper school (grades 7 and 8), standing between the 8th UCLA classroom and the field,
  * looking out at the field. Matches his portrait: warm tan skin, short neat black
  * hair, a mustache and goatee, a crisp white button-up shirt.
  */
@@ -947,7 +947,7 @@ export const NPC_GUERRERO: NpcDef = {
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Good morning! I'm Mr. Guerrero, the Assistant Principal for our upper school, grades 6 through 8.",
+          "(Sample text) Good morning! I'm Mr. Guerrero, the Assistant Principal for our upper school, grades 7 and 8.",
           "How's the PD going? Make sure you stop by every classroom, our teachers have some great things to share.",
         ],
         options: [
@@ -958,7 +958,7 @@ export const NPC_GUERRERO: NpcDef = {
       },
       ap: {
         paragraphs: [
-          "(Sample text) A little of everything! I support our 6th, 7th and 8th grade teachers in their classrooms, help with student support and discipline, and work with families so every student has what they need.",
+          "(Sample text) A little of everything! I support our 7th and 8th grade teachers in their classrooms, help with student support and discipline, and work with families so every student has what they need.",
           "Most of all, I'm out here making sure our students feel known and cared for.",
         ],
         options: [
@@ -980,7 +980,7 @@ export const NPC_GUERRERO: NpcDef = {
 };
 
 /**
- * Mrs. Nayfeld, outside the MPR's courtyard doors on the side toward the stairs up to the west building's walkway
+ * Mrs. Nayfeld, Assistant Principal for the lower school (grades 5 and 6), outside the MPR's courtyard doors on the side toward the stairs up to the west building's walkway
  * (Mrs. Tunson is on the other side). Matches her portrait: warm light-medium skin, long wavy brown hair with a
  * center part, a beige button-up utility shirt, dark pants.
  */
@@ -995,7 +995,7 @@ export const NPC_NAYFELD: NpcDef = {
   profile: {
     ...getDefaultProfile(),
     name: "Mrs. Nayfeld",
-    title: "",
+    title: "Assistant Principal, Lower School",
     noHomeroom: true,
     gender: "feminine",
     look: "fem-suit", // jacket and shirt both her beige utility shirt
@@ -1015,12 +1015,22 @@ export const NPC_NAYFELD: NpcDef = {
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Hi there! I'm Mrs. Nayfeld. Welcome to our PD day!",
+          "(Sample text) Hi there! I'm Mrs. Nayfeld, the Assistant Principal for our lower school, grades 5 and 6. Welcome to our PD day!",
           "Heading upstairs? These stairs take you up to the 6th grade classrooms on the walkway.",
         ],
         options: [
+          { label: "What does an Assistant Principal do?", next: "ap" },
           { label: "Where should I go first?", next: "first" },
           { label: "Any tips for today?", next: "tips" },
+          { label: "Thanks, Mrs. Nayfeld!" },
+        ],
+      },
+      ap: {
+        paragraphs: [
+          "(Sample text) I support our 5th and 6th grade teachers and students: visiting classrooms, coaching, helping with student support, and partnering with families so our younger students get off to a strong start.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
           { label: "Thanks, Mrs. Nayfeld!" },
         ],
       },
