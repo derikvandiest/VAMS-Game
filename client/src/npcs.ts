@@ -22,7 +22,7 @@ import somozaPortrait from "./assets/somoza_portrait.png";
 import weberPortrait from "./assets/weber_portrait.png";
 import dominguezPortrait from "./assets/dominguez_portrait.png";
 import larkPortrait from "./assets/lark_portrait.png";
-import gilletPortrait from "./assets/gillet_portrait.png";
+import gillettPortrait from "./assets/gillett_portrait.png";
 import noroPortrait from "./assets/norori_portrait.png";
 import ramirezPortrait from "./assets/ramirez_portrait.png";
 import martinezPortrait from "./assets/martinez_portrait.png";
@@ -1382,12 +1382,12 @@ export const NPC_LARK: NpcDef = {
 };
 
 /**
- * Ms. Gillet, the 6th grade USC English teacher, standing in front of the whiteboard in her classroom (talk to her for
+ * Ms. Gillett, the 6th grade USC English teacher, standing in front of the whiteboard in her classroom (talk to her for
  * the assignment). Matches her portrait: long, wavy honey-blonde hair with a center part, fair skin, a black hoodie.
  */
-const GILLET_BLACK = "#1c1d21";
-export const NPC_GILLET: NpcDef = {
-  id: "npc-gillet",
+const GILLETT_BLACK = "#1c1d21";
+export const NPC_GILLETT: NpcDef = {
+  id: "npc-gillett",
   room: "classroom",
   classroomId: "6th-usc-english",
   x: 0, // set from the classroom's whiteboard
@@ -1397,12 +1397,12 @@ export const NPC_GILLET: NpcDef = {
   chatFirst: true,
   profile: {
     ...getDefaultProfile(),
-    name: "Ms. Gillet",
+    name: "Ms. Gillett",
     title: "6th Grade English Teacher",
     noHomeroom: true,
     gender: "feminine",
     look: "fem-casual",
-    outfitColor: GILLET_BLACK,
+    outfitColor: GILLETT_BLACK,
     hairStyle: "f-witch", // center part, lengthened below the shoulders
     hairLength: 2.0,
     hairColor: "#b48a56", // honey blonde
@@ -1410,22 +1410,22 @@ export const NPC_GILLET: NpcDef = {
     glasses: "none",
     shoes: "sneakers",
     shoeColor: "#1f1f24",
-    partColors: { "Body:White": GILLET_BLACK, "Legs:Orange": "#2a3142" },
+    partColors: { "Body:White": GILLETT_BLACK, "Legs:Orange": "#2a3142" },
   },
-  portrait: gilletPortrait,
-  // SAMPLE TEXT: replace with Ms. Gillet's real dialogue
+  portrait: gillettPortrait,
+  // SAMPLE TEXT: replace with Ms. Gillett's real dialogue
   dialog: {
     start: "root",
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Hi, welcome! I'm Ms. Gillet, and I teach 6th grade English here in USC.",
+          "(Sample text) Hi, welcome! I'm Ms. Gillett, and I teach 6th grade English here in USC.",
           "Your assignment is ready whenever you are. Come on in!",
         ],
         options: [
           { label: "Show me the assignment!", action: "open-assignment" },
           { label: "What are your students learning?", next: "learn" },
-          { label: "Thanks, Ms. Gillet!", next: "bye" },
+          { label: "Thanks, Ms. Gillett!", next: "bye" },
         ],
       },
       learn: {
@@ -1436,12 +1436,12 @@ export const NPC_GILLET: NpcDef = {
         options: [
           { label: "Show me the assignment!", action: "open-assignment" },
           { label: "I have another question", next: "root" },
-          { label: "Thanks, Ms. Gillet!", next: "bye" },
+          { label: "Thanks, Ms. Gillett!", next: "bye" },
         ],
       },
       bye: {
         paragraphs: ["(Sample text) Have a great day! Enjoy visiting the other classrooms."],
-        options: [{ label: "See you, Ms. Gillet!" }],
+        options: [{ label: "See you, Ms. Gillett!" }],
       },
     },
   },
@@ -1786,7 +1786,7 @@ export const NPC_BAKOO: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLET, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO];
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.
