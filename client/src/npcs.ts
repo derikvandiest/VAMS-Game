@@ -46,6 +46,8 @@ export interface NpcDef {
   talkRange?: number;
   /** Sitting (on a bench or chair) with the seat at this height; x/z/rotY are then the seated position */
   seatY?: number;
+  /** No floating name tag above the head (generic, unnamed characters) */
+  noNameTag?: boolean;
   /** Something held in the right hand */
   holding?: "coffee"; // drawn as a 40 oz Stanley tumbler
 }
@@ -1065,7 +1067,6 @@ export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLE
 // ---------------------------------------------------------------------------------------------------------------
 type Attendee = {
   id: string;
-  name: string;
   title: string;
   homeroom: CharacterProfile["homeroom"];
   /** table centre and chair: side -1 = west chair (faces +x), 1 = east chair (faces -x); dz = chair offset along the table */
@@ -1078,32 +1079,32 @@ type Attendee = {
 
 const ATTENDEES: Attendee[] = [
   {
-    id: "npc-attendee-1", name: "Ms. Alvarez", title: "6th Grade Teacher", homeroom: "CSUN", table: [400, 400], side: -1, dz: -0.6,
+    id: "npc-attendee-1", title: "6th Grade Teacher", homeroom: "CSUN", table: [400, 400], side: -1, dz: -0.6,
     look: { gender: "feminine", look: "fem-casual", hairStyle: "f-wavy", hairColor: "#2b1b12", skinTone: "#C68E5E", glasses: "round", glassesColor: "#3b2a1e", shoes: "sneakers" },
     lines: ["(Sample text) Hi! I'm saving this seat for my co-teacher. Have you visited any classrooms yet?", "I heard the sentence frames in the 7th grade rooms are great for academic talk."],
   },
   {
-    id: "npc-attendee-2", name: "Mr. Okafor", title: "7th Grade Teacher", homeroom: "LMU", table: [400, 400], side: 1, dz: 1.8,
+    id: "npc-attendee-2", title: "7th Grade Teacher", homeroom: "LMU", table: [400, 400], side: 1, dz: 1.8,
     look: { gender: "masculine", look: "masc-tee", hairStyle: "m-suit", hairColor: "#141414", skinTone: "#7A4A2E", facialHair: "goatee", shoes: "sneakers" },
     lines: ["(Sample text) Morning! I'm just finishing my notes from the welcome.", "Tip: your student agenda keeps track of every assignment you still need."],
   },
   {
-    id: "npc-attendee-3", name: "Mrs. Chen", title: "5th Grade Teacher", homeroom: "UCLA", table: [405.5, 405], side: 1, dz: -0.6,
+    id: "npc-attendee-3", title: "5th Grade Teacher", homeroom: "UCLA", table: [405.5, 405], side: 1, dz: -0.6,
     look: { gender: "feminine", look: "fem-suit", hairStyle: "f-long", hairColor: "#141414", skinTone: "#EBC7A4", shoes: "dress", shoeColor: "#1f1f24" },
     lines: ["(Sample text) Hello! This is my favorite PD day of the year.", "I'm trying a few of these strategies with my newcomers next week."],
   },
   {
-    id: "npc-attendee-4", name: "Mr. Hughes", title: "8th Grade Teacher", homeroom: "USC", table: [405.5, 405], side: -1, dz: 0.6,
+    id: "npc-attendee-4", title: "8th Grade Teacher", homeroom: "USC", table: [405.5, 405], side: -1, dz: 0.6,
     look: { gender: "masculine", look: "masc-hoodie", hairStyle: "m-explorer", hairColor: "#6b4a2b", skinTone: "#F1C9A5", facialHair: "beard", glasses: "rect", glassesColor: "#1f1f24", shoes: "work" },
     lines: ["(Sample text) Hey there. Grab a backpack by the doors if you haven't yet: you'll want somewhere to keep your things.", "See you out in the classrooms!"],
   },
   {
-    id: "npc-attendee-5", name: "Ms. Patel", title: "Instructional Coach", homeroom: "LMU", table: [394.5, 405], side: -1, dz: 1.8,
+    id: "npc-attendee-5", title: "Instructional Coach", homeroom: "LMU", table: [394.5, 405], side: -1, dz: 1.8,
     look: { gender: "feminine", look: "fem-dress", hairStyle: "f-cadet", hairColor: "#1c1410", skinTone: "#A86B45", shoes: "sneakers" },
     lines: ["(Sample text) Hi! I'm one of the coaches today. Let me know if you have any questions.", "The map (press M) shows which classrooms still have an assignment."],
   },
   {
-    id: "npc-attendee-6", name: "Mr. Romero", title: "6th Grade Teacher", homeroom: "CSUN", table: [405.5, 395], side: -1, dz: -1.8,
+    id: "npc-attendee-6", title: "6th Grade Teacher", homeroom: "CSUN", table: [405.5, 395], side: -1, dz: -1.8,
     look: { gender: "masculine", look: "masc-tee", hairStyle: "m-beach", hairColor: "#2b1b12", skinTone: "#B07A52", facialHair: "moustache", shoes: "sneakers" },
     lines: ["(Sample text) Hey! First time at Valor's PD? You'll love it.", "Don't forget to fill your water bottle at the fountain. It's a long day!"],
   },
@@ -1120,10 +1121,12 @@ export const ATTENDEE_NPCS: NpcDef[] = ATTENDEES.map((a) => {
     rotY: facing,
     seatY: 0.44,
     talkRange: 2.2,
+    noNameTag: true,
     profile: {
       ...getDefaultProfile(),
-      name: a.name,
-      title: a.title,
+      // unnamed: the dialogue shows the role ("6th Grade Teacher") with "PD Participant" under it
+      name: a.title,
+      title: "PD Participant",
       homeroom: a.homeroom,
       outfitColor: "",
       ...a.look,
@@ -1131,7 +1134,7 @@ export const ATTENDEE_NPCS: NpcDef[] = ATTENDEES.map((a) => {
     dialog: {
       start: "root",
       nodes: {
-        root: { paragraphs: a.lines, options: [{ label: `Nice to meet you, ${a.name}!` }] },
+        root: { paragraphs: a.lines, options: [{ label: "Nice to meet you!" }] },
       },
     },
   } as NpcDef;

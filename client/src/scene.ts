@@ -7487,7 +7487,7 @@ export function startPlaceholderScene(
   const npcList: Array<{ def: NpcDef; rig: AvatarRig }> = [];
   const npcCups = new Map<string, THREE.Group>(); // coffee cups NPCs hold
   for (const def of NPCS) {
-    const npcRig = createAvatarRig({ nameTag: true, scale: GAME_AVATAR_SCALE });
+    const npcRig = createAvatarRig({ nameTag: !def.noNameTag, scale: GAME_AVATAR_SCALE });
     npcRig.apply(def.profile);
     const inst = def.room === "classroom" && def.classroomId ? getClassroom(def.classroomId) : null;
     if (inst) {
@@ -9924,7 +9924,7 @@ export function startPlaceholderScene(
         hintText =
           hintNpc.def.room === "classroom"
             ? `Press E to talk to ${hintNpc.def.profile.name} about the assignment 📋`
-            : `Press E to talk to ${hintNpc.def.profile.name} 💬`;
+            : `Press E to talk to ${hintNpc.def.noNameTag ? "the " + hintNpc.def.profile.name.toLowerCase() : hintNpc.def.profile.name} 💬`;
       } else if (hintElev) {
         hintText = hintElev;
       } else if (distToCarResetBtn <= 2.2) {
