@@ -6567,7 +6567,7 @@ export function startPlaceholderScene(
   const tableTopMaterial = new THREE.MeshStandardMaterial({ color: 0xc9b28a, roughness: 0.9 });
   const tablePoleMaterial = new THREE.MeshStandardMaterial({ color: 0x4a4f57, roughness: 0.7, metalness: 0.3 });
   const chairMaterial = new THREE.MeshStandardMaterial({ color: 0x8a6f4d, roughness: 0.9 });
-  const umbrellaMaterials = ["#d7263d", "#2f6fd0", "#2e9e4f", "#f2b705", "#8a4fd0"].map(
+  const umbrellaMaterials = ["#2f6fd0"].map( // all the lunch-table umbrellas are blue
     (hex) => new THREE.MeshStandardMaterial({ color: hex, roughness: 0.8 })
   );
   const TABLE_HEIGHT = 1.1; // table-top surface height (player is ~2.4 tall)
@@ -7120,11 +7120,12 @@ export function startPlaceholderScene(
     addTrashBin(4.1, 13.6, 0, BLUE);
     addTrashBin(4.1, 39.4, 0, BLUE);
     // upstairs: outside the elevator (upper door at x -6.8 on the north walkway)
-    addTrashBin(-8.75, 0.25, floor2, RED);
+    addTrashBin(-8.75, 0.55, floor2, RED);
     // the middle of the 6th grade wing (west building walkway, doors at z 9.3 - 31.7) and, symmetrically, the 5th grade
-    // wing (north building walkway, doors at x 10.3 - 32.7): both against the building wall
-    addTrashBin(-13.55, 20.5, floor2, RED);
-    addTrashBin(21.5, -1.55, floor2, RED);
+    // wing (north building walkway, doors at x 10.3 - 32.7): all three upstairs ones stand by the railing (walkway edge
+    // at x = -11 on the west building, z = 1 on the north building)
+    addTrashBin(-11.45, 20.5, floor2, RED);
+    addTrashBin(21.5, 0.55, floor2, RED);
   }
   /** The trash can the player is standing at (same floor), if any */
   const nearTrash = (): boolean =>
