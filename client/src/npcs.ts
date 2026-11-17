@@ -1086,6 +1086,7 @@ export const NPC_SOMOZA: NpcDef = {
     outfitColor: SOMOZA_NAVY,
     hairStyle: "f-long", // modelled hair down to the collar (like Mr. Stauffer's), under the hat
     hairColor: "#2a1a10", // dark brown
+    extraHair: "scalp", // hair-colored scalp under the long hair: no skin shows between the hair and the hat
     skinTone: "#D9A074", // warm tan
     facialHair: "full-beard",
     hat: "farmer",

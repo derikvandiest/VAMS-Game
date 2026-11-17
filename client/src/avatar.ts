@@ -579,7 +579,11 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
   const BUZZ_FRONT = 0.72; // hairline height at the forehead (fraction of the head skin's height)
   const BUZZ_BACK = 0.5; // ... and at the nape
   const BUZZ_FADE = 0.16; // height of the fade at the sides and back
-  function buildBuzzCut(): THREE.Object3D[] | null {
+  /**
+   * scalp = true: the same hair-colored scalp, but as full coverage under long hair and a hat: the forehead stays
+   * clear in the middle, while the temples, sides and back are covered down to about eye / ear level, with no fade.
+   */
+  function buildBuzzCut(scalp = false): THREE.Object3D[] | null {
     const root = armatureScene;
     const m = measureNow();
     if (!root || !m) return null;
@@ -599,12 +603,13 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     // the head skin's own extent (same space as the test below): chin/neck at the bottom, crown at the top
     const v = new THREE.Vector3();
     const pts: THREE.Vector3[] = [];
-    let yMin = Infinity, yMax = -Infinity, zMin = Infinity, zMax = -Infinity;
+    let yMin = Infinity, yMax = -Infinity, zMin = Infinity, zMax = -Infinity, xMin = Infinity, xMax = -Infinity;
     for (let i = 0; i < pos.count; i++) {
       v.fromBufferAttribute(pos, i).applyMatrix4(toModel);
       pts.push(v.clone());
       yMin = Math.min(yMin, v.y); yMax = Math.max(yMax, v.y);
       zMin = Math.min(zMin, v.z); zMax = Math.max(zMax, v.z);
+      xMin = Math.min(xMin, v.x); xMax = Math.max(xMax, v.x);
     }
     const h = yMax - yMin;
     const d = zMax - zMin;
@@ -612,11 +617,23 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
     const frontCut = yMin + h * BUZZ_FRONT;
     const backCut = yMin + h * BUZZ_BACK;
     const front = (p: THREE.Vector3): number => Math.min(1, Math.max(0, (p.z - (zMin + 0.3 * d)) / (0.55 * d)));
-    const cutAt = (p: THREE.Vector3): number => backCut + (frontCut - backCut) * front(p);
+    const xc = (xMin + xMax) / 2, hw = (xMax - xMin) / 2;
+    const sideAmt = (p: THREE.Vector3): number => {
+      const s = Math.min(1, Math.max(0, (Math.abs(p.x - xc) / hw - 0.3) / 0.4));
+      return s * s * (3 - 2 * s);
+    };
+    const cutAt = scalp
+      ? (p: THREE.Vector3): number => {
+          // forehead (middle) stays high; temples and sides come down to about eye level; the back to the nape
+          const fr = yMin + h * (BUZZ_FRONT - (BUZZ_FRONT - 0.5) * sideAmt(p));
+          return yMin + h * 0.4 + (fr - (yMin + h * 0.4)) * front(p);
+        }
+      : (p: THREE.Vector3): number => backCut + (frontCut - backCut) * front(p);
     const keepVert = pts.map((p) => p.y > cutAt(p));
     // fade: the sides and back thin out toward the skin over a band above the cut; the front hairline stays crisp
     const fadeBand = h * BUZZ_FADE;
     const alpha = pts.map((p) => {
+      if (scalp) return 1;
       const band = fadeBand * (1 - 0.85 * front(p));
       const a = Math.min(1, Math.max(0, (p.y - cutAt(p)) / band));
       return a * a * (3 - 2 * a);
@@ -939,7 +956,9 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
       cutRegion(borrow(hair.donor!, hair.parts ?? [], (i) => (i === 0 ? "hair" : "hairDark")), hair.cut)
     );
     hideBakedHair = hairObjs.length > 0 || !!p.noHair;
-    setSlot("extraHair", p.extraHair ? L(p.extraHair) : "", () => (p.extraHair === "buzz" ? buildBuzzCut() : buildOnHead(p.extraHair!)));
+    setSlot("extraHair", p.extraHair ? L(p.extraHair) : "", () =>
+      p.extraHair === "buzz" || p.extraHair === "scalp" ? buildBuzzCut(p.extraHair === "scalp") : buildOnHead(p.extraHair!)
+    );
 
     const fh = getFacialHair(p.facialHair);
     setSlot("facial", fh.donor ? L(fh.id) : "", () => cutRegion(borrow(fh.donor!, fh.parts ?? [], () => (fh.cut ? "hair" : "hairDark")), fh.cut));

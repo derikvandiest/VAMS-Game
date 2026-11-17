@@ -60,7 +60,7 @@ export interface CharacterProfile {
   /** NPCs only: exact colors for named model materials (e.g. { Tie: "#9b1b30" }), applied last */
   partColors?: Record<string, string>;
   /** NPCs only: extra procedural hair on top of the hairstyle (e.g. "locs") */
-  extraHair?: "locs" | "curls" | "braid" | "buzz" | "curlyTop" | "locsWrap" | "shoulder" | "curlyBob";
+  extraHair?: "locs" | "curls" | "braid" | "buzz" | "scalp" | "curlyTop" | "locsWrap" | "shoulder" | "curlyBob";
   /** NPCs only: no hairstyle at all (the baked and borrowed hair are hidden), e.g. under a "buzz" cut */
   noHair?: boolean;
   /** NPCs only: polka-dot pattern on the named model materials */
@@ -188,7 +188,7 @@ export function sanitizeProfile(raw: unknown): CharacterProfile {
     ...(npc && p.partColors && typeof p.partColors === "object"
       ? { partColors: Object.fromEntries(Object.entries(p.partColors as Record<string, unknown>).filter(([, v]) => isHex(v))) as Record<string, string> }
       : {}),
-    ...(npc && ["locs", "curls", "braid", "buzz", "curlyTop", "locsWrap", "shoulder", "curlyBob"].includes(p.extraHair as string)
+    ...(npc && ["locs", "curls", "braid", "buzz", "scalp", "curlyTop", "locsWrap", "shoulder", "curlyBob"].includes(p.extraHair as string)
       ? { extraHair: p.extraHair as NonNullable<CharacterProfile["extraHair"]> }
       : {}),
     ...(npc && p.noHair === true ? { noHair: true } : {}),
