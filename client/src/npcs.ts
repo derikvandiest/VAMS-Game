@@ -1790,23 +1790,24 @@ export const NPC_BAKOO: NpcDef = {
 };
 
 /**
- * Ms. Getis, on the upper walkway just to the right of the 5th grade UCLA classroom door (x = 12.7 on the north
- * building, wall z = -2), facing out over the walkway. Matches her portrait: wavy light-brown hair with a center part,
- * a coral floral short-sleeve cardigan over a white top.
+ * Ms. Getis, the 5th grade UCLA English teacher, standing in front of the whiteboard in her classroom (talk to her for
+ * the assignment). Matches her portrait: wavy light-brown hair with a center part, a coral floral short-sleeve cardigan
+ * over a white top.
  */
 const GETIS_CORAL = "#d9604a";
 export const NPC_GETIS: NpcDef = {
   id: "npc-getis",
-  room: "campus",
-  floor: 1,
-  x: 14.6,
-  z: -0.6,
-  rotY: 0.25, // looking out over the walkway
-  talkRange: 1.5, // close, so E at the classroom door still opens the door
+  room: "classroom",
+  classroomId: "5th-ucla-english",
+  x: 0, // set from the classroom's whiteboard
+  z: 0,
+  rotY: 0, // facing the class
+  talkRange: 2.2,
+  chatFirst: true,
   profile: {
     ...getDefaultProfile(),
     name: "Ms. Getis",
-    title: "5th Grade Teacher",
+    title: "5th Grade English Teacher",
     noHomeroom: true,
     gender: "feminine",
     look: "fem-suit", // the jacket is her open floral cardigan, the shirt her white top
@@ -1828,26 +1829,28 @@ export const NPC_GETIS: NpcDef = {
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Hi there! I'm Ms. Getis. Welcome to the 5th grade hallway!",
-          "The 5th grade UCLA classroom is right here. Step inside when you're ready, your assignment is waiting.",
+          "(Sample text) Hi there, welcome! I'm Ms. Getis, and I teach 5th grade English here in UCLA.",
+          "Your assignment is ready whenever you are. Come on in!",
         ],
         options: [
-          { label: "What do 5th graders do here?", next: "about" },
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "What are your students learning?", next: "learn" },
           { label: "Thanks, Ms. Getis!", next: "bye" },
         ],
       },
-      about: {
+      learn: {
         paragraphs: [
-          "(Sample text) Our 5th graders are the youngest on campus, so we build strong routines, lots of reading, and plenty of partner talk with sentence frames.",
-          "It's amazing to watch our English learners grow their confidence over the year!",
+          "(Sample text) We're reading stories together and talking about how characters think and feel, using clues from the text to explain our ideas.",
+          "My 5th graders practice with partners and sentence frames every day, and it's amazing to watch my English learners grow their confidence!",
         ],
         options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
           { label: "I have another question", next: "root" },
           { label: "Thanks, Ms. Getis!", next: "bye" },
         ],
       },
       bye: {
-        paragraphs: ["(Sample text) Have a great time exploring!"],
+        paragraphs: ["(Sample text) Have a wonderful day! Enjoy the rest of the classrooms."],
         options: [{ label: "See you, Ms. Getis!" }],
       },
     },
