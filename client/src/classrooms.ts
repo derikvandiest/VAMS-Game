@@ -112,7 +112,7 @@ const SPECIAL_THEMES: Record<string, { primary: number; secondary: number; banne
     secondary: 0xfecdd3,
     bannerBg: "#4c0519",
     bannerText: "#fef08a",
-    motto: "VALOR DRAMA & THEATER",
+    motto: "VALOR DRAMA & THEATRE",
   },
 };
 
@@ -323,7 +323,7 @@ function makeWhiteboardTexture(room: ClassroomData): THREE.CanvasTexture {
     ctx.font = "bold 48px system-ui";
     ctx.fillText("𝄢  𝅘𝅥  𝅘𝅥  𝅘𝅥  𝅘𝅥   |   𝅘𝅥𝅯  𝅘𝅥𝅯  𝅘𝅥", 250, 700);
   } else if (room.id === "theater") {
-    ctx.fillText("• Physical theater warmup & diaphragmatic voice projection", 60, 310);
+    ctx.fillText("• Physical theatre warmup & diaphragmatic voice projection", 60, 310);
     ctx.fillText("• Act II, Scene 1 Blocking: Stage Left to Center Stage focus", 60, 370);
     ctx.fillText("• Character motivation & subtext monologue rehearsals", 60, 430);
 

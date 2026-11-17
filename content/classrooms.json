@@ -238,8 +238,8 @@
     },
     {
       "id": "theater",
-      "label": "Theater",
-      "shortLabel": "Theater",
+      "label": "Theatre",
+      "shortLabel": "Theatre",
       "type": "other",
       "roomNumber": "TBD",
       "doorPosition": { "x": 0, "y": 0, "z": 0 },

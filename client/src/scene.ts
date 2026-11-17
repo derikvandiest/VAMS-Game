@@ -5705,7 +5705,7 @@ export function startPlaceholderScene(
         mainLabel = "MUSIC";
         subLabel = "MUSIC ROOM";
       } else if (inst.data.id === "theater") {
-        mainLabel = "THEATER";
+        mainLabel = "THEATRE";
         subLabel = "DRAMA & ARTS";
       } else if (inst.data.id === "learning-center") {
         mainLabel = "LEARNING";

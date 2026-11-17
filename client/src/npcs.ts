@@ -1314,7 +1314,7 @@ export const NPC_LARK: NpcDef = {
   profile: {
     ...getDefaultProfile(),
     name: "Mr. Lark",
-    title: "Theater Teacher",
+    title: "Theatre Teacher",
     noHomeroom: true,
     gender: "masculine",
     look: "masc-suit", // the jacket is his vest (white shirt sleeves), the shirt his white collar
@@ -1338,11 +1338,11 @@ export const NPC_LARK: NpcDef = {
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Welcome to the Theater! I'm Mr. Lark, the theater teacher. Have a seat, rehearsal is about to begin.",
+          "(Sample text) Welcome to the Theatre! I'm Mr. Lark, the theatre teacher. Have a seat, rehearsal is about to begin.",
           "See the colored tape on the stage? Those are our spike marks: every actor knows exactly where to stand.",
         ],
         options: [
-          { label: "What happens in the Theater?", next: "about" },
+          { label: "What happens in the Theatre?", next: "about" },
           { label: "What are the tape marks for?", next: "tape" },
           { label: "Thanks, Mr. Lark!", next: "bye" },
         ],
@@ -1350,7 +1350,7 @@ export const NPC_LARK: NpcDef = {
       about: {
         paragraphs: [
           "(Sample text) Our students rehearse plays, practice public speaking, and put on shows for the whole school. It's a great place to try something new.",
-          "Theater is wonderful for English learners: they practice speaking, listening, and expression, all with a script to support them.",
+          "Theatre is wonderful for English learners: they practice speaking, listening, and expression, all with a script to support them.",
         ],
         options: [
           { label: "I have another question", next: "root" },
