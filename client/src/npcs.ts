@@ -1147,7 +1147,7 @@ export const NPC_SOMOZA: NpcDef = {
 
 /**
  * Mr. Drori, the 8th grade USC science teacher, standing in front of the whiteboard in his classroom (talk to him for
- * the assignment). Dry, very smart, sarcastic, and he speaks in memes. Matches his portrait: short
+ * the assignment). Teaches mostly space science. Dry, very smart, sarcastic, and he speaks in memes. Matches his portrait: short
  * dark crew cut, a reddish-brown goatee and moustache, fair skin, a navy varsity jacket with gray sleeves over a
  * light gray button-up jersey.
  */
@@ -1188,21 +1188,22 @@ export const NPC_DRORI: NpcDef = {
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Ah, a visitor. Welcome to 8th grade science, where we follow the evidence. Even when the evidence says it's a PD day.",
-          "I'm Mr. Drori. The assignment's ready whenever you are. No pressure. Well, some pressure. That's physics.",
+          "(Sample text) Ah, a visitor. Welcome to 8th grade science. We mostly study space here, which is fitting, because it's also where my students' minds go during lab cleanup.",
+          "I'm Mr. Drori. The assignment's ready whenever you are. Take your time. The universe has been waiting 13.8 billion years; it can wait a few more minutes.",
         ],
         options: [
           { label: "Show me the assignment!", action: "open-assignment" },
-          { label: "What are your students working on?", next: "work" },
+          { label: "What are your students learning?", next: "learn" },
+          { label: "What's your favorite planet?", next: "planet" },
           { label: "Any advice for today?", next: "advice" },
           { label: "How do you feel about PD days?", next: "pd" },
           { label: "Thanks, Mr. Drori!", next: "bye" },
         ],
       },
-      work: {
+      learn: {
         paragraphs: [
-          "(Sample text) Photosynthesis and cellular respiration. Plants turn sunlight into sugar, and my students turn sugar into chaos. Conservation of energy, technically.",
-          "They run the lab, record the data, and argue about it with sentence frames like actual scientists. The arguing is my favorite part. Allegedly it's educational.",
+          "(Sample text) Right now? The scale of the solar system. If the sun were a basketball, Earth would be a peppercorn about 26 meters away. My students' reaction: \u201Cwait, that's ILLEGAL.\u201D",
+          "Then we talk gravity and orbits. They compare real NASA data and defend their claims with sentence frames, like tiny astrophysicists with strong opinions about Pluto.",
         ],
         options: [
           { label: "Show me the assignment!", action: "open-assignment" },
@@ -1210,10 +1211,20 @@ export const NPC_DRORI: NpcDef = {
           { label: "Thanks, Mr. Drori!", next: "bye" },
         ],
       },
+      planet: {
+        paragraphs: [
+          "(Sample text) Saturn. It has rings, 274 moons at last count (astronomers keep finding more; very rude of them), and it's less dense than water, so in theory it would float in a big enough bathtub. Iconic behavior.",
+          "And yes, I have opinions about Pluto. No, you're not ready for them. Pluto is a dwarf planet. I have accepted it. Pluto has not.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Drori!", next: "bye" },
+        ],
+      },
       advice: {
         paragraphs: [
-          "(Sample text) One does not simply walk into 16 classrooms without a plan. The map is on M. Revolutionary technology, I know.",
-          "Also, get a backpack from the MPR. Carrying everything in your arms is a bold strategy, Cotton. Let's see if it pays off.",
+          "(Sample text) One does not simply walk into 16 classrooms without a plan. Press M for the map. It's less advanced than a star chart, but it'll do.",
+          "And grab a backpack in the MPR. Carrying everything in your arms is a bold strategy, Cotton. Let's see if it pays off.",
         ],
         options: [
           { label: "I have another question", next: "root" },
@@ -1222,8 +1233,8 @@ export const NPC_DRORI: NpcDef = {
       },
       pd: {
         paragraphs: [
-          "(Sample text) I have a hypothesis: the snacks are the real professional development. Peer review is ongoing.",
-          "Honestly though? Watching my colleagues teach is the best part. Don't quote me. I have a reputation to maintain.",
+          "(Sample text) My working hypothesis is that the snacks are the real professional development. Peer review is ongoing.",
+          "Honestly though, watching my colleagues teach is the best part. Don't quote me. I have a reputation to maintain.",
         ],
         options: [
           { label: "Your secret is safe with me", next: "root" },
@@ -1231,7 +1242,7 @@ export const NPC_DRORI: NpcDef = {
         ],
       },
       bye: {
-        paragraphs: ["(Sample text) Go forth and learn things. I'll be here, being right about stuff. \uD83D\uDC4D"],
+        paragraphs: ["(Sample text) To infinity and... well, the next classroom. Go learn things. \uD83D\uDE80"],
         options: [{ label: "See you, Mr. Drori!" }],
       },
     },
