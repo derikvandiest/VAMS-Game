@@ -4860,6 +4860,11 @@ export function startPlaceholderScene(
   for (const x of [8, 20, 32, 42]) {
     addFirstFloorHighWindowX(x, -20, -1);   // 1st floor North side (horizontal rectangular, closer to top of wall)
   }
+  // CSUN 5 (the north end of the north building, upstairs): two windows meeting at the building's north-west corner
+  // (compass north = +x, west = -z), one on the end wall (x = 46) and one on the back wall (z = -20), in the same tall
+  // style as the windows beside the classroom doors.
+  buildWindow(46, -18.45, largeWinY, LARGE_WIN_W, LARGE_WIN_H, true, 1, floor2 + 1.8, "5th-csun-humanities");
+  buildWindow(-20, 44.45, largeWinY, LARGE_WIN_W, LARGE_WIN_H, false, -1, floor2 + 1.8, "5th-csun-humanities");
 
   // Office building 2nd floor south side: 2 large windows stretching to the floor
   // (one to the right of learning-center at x = -26, one to the right of music at x = -16)
