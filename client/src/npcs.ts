@@ -27,6 +27,7 @@ import noroPortrait from "./assets/norori_portrait.png";
 import ramirezPortrait from "./assets/ramirez_portrait.png";
 import martinezPortrait from "./assets/martinez_portrait.png";
 import traePortrait from "./assets/trae_portrait.png";
+import bakooPortrait from "./assets/bakoo_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -1719,7 +1720,73 @@ export const NPC_TRAE: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLET, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE];
+/**
+ * Ms. Bakoo, the 7th grade UCLA science teacher, standing in front of the whiteboard in her classroom (talk to her for
+ * the assignment). Matches her portrait: long, straight dark brown-black hair swept back on top, a navy top.
+ */
+const BAKOO_NAVY = "#25325c";
+export const NPC_BAKOO: NpcDef = {
+  id: "npc-bakoo",
+  room: "classroom",
+  classroomId: "7th-ucla-science",
+  x: 0, // set from the classroom's whiteboard
+  z: 0,
+  rotY: 0, // facing the class
+  talkRange: 2.2,
+  chatFirst: true,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Ms. Bakoo",
+    title: "7th Grade Science Teacher",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-casual",
+    outfitColor: BAKOO_NAVY,
+    hairStyle: "f-witch", // lengthened to the chest
+    hairLength: 2.0,
+    hairColor: "#221916",
+    skinTone: "#ECBF9F",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#1f1f24",
+    partColors: { "Body:White": BAKOO_NAVY, "Legs:Orange": "#2a2f3a" },
+  },
+  portrait: bakooPortrait,
+  // SAMPLE TEXT: replace with Ms. Bakoo's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi there, welcome! I'm Ms. Bakoo, and I teach 7th grade science here in UCLA.",
+          "Your assignment is ready whenever you are. Come on in and explore!",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "What are your students learning?", next: "learn" },
+          { label: "Thanks, Ms. Bakoo!", next: "bye" },
+        ],
+      },
+      learn: {
+        paragraphs: [
+          "(Sample text) We're studying how living things get and use energy: photosynthesis in plants and cellular respiration in our own cells.",
+          "My students run labs, record their data, and explain their findings to a partner with sentence frames, so everyone, especially my English learners, talks like a scientist.",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Bakoo!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Thanks for stopping by! Enjoy the rest of your day."],
+        options: [{ label: "See you, Ms. Bakoo!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLET, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.
