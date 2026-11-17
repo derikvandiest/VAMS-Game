@@ -7508,9 +7508,11 @@ export function startPlaceholderScene(
       def.x = inst.whiteboard.x;
       def.z = inst.whiteboard.z + 1.3 + (def.offsetZ ?? 0);
     }
-    npcRig.player.position.set(def.x, def.y ?? 0, def.z); // y: standing on a stage
+    const npcY = def.floor === 1 ? floor2 : def.y ?? 0; // on the upper walkway, or standing on a stage
+    npcRig.player.position.set(def.x, npcY, def.z);
     npcRig.player.rotation.y = def.rotY;
-    const solid = { x: def.x, z: def.z, w: 0.7, d: 0.7, yBase: 0, yTop: 2.6 };
+    const solidBase = def.floor === 1 ? floor2 : 0;
+    const solid = { x: def.x, z: def.z, w: 0.7, d: 0.7, yBase: solidBase, yTop: solidBase + 2.6 };
     if (def.room === "classroom") {
       if (!inst) continue;
       inst.group.add(npcRig.player); // shows and hides with the classroom
@@ -7666,13 +7668,14 @@ export function startPlaceholderScene(
   function nearbyNpc(): { def: NpcDef; rig: AvatarRig } | null {
     if (seatedChair || drivingCar) return null;
     const here: NpcDef["room"] = currentClassroom ? "classroom" : inMprRoom ? "mpr" : "campus";
-    if (here === "campus" && player.position.y > 1.5) return null; // not from the upper walkway
+    const upstairs = player.position.y > 1.5; // campus NPCs talk only to players on their own floor
     let best: { def: NpcDef; rig: AvatarRig } | null = null;
     let bestD = NPC_TALK_RANGE;
     for (const n of npcList) {
       if (n.def.room !== here) continue;
       // a classroom teacher only in their own room (they give the assignment); everyone else needs something to say
       if (here === "classroom" ? n.def.classroomId !== currentClassroom?.id : !n.def.dialog) continue;
+      if (here === "campus" && (n.def.floor === 1) !== upstairs) continue;
       const d = Math.hypot(player.position.x - n.def.x, player.position.z - n.def.z);
       if (d <= bestD && d <= (n.def.talkRange ?? NPC_TALK_RANGE)) {
         bestD = d;

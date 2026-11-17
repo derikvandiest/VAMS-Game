@@ -28,6 +28,7 @@ import ramirezPortrait from "./assets/ramirez_portrait.png";
 import martinezPortrait from "./assets/martinez_portrait.png";
 import traePortrait from "./assets/trae_portrait.png";
 import bakooPortrait from "./assets/bakoo_portrait.png";
+import getisPortrait from "./assets/getis_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -60,6 +61,8 @@ export interface NpcDef {
   chatFirst?: boolean;
   /** No floating name tag above the head (generic, unnamed characters) */
   noNameTag?: boolean;
+  /** Campus NPC on the upper walkway (second floor) instead of the ground */
+  floor?: 1;
   /** Standing height (e.g. on a stage); default 0 */
   y?: number;
   /** Classroom teacher: how much further from the whiteboard (toward the class) than the usual 1.3 m */
@@ -1786,7 +1789,72 @@ export const NPC_BAKOO: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO];
+/**
+ * Ms. Getis, on the upper walkway just to the right of the 5th grade UCLA classroom door (x = 12.7 on the north
+ * building, wall z = -2), facing out over the walkway. Matches her portrait: wavy light-brown hair with a center part,
+ * a coral floral short-sleeve cardigan over a white top.
+ */
+const GETIS_CORAL = "#d9604a";
+export const NPC_GETIS: NpcDef = {
+  id: "npc-getis",
+  room: "campus",
+  floor: 1,
+  x: 14.6,
+  z: -0.6,
+  rotY: 0.25, // looking out over the walkway
+  talkRange: 1.5, // close, so E at the classroom door still opens the door
+  profile: {
+    ...getDefaultProfile(),
+    name: "Ms. Getis",
+    title: "5th Grade Teacher",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-suit", // the jacket is her open floral cardigan, the shirt her white top
+    outfitColor: GETIS_CORAL,
+    hairStyle: "f-witch", // center part, lengthened to the chest
+    hairLength: 1.9,
+    hairColor: "#a27c4c", // golden light brown
+    skinTone: "#F4CDB4",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#f0f0ee",
+    partColors: { "Body:White": "#f6f4ef", "Legs:Black": "#2f3a52" },
+    polkaDots: { parts: ["Body:Black"], base: GETIS_CORAL, dot: "#2f5f8a", accent: "#e8c64f", shape: "dots" },
+  },
+  portrait: getisPortrait,
+  // SAMPLE TEXT: replace with Ms. Getis's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi there! I'm Ms. Getis. Welcome to the 5th grade hallway!",
+          "The 5th grade UCLA classroom is right here. Step inside when you're ready, your assignment is waiting.",
+        ],
+        options: [
+          { label: "What do 5th graders do here?", next: "about" },
+          { label: "Thanks, Ms. Getis!", next: "bye" },
+        ],
+      },
+      about: {
+        paragraphs: [
+          "(Sample text) Our 5th graders are the youngest on campus, so we build strong routines, lots of reading, and plenty of partner talk with sentence frames.",
+          "It's amazing to watch our English learners grow their confidence over the year!",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Getis!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Have a great time exploring!"],
+        options: [{ label: "See you, Ms. Getis!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.
