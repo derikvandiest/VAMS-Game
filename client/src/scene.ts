@@ -7150,6 +7150,7 @@ export function startPlaceholderScene(
   /** Throw something away: a list of what the player carries that can go in the trash */
   function openTrashDialog(): void {
     const throwable: Array<[string, string]> = [
+      ["burrito-wrapper", "the burrito wrapper"],
       ["water-bottle-full", "your Stanley cup"],
       ["water-bottle-empty", "your Stanley cup"],
       ["burrito", "the burrito"],

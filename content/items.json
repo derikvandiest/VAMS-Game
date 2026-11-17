@@ -76,6 +76,14 @@
       "badge": "🌱",
       "description": "The vegan option from the food truck by the MPR: beans, rice, grilled veggies and salsa, no animal products. Click it to eat it.",
       "stack": 1
+    },
+    {
+      "id": "burrito-wrapper",
+      "name": "Burrito Wrapper",
+      "icon": "🗑️",
+      "dim": true,
+      "description": "The crumpled foil from your burrito. Throw it away in a trash can (blue ones by the lunch tables, red ones upstairs).",
+      "stack": 2
     }
   ]
 }

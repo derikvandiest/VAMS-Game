@@ -409,7 +409,8 @@ export function takeFood(id: "burrito" | "burrito-vegan"): GiveResult {
 /** Eat a burrito (clicking it in the backpack) */
 function eatBurrito(id: string): void {
   if (removeItem(id, 1) === 0) return;
-  toast(id === "burrito" ? "🌯 Mmm, delicious! Thanks, Delma and Raquel!" : "🌱 Mmm, the vegan burrito is delicious! Thanks, Delma and Raquel!");
+  addItem("burrito-wrapper", 1); // the wrapper is left: throw it away in a trash can
+  toast(id === "burrito" ? "🌯 Mmm, delicious! Thanks, Delma! (Throw the wrapper away in a trash can.)" : "🌱 Mmm, the vegan burrito is delicious! Thanks, Delma! (Throw the wrapper away in a trash can.)");
 }
 
 /** A brand-new Stanley cup from Delma, for players who threw theirs away */
