@@ -8,6 +8,7 @@ import { roomById } from "./rooms";
 import kurisuPortrait from "./assets/kurisu_portrait.png";
 import blessingPortrait from "./assets/blessing_portrait.png";
 import staufferPortrait from "./assets/stauffer_portrait.png";
+import { NPCS } from "./npcs";
 
 interface AssignmentContent {
   teacher: DialogSpeaker;
@@ -50,16 +51,24 @@ const ASSIGNMENTS: Record<string, AssignmentContent> = {
 };
 
 /** The teacher of a classroom, if one has been set up (for the student agenda) */
+/** The teacher character standing in a classroom (npcs.ts), if it has one */
+function classroomNpc(roomId: string) {
+  return NPCS.find((n) => n.room === "classroom" && n.classroomId === roomId);
+}
+
 export function teacherFor(roomId: string): string | undefined {
-  return ASSIGNMENTS[roomId]?.teacher.name;
+  return classroomNpc(roomId)?.profile.name ?? ASSIGNMENTS[roomId]?.teacher.name;
 }
 
 function contentFor(roomId: string): AssignmentContent {
   const known = ASSIGNMENTS[roomId];
   if (known) return known;
   const room = roomById(roomId);
+  const npc = classroomNpc(roomId);
   return {
-    teacher: { name: "Your Teacher", title: room ? room.label : undefined },
+    teacher: npc
+      ? { name: npc.profile.name, title: npc.profile.title, portrait: npc.portrait }
+      : { name: "Your Teacher", title: room ? room.label : undefined },
     intro: ["(Sample text) Welcome to class!"],
     task: ["(Sample assignment) This classroom's assignment will appear here.", "When you have finished, come back and let me know."],
     finished: ["(Sample text) Great work! Your assignment is complete."],
