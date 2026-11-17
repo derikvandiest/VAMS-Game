@@ -410,12 +410,15 @@ export function createAvatarRig(opts: { nameTag?: boolean; scale?: number } = {}
   }
 
   /** Printed patterns drawn in the shader from the model-space position (the outfit models have no texture UVs) */
-  function addPolkaDots(std: THREE.MeshStandardMaterial, base: string, dot: string, accent = dot, shape: "dots" | "diamonds" | "ribs" | "plaid" | "sleeves" = "dots", sleeveX = 1): void {
+  function addPolkaDots(std: THREE.MeshStandardMaterial, base: string, dot: string, accent = dot, shape: "dots" | "diamonds" | "ribs" | "plaid" | "sleeves" | "stripes" = "dots", sleeveX = 1): void {
     std.color.set(base);
     const dotColor = new THREE.Color(dot);
     const accentColor = new THREE.Color(accent);
     const body =
-      shape === "sleeves"
+      shape === "stripes"
+        ? // a classic striped shirt: crisp vertical stripes in the dot color on the base
+          "float st = fract(uv.x * 46.0); float m = smoothstep(0.45, 0.52, st) - smoothstep(0.88, 0.95, st); diffuseColor.rgb = mix(diffuseColor.rgb, polkaColor, m);"
+        : shape === "sleeves"
         ? // varsity jacket: the arms (measured in the bind pose, arms out) in the dot color
           "float sx = abs(vBindPos.x) / polkaSleeveX; float arm = smoothstep(0.98, 1.02, sx); diffuseColor.rgb = mix(diffuseColor.rgb, polkaColor, arm);"
         : shape === "plaid"
