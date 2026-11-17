@@ -54,6 +54,13 @@
       "icon": "svg:chromebook",
       "description": "A school Chromebook borrowed from this classroom's laptop cart. Click it to open it and log in. It stays in this classroom: it goes back to the cart when you leave.",
       "stack": 1
+    },
+    {
+      "id": "community-handout",
+      "name": "Community Schools Handout",
+      "icon": "📄",
+      "description": "\"Partners in Learning\" from Mr. Martinez, the Community Schools Manager: how schools can leverage families and the community to help multilingual learners. Click it to read it (you can print it or save it as a PDF).",
+      "stack": 1
     }
   ]
 }

@@ -13,6 +13,7 @@ import { getActiveSlotId, loadSlot } from "./saveManager";
 import { ROOMS } from "./rooms";
 import { openChromebook, isChromebookOpen, closeChromebook } from "./chromebook";
 import { openAgenda, isAgendaOpen, closeAgenda } from "./agenda";
+import { openHandout, isHandoutOpen, closeHandout } from "./handout";
 import { loadCharacterProfile, saveCharacterProfile } from "./profile";
 
 export interface ItemDef {
@@ -391,6 +392,22 @@ function renderOptional(): void {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// Mr. Martinez's Community Schools handout
+// ---------------------------------------------------------------------------------------------------------------
+/** Receive the handout from Mr. Martinez (it needs a backpack to carry it; one copy is enough) */
+export function takeHandout(): "ok" | "no-backpack" | "has" | "full" {
+  if (!state.backpack) return "no-backpack";
+  if (countItem("community-handout") > 0) return "has";
+  const k = state.bag.indexOf(null);
+  if (k < 0) return "full";
+  state.bag[k] = { id: "community-handout", qty: 1 };
+  save();
+  render();
+  toast("📄 Mr. Martinez's handout is in your backpack. Click it to read it!");
+  return "ok";
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // Chromebooks: borrowed from a classroom's laptop cart, only usable in that classroom
 // ---------------------------------------------------------------------------------------------------------------
 /** Take a Chromebook from the laptop cart (one at a time) */
@@ -550,6 +567,7 @@ export function startInventory(): void {
 export function stopInventory(): void {
   closeChromebook();
   closeAgenda();
+  closeHandout();
   closeBackpack();
   bar?.remove();
   bar = null;
@@ -685,7 +703,7 @@ export function closeBackpack(): void {
 
 function onGlobalKey(e: KeyboardEvent): void {
   if (!bar) return; // not in a game
-  if (isChromebookOpen() || isAgendaOpen()) return; // the laptop / agenda has the keyboard
+  if (isChromebookOpen() || isAgendaOpen() || isHandoutOpen()) return; // the laptop / agenda / handout has the keyboard
   const t = e.target as HTMLElement | null;
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
   if (document.querySelector(".dialog-overlay, #map-overlay, #settings-modal-overlay[style*='flex']")) return;
@@ -775,6 +793,7 @@ function onPointerUp(e: PointerEvent): void {
     if (clicked === "water-bottle-full") drinkWaterBottle();
     if (clicked === "chromebook") openChromebook(loadCharacterProfile().name); // open the laptop at its login screen
     if (clicked === "student-agenda") openAgenda(loadCharacterProfile().name); // every objective, in detail
+    if (clicked === "community-handout") openHandout(); // Mr. Martinez's handout
     return;
   }
   const target = e.type === "pointerup" ? targetSlot(e) : null;

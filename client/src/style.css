@@ -2974,3 +2974,46 @@ body {
 .ag-room i { color: #6b7280; font-style: normal; }
 .ag-foot { margin-top: 10px; font-size: 11.5px; color: #9ca3af; text-align: right; }
 @media (max-width: 560px) { .ag-grades { grid-template-columns: 1fr; } }
+
+/* ---- Mr. Martinez's Community Schools handout (handout.ts) ---- */
+.ho-overlay { display: flex; align-items: center; justify-content: center; z-index: 3500; }
+.ho-wrap { display: flex; flex-direction: column; width: min(860px, 94vw); max-height: 92vh; }
+.ho-bar { display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 16px; background: #0f172a; color: #e2e8f0; border-radius: 12px 12px 0 0; font-weight: 700; font-size: 14px; }
+.ho-bar span { flex: 1; }
+.ho-print, .ho-close { border: 0; border-radius: 8px; padding: 7px 12px; font-weight: 700; cursor: pointer; background: #1e293b; color: #e2e8f0; }
+.ho-print:hover, .ho-close:hover { background: #334155; }
+.ho-paper { background: #fffdf8; color: #1f2937; overflow-y: auto; padding: 0 38px 30px; border-radius: 0 0 12px 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.45); font: 14px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.ho-head { margin: 0 -38px 18px; padding: 26px 38px 20px; background: linear-gradient(135deg, #7f1d1d, #b45309); color: #fff; }
+.ho-kicker { text-transform: uppercase; letter-spacing: 1.6px; font-size: 11px; font-weight: 800; opacity: 0.85; }
+.ho-head h1 { margin: 4px 0 4px; font-size: 32px; line-height: 1.1; }
+.ho-sub { margin: 0; font-size: 16px; opacity: 0.95; }
+.ho-from { margin: 10px 0 0; font-size: 12px; font-weight: 700; opacity: 0.85; }
+.ho-paper h2 { margin: 22px 0 10px; font-size: 18px; color: #7f1d1d; border-bottom: 2px solid #fcd9b6; padding-bottom: 4px; }
+.ho-paper h3 { margin: 0 0 6px; font-size: 15px; color: #1f2937; }
+.ho-paper cite { display: block; margin-top: 6px; font-size: 11px; font-style: normal; color: #92400e; font-weight: 700; }
+.ho-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.ho-stat { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 12px; }
+.ho-stat b { display: block; font-size: 22px; color: #b45309; line-height: 1.1; margin-bottom: 6px; }
+.ho-stat span { font-size: 13px; }
+.ho-note { font-size: 12.5px; color: #4b5563; margin: 10px 0 0; }
+.ho-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ho-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; }
+.ho-card p { margin: 0; font-size: 13.5px; }
+.ho-group { margin-top: 12px !important; color: #b45309 !important; text-transform: uppercase; letter-spacing: 0.8px; font-size: 12px !important; }
+.ho-list { margin: 4px 0 0; padding-left: 22px; }
+.ho-list li { margin: 0 0 7px; }
+.ho-pillars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 8px; }
+.ho-pillars div { background: #7f1d1d; color: #fff; border-radius: 10px; padding: 12px; }
+.ho-pillars b { display: block; font-size: 14px; margin-bottom: 4px; }
+.ho-pillars span { font-size: 12.5px; opacity: 0.92; }
+.ho-rules { padding-left: 20px; margin: 0; }
+.ho-rules li { margin: 0 0 8px; }
+.ho-try { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 2px 16px 10px; margin-top: 18px; }
+.ho-try h2 { color: #065f46; border-color: #a7f3d0; }
+.ho-check { list-style: none; padding: 0; margin: 0; }
+.ho-check li { padding-left: 28px; position: relative; margin: 0 0 7px; }
+.ho-check li::before { content: ""; position: absolute; left: 2px; top: 2px; width: 15px; height: 15px; border: 2px solid #059669; border-radius: 4px; }
+.ho-sources ol { padding-left: 20px; font-size: 11.5px; color: #4b5563; }
+.ho-sources li { margin: 0 0 4px; }
+@media (max-width: 700px) { .ho-stats, .ho-two, .ho-pillars { grid-template-columns: 1fr; } .ho-paper { padding: 0 18px 20px; } .ho-head { margin: 0 -18px 14px; padding: 20px 18px 16px; } }
+@media print { .ho-paper { padding: 0 24px 20px; font-size: 12px; } .ho-head { margin: 0 -24px 14px; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .ho-pillars div, .ho-stat, .ho-try { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }

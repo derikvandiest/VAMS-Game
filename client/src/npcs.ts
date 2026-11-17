@@ -29,6 +29,7 @@ import martinezPortrait from "./assets/martinez_portrait.png";
 import traePortrait from "./assets/trae_portrait.png";
 import bakooPortrait from "./assets/bakoo_portrait.png";
 import getisPortrait from "./assets/getis_portrait.png";
+import mrMartinezPortrait from "./assets/mrmartinez_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -1857,7 +1858,87 @@ export const NPC_GETIS: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS];
+/**
+ * Mr. Martinez, the Community Schools Manager, behind his white folding table by the MPR near the south brick wall
+ * (scene.ts: pamphlets, a trifold poster), facing the lunch tables. He gives players the "Partners in Learning" handout
+ * (handout.ts) on how schools can leverage families and the community to support multilingual learners. Matches his
+ * portrait: black hair swept back, a short trimmed beard, tan skin, a navy-and-gray striped button-up over a white tee.
+ */
+const MR_MARTINEZ_NAVY = "#3b4558";
+export const NPC_MARTINEZ_CS: NpcDef = {
+  id: "npc-martinez-cs",
+  room: "campus",
+  x: -9.5, // behind the table (table centre z = 62.4)
+  z: 63.25,
+  rotY: Math.PI, // facing the lunch tables across the plaza
+  talkRange: 2.6, // talk across the table
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mr. Martinez",
+    title: "Community Schools Manager",
+    noHomeroom: true,
+    gender: "masculine",
+    look: "masc-suit", // the jacket is his open striped button-up, the shirt his white tee
+    outfitColor: MR_MARTINEZ_NAVY,
+    hairStyle: "m-king", // short, swept back
+    hairColor: "#15131a",
+    facialHair: "beard",
+    beardColor: "#221a15",
+    skinTone: "#C68E66",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#2a2d33",
+    partColors: { White: "#f2f2ef", Tie: "#f2f2ef", "Legs:Suit": "#2b2f38" }, // the white tee at his open collar
+    polkaDots: { parts: ["Body:Suit"], base: MR_MARTINEZ_NAVY, dot: "#8fa3c4", shape: "hstripes" },
+  },
+  portrait: mrMartinezPortrait,
+  // SAMPLE TEXT (greeting / role): replace with Mr. Martinez's real words. The handout content is in handout.ts.
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi, welcome! I'm Mr. Martinez, the Community Schools Manager here at Valor.",
+          "This table is all about partnering with our families and our community to help our multilingual learners thrive. Take a look around, and grab a handout!",
+        ],
+        options: [
+          { label: "Can I have a handout?", action: "give-handout" },
+          { label: "What does a Community Schools Manager do?", next: "role" },
+          { label: "Why do families matter so much for MLLs?", next: "why" },
+          { label: "Thanks, Mr. Martinez!", next: "bye" },
+        ],
+      },
+      role: {
+        paragraphs: [
+          "(Sample text) I connect our school with families and community partners: health and food resources, adult ESL classes, family workshops, and after-school programs.",
+          "I also support our ELAC so families have a real voice in decisions. When students' basic needs are met and their families feel welcome, they can focus on learning.",
+        ],
+        options: [
+          { label: "Can I have a handout?", action: "give-handout" },
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Martinez!", next: "bye" },
+        ],
+      },
+      why: {
+        paragraphs: [
+          "Research keeps finding the same thing: when schools and families work as partners, students attend more and learn more, across every background.",
+          "Our multilingual families bring so much: languages, cultures, skills, and stories. The handout has research-based strategies to tap into that, plus what the law requires for communicating with families.",
+        ],
+        options: [
+          { label: "Can I have a handout?", action: "give-handout" },
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Martinez!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Thanks for stopping by! Remember: families are our partners."],
+        options: [{ label: "See you, Mr. Martinez!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.

@@ -42,7 +42,7 @@ import {
 } from "./classrooms";
 import { createAvatarRig, GAME_AVATAR_SCALE, AvatarRig } from "./avatar";
 import { openMap } from "./map";
-import { equipBackpack, backpackColor, fillWaterBottle, countItem, takePencilPouch, pencilQuest, collectPencil, borrowChromebook, returnChromebook, completeOptional } from "./inventory";
+import { equipBackpack, backpackColor, fillWaterBottle, countItem, takePencilPouch, pencilQuest, collectPencil, borrowChromebook, returnChromebook, completeOptional, takeHandout } from "./inventory";
 import { loadCharacterProfile, onProfileChange } from "./profile";
 import { initSettingsModal } from "./settings";
 
@@ -6888,6 +6888,192 @@ export function startPlaceholderScene(
     addFountain(-18.4, -10.3, floor2, "south");
   }
 
+  // --- Mr. Martinez's Community Schools table: a white folding table by the MPR, near the south brick wall, facing the
+  // lunch tables. Pamphlet stacks, a trifold poster with community information, a sign-in clipboard. He stands
+  // behind it (npcs.ts NPC_MARTINEZ_CS) and hands out the "Partners in Learning" handout (handout.ts).
+  {
+    const TX = -9.5, TZ = 62.4; // table centre; the long side faces the lunch tables (-z)
+    const g = new THREE.Group();
+    g.position.set(TX, 0, TZ);
+    const white = new THREE.MeshStandardMaterial({ color: 0xf4f4f1, roughness: 0.6 });
+    const gray = new THREE.MeshStandardMaterial({ color: 0x8b9099, roughness: 0.4, metalness: 0.6 });
+    const add = (m: THREE.Mesh, x: number, y: number, z: number): THREE.Mesh => {
+      m.position.set(x, y, z);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      g.add(m);
+      return m;
+    };
+    // top with a rolled edge, folding leg frames and a brace
+    add(new THREE.Mesh(new THREE.BoxGeometry(1.83, 0.045, 0.76), white), 0, 0.74, 0);
+    add(new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.03, 0.78), white), 0, 0.71, 0);
+    for (const sx of [-0.72, 0.72]) {
+      for (const sz of [-0.3, 0.3]) add(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.7, 8), gray), sx, 0.35, sz);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.6, 8), gray), sx, 0.1, 0).rotation.x = Math.PI / 2;
+      for (const sz of [-0.3, 0.3]) add(new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.03, 8), new THREE.MeshStandardMaterial({ color: 0x222222 })), sx, 0.015, sz);
+    }
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 1.44, 8), gray), 0, 0.62, 0).rotation.z = Math.PI / 2;
+
+    // canvas helper
+    const tex = (w: number, h: number, draw: (c: CanvasRenderingContext2D) => void): THREE.CanvasTexture => {
+      const cv = document.createElement("canvas");
+      cv.width = w;
+      cv.height = h;
+      draw(cv.getContext("2d")!);
+      const t = new THREE.CanvasTexture(cv);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.anisotropy = 4;
+      return t;
+    };
+    const wrap = (c: CanvasRenderingContext2D, text: string, x: number, y: number, maxW: number, lh: number): number => {
+      let line = "";
+      for (const word of text.split(" ")) {
+        const test = line ? line + " " + word : word;
+        if (c.measureText(test).width > maxW && line) { c.fillText(line, x, y); line = word; y += lh; } else line = test;
+      }
+      if (line) c.fillText(line, x, y);
+      return y + lh;
+    };
+
+    // trifold poster board standing at the back of the table (center panel facing the lunch tables)
+    const PW = 0.46, PH = 0.72;
+    const panel = (draw: (c: CanvasRenderingContext2D) => void): THREE.Mesh => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(PW, PH), new THREE.MeshStandardMaterial({ map: tex(460, 720, draw), roughness: 0.8, side: THREE.DoubleSide }));
+      m.castShadow = true;
+      return m;
+    };
+    const board = (c: CanvasRenderingContext2D, title: string, color: string): void => {
+      c.fillStyle = "#fffdf6";
+      c.fillRect(0, 0, 460, 720);
+      c.fillStyle = color;
+      c.fillRect(0, 0, 460, 110);
+      c.fillStyle = "#fff";
+      c.font = "900 38px Arial Black, Arial";
+      c.textAlign = "center";
+      wrap(c, title, 230, 48, 420, 42);
+      c.textAlign = "left";
+    };
+    const bullets = (c: CanvasRenderingContext2D, items: string[], color: string, y0: number): void => {
+      let y = y0;
+      c.font = "bold 27px Arial";
+      for (const s of items) {
+        c.fillStyle = color;
+        c.beginPath();
+        c.arc(34, y - 9, 9, 0, Math.PI * 2);
+        c.fill();
+        c.fillStyle = "#1f2937";
+        y = wrap(c, s, 54, y, 380, 32) + 16;
+      }
+    };
+    const left = panel((c) => {
+      board(c, "FAMILY RESOURCE CENTER", "#b45309");
+      bullets(c, ["Adult ESL & citizenship classes", "Parent workshops in your language", "Free interpreters at every meeting", "Help with school forms & apps", "Coffee chats with the principal"], "#b45309", 170);
+      c.fillStyle = "#b45309"; c.font = "bold 26px Arial"; c.fillText("Mon–Fri · Room 101", 40, 670);
+    });
+    const center = panel((c) => {
+      c.fillStyle = "#fffdf6"; c.fillRect(0, 0, 460, 720);
+      c.fillStyle = "#7f1d1d"; c.fillRect(0, 0, 460, 150);
+      c.fillStyle = "#fff"; c.textAlign = "center";
+      c.font = "900 44px Arial Black, Arial"; c.fillText("VALOR", 230, 62);
+      c.font = "bold 30px Arial"; c.fillText("COMMUNITY SCHOOLS", 230, 112);
+      // families & community: a ring of people around the school
+      const cx = 230, cy = 330;
+      c.fillStyle = "#fde68a"; c.beginPath(); c.arc(cx, cy, 120, 0, Math.PI * 2); c.fill();
+      c.fillStyle = "#7f1d1d"; c.fillRect(cx - 42, cy - 20, 84, 62);
+      c.beginPath(); c.moveTo(cx - 54, cy - 18); c.lineTo(cx, cy - 66); c.lineTo(cx + 54, cy - 18); c.fill();
+      const people = ["#2563eb", "#16a34a", "#db2777", "#ea580c", "#7c3aed", "#0d9488"];
+      people.forEach((col, i) => {
+        const a = (i / people.length) * Math.PI * 2 - Math.PI / 2;
+        const px = cx + Math.cos(a) * 160, py = cy + Math.sin(a) * 160;
+        c.fillStyle = col;
+        c.beginPath(); c.arc(px, py - 22, 16, 0, Math.PI * 2); c.fill();
+        c.beginPath(); c.ellipse(px, py + 14, 22, 26, 0, Math.PI, 0); c.fill();
+      });
+      c.fillStyle = "#1f2937"; c.font = "900 32px Arial Black, Arial";
+      wrap(c, "FAMILIES + COMMUNITY = STUDENT SUCCESS", 230, 560, 420, 40);
+      c.font = "bold 24px Arial"; c.fillStyle = "#7f1d1d";
+      c.fillText("Ask Mr. Martinez for a handout!", 230, 690);
+      c.textAlign = "left";
+    });
+    const right = panel((c) => {
+      board(c, "COMMUNITY PARTNERS", "#1d4ed8");
+      bullets(c, ["Health & dental clinic", "Food pantry & clothing closet", "Public library cards", "Free legal aid & newcomer services", "Counseling & mental health"], "#1d4ed8", 170);
+      c.fillStyle = "#16a34a"; c.fillRect(30, 600, 400, 90);
+      c.fillStyle = "#fff"; c.font = "900 30px Arial Black, Arial"; c.textAlign = "center";
+      c.fillText("JOIN OUR ELAC!", 230, 640); c.font = "bold 22px Arial"; c.fillText("Parents' voice in decisions", 230, 674);
+      c.textAlign = "left";
+    });
+    const backZ = 0.22; // toward the wall (+z); the board faces -z
+    center.position.set(0, 0.762 + PH / 2, backZ);
+    center.rotation.y = Math.PI;
+    const wing = 0.5; // how far the side panels fold forward
+    left.position.set(PW / 2 + (Math.cos(wing) * PW) / 2, 0.762 + PH / 2, backZ - (Math.sin(wing) * PW) / 2);
+    left.rotation.y = Math.PI + wing;
+    right.position.set(-PW / 2 - (Math.cos(wing) * PW) / 2, 0.762 + PH / 2, backZ - (Math.sin(wing) * PW) / 2);
+    right.rotation.y = Math.PI - wing;
+    g.add(center, left, right);
+
+    // pamphlet stacks (tri-fold brochures) with printed covers, a few fanned out, and a sign-in clipboard
+    const covers: Array<[string, string, string]> = [
+      ["#0f766e", "COMMUNITY RESOURCES", "Clinics · Food · Libraries"],
+      ["#b45309", "FAMILY WORKSHOPS", "In English & Spanish"],
+      ["#1d4ed8", "ELAC", "Your voice at school"],
+      ["#7c3aed", "AFTER-SCHOOL", "Clubs · Tutoring · Sports"],
+    ];
+    const coverMats = covers.map(([col, title, sub]) =>
+      new THREE.MeshStandardMaterial({
+        roughness: 0.7,
+        map: tex(200, 400, (c) => {
+          c.fillStyle = "#ffffff"; c.fillRect(0, 0, 200, 400);
+          c.fillStyle = col; c.fillRect(0, 0, 200, 230);
+          c.fillStyle = "#fff"; c.font = "900 26px Arial Black, Arial"; c.textAlign = "center";
+          wrap(c, title, 100, 80, 180, 30);
+          c.fillStyle = "#374151"; c.font = "bold 18px Arial"; wrap(c, sub, 100, 280, 180, 22);
+          c.fillStyle = col; c.fillRect(70, 340, 60, 8);
+        }),
+      })
+    );
+    const paper = new THREE.MeshStandardMaterial({ color: 0xf8f8f4, roughness: 0.8 });
+    covers.forEach((_, i) => {
+      const x = -0.66 + i * 0.27 + (i >= 2 ? 0.5 : 0); // two stacks each side of the poster
+      const z = -0.16;
+      add(new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.03, 0.2), paper), x, 0.778, z);
+      const top = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.2), coverMats[i]);
+      top.rotation.set(-Math.PI / 2, 0, Math.PI); // reads right way up from the front
+      top.position.set(x, 0.7935, z);
+      g.add(top);
+    });
+    // a few brochures fanned out at the front edge
+    for (let k = 0; k < 3; k++) {
+      const b = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.2), coverMats[(k + 1) % coverMats.length]);
+      b.rotation.set(-Math.PI / 2, 0, Math.PI - 0.35 + k * 0.32);
+      b.position.set(0.02 + k * 0.05, 0.765 + k * 0.001, -0.27);
+      g.add(b);
+    }
+    // clipboard with a sign-in sheet and a pen
+    add(new THREE.Mesh(new THREE.BoxGeometry(0.23, 0.01, 0.32), new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.6 })), 0.62, 0.768, -0.05);
+    const sheet = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.2, 0.27),
+      new THREE.MeshStandardMaterial({
+        roughness: 0.85,
+        map: tex(200, 270, (c) => {
+          c.fillStyle = "#fff"; c.fillRect(0, 0, 200, 270);
+          c.fillStyle = "#1f2937"; c.font = "bold 18px Arial"; c.textAlign = "center"; c.fillText("FAMILY SIGN-IN", 100, 28);
+          c.strokeStyle = "#9ca3af"; c.lineWidth = 1.5;
+          for (let y = 50; y < 260; y += 22) { c.beginPath(); c.moveTo(12, y); c.lineTo(188, y); c.stroke(); }
+          c.fillStyle = "#1e3a8a"; c.font = "italic 15px Arial"; c.textAlign = "left";
+          ["M. Lopez", "J. Nguyen", "A. Haddad", "R. Garcia"].forEach((n, i) => c.fillText(n, 16, 66 + i * 22));
+        }),
+      })
+    );
+    sheet.rotation.set(-Math.PI / 2, 0, Math.PI);
+    sheet.position.set(0.62, 0.7745, -0.06);
+    g.add(sheet);
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.14, 8), new THREE.MeshStandardMaterial({ color: 0x1e3a8a })), 0.68, 0.778, -0.12).rotation.set(Math.PI / 2, 0, 0.6);
+    scene.add(g);
+    buildingSolids.push({ x: TX, z: TZ, w: 1.95, d: 0.88, yBase: 0, yTop: 1.5 });
+  }
+
   // --- Black music stands in a row on the upper walkway, against the wall just outside the music room door
   {
     const black = new THREE.MeshStandardMaterial({ color: 0x15171b, roughness: 0.45, metalness: 0.6 });
@@ -7713,6 +7899,19 @@ export function startPlaceholderScene(
         if (event === "reset-balls") doBallReset();
         // Mr. Ipina opens the campus map for you
         if (event === "open-map") setTimeout(() => openMap(), 0);
+        // Mr. Martinez hands out his Community Schools handout (it goes in the backpack)
+        if (event === "give-handout") {
+          const r = takeHandout();
+          const why =
+            r === "no-backpack"
+              ? "You'll need a backpack to carry it! Grab one from the hooks just inside the MPR doors, then come back and I'll give you a copy."
+              : r === "has"
+                ? "You already have a copy! Open your backpack (press I) and click the handout to read it. You can even print it."
+                : r === "full"
+                  ? "Your backpack is full! Make some room and come back for a copy."
+                  : "";
+          if (why) setTimeout(() => showDialog({ name: n.def.profile.name, title: n.def.profile.title, portrait: n.def.portrait }, { start: "r", nodes: { r: { paragraphs: [why], options: [{ label: "Okay, thanks!" }] } } }), 0);
+        }
         // A classroom teacher who chats first hands out the assignment from the dialogue
         if (event === "open-assignment") setTimeout(() => openAssignment(), 0);
         // Ms. Castaneda runs the front entrance gate (the only way to open or close it)
