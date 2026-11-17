@@ -5710,7 +5710,7 @@ export function startPlaceholderScene(
     if (inst.data.type === "other") {
       if (inst.data.id === "eld") {
         mainLabel = "ELD";
-        subLabel = "MR. VAN DIEST";
+        subLabel = "ROOMS 210A & 210B";
       } else if (inst.data.id === "music") {
         mainLabel = "MUSIC";
         subLabel = "MUSIC ROOM";
