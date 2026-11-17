@@ -25,6 +25,7 @@ import larkPortrait from "./assets/lark_portrait.png";
 import gilletPortrait from "./assets/gillet_portrait.png";
 import noroPortrait from "./assets/norori_portrait.png";
 import ramirezPortrait from "./assets/ramirez_portrait.png";
+import martinezPortrait from "./assets/martinez_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -1582,7 +1583,75 @@ export const NPC_RAMIREZ: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLET, NPC_NORORI, NPC_RAMIREZ];
+/**
+ * Ms. Martinez, the 7th grade CSUN math teacher, standing in front of the whiteboard in her classroom (talk to her for
+ * the assignment). Matches her portrait: very long, wavy black hair with a center part, black rectangular glasses,
+ * a light blue crewneck tee.
+ */
+const MARTINEZ_BLUE = "#7cb9df";
+export const NPC_MARTINEZ: NpcDef = {
+  id: "npc-martinez",
+  room: "classroom",
+  classroomId: "7th-csun-math",
+  x: 0, // set from the classroom's whiteboard
+  z: 0,
+  rotY: 0, // facing the class
+  talkRange: 2.2,
+  chatFirst: true,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Ms. Martinez",
+    title: "7th Grade Math Teacher",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-casual",
+    outfitColor: MARTINEZ_BLUE,
+    hairStyle: "f-witch", // center part, lengthened well past the shoulders
+    hairLength: 2.4,
+    hairColor: "#17141a",
+    skinTone: "#E6B48F",
+    glasses: "rect",
+    glassesColor: "#1d1f24",
+    shoes: "sneakers",
+    shoeColor: "#f0f0ee",
+    partColors: { "Body:White": MARTINEZ_BLUE, "Legs:Orange": "#2a3142" },
+  },
+  portrait: martinezPortrait,
+  // SAMPLE TEXT: replace with Ms. Martinez's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi, welcome! I'm Ms. Martinez, and I teach 7th grade math here in CSUN.",
+          "Your assignment is ready whenever you are. Come on in!",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "What are your students learning?", next: "learn" },
+          { label: "Thanks, Ms. Martinez!", next: "bye" },
+        ],
+      },
+      learn: {
+        paragraphs: [
+          "(Sample text) We're working on slope and linear equations: finding patterns in tables and graphs and writing the equation that describes them.",
+          "My students explain their strategies to a partner using math sentence frames, so everyone, especially my English learners, practices the language of math.",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Martinez!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Have a great day! Good luck with the rest of the classrooms."],
+        options: [{ label: "See you, Ms. Martinez!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLET, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.
