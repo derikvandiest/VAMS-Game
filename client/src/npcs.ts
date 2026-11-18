@@ -34,6 +34,7 @@ import delmaPortrait from "./assets/delma_portrait.png";
 import raquelPortrait from "./assets/raquel_portrait.png";
 import aparicioPortrait from "./assets/aparicio_portrait.png";
 import carreraPortrait from "./assets/carrera_portrait.png";
+import williamsPortrait from "./assets/williams_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -2213,7 +2214,69 @@ export const NPC_CARRERA: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL, NPC_APARICIO, NPC_CARRERA];
+/**
+ * Ms. Williams, standing next to Ms. Roldan outside the Learning Center (to her right), turned a little toward her.
+ * Matches her portrait: long curly hair, dark at the roots and honey blonde toward the ends, warm brown skin, an open
+ * pink cardigan over a navy tee.
+ */
+export const NPC_WILLIAMS: NpcDef = {
+  id: "npc-williams",
+  room: "campus",
+  x: -0.75, // beside Ms. Roldan (x -1.9, z 0.4)
+  z: 0.5,
+  rotY: -0.7, // facing the courtyard, turned toward Ms. Roldan
+  talkRange: 1.7,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Ms. Williams",
+    title: "Valor Staff", // TODO: her real title
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-suit", // the jacket is her pink cardigan, the shirt her navy tee
+    outfitColor: "#d63384",
+    hairStyle: "f-witch", // long, lengthened well past the shoulders
+    hairLength: 2.3,
+    hairColor: "#2c1e16",
+    hairTips: "#c9a46a", // honey blonde toward the ends
+    skinTone: "#C08A64",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#f0f0ee",
+    partColors: { "Body:White": "#24315a", "Legs:Black": "#25272d" },
+  },
+  portrait: williamsPortrait,
+  // SAMPLE TEXT: replace with Ms. Williams's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi there, welcome! I'm Ms. Williams. So glad you're here today!",
+          "Ms. Roldan and I were just talking about how we support every learner on campus.",
+        ],
+        options: [
+          { label: "What do you focus on?", next: "about" },
+          { label: "Thanks, Ms. Williams!", next: "bye" },
+        ],
+      },
+      about: {
+        paragraphs: [
+          "(Sample text) Empathy, compassion and inclusion. When students feel they belong, they take risks, and that's when learning happens, especially for our English learners.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Williams!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Have a wonderful day!"],
+        options: [{ label: "See you, Ms. Williams!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL, NPC_APARICIO, NPC_CARRERA, NPC_WILLIAMS];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.
