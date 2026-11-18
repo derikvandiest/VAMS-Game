@@ -32,6 +32,8 @@ interface Spec {
   slide?: boolean; // sliding side door (minivan / van)
   lightBar?: boolean; // EV light bars
   decal?: string; // text on the sides
+  pillars?: number[]; // the side window dividers (instead of the default door pillars)
+  van?: boolean; // passenger-van details (tall roof cap, cladding, hex grille, steel wheels)
 }
 
 const SPECS: Record<CarStyle, Spec> = {
@@ -43,7 +45,9 @@ const SPECS: Record<CarStyle, Spec> = {
   pickup: { name: "Pickup Truck", L: 4.8, W: 2.0, wr: 0.4, wf: 1.62, wb: -1.42, noseY: 0.78, hoodY: 1.06, beltY: 1.14, roofY: 1.78, deckY: 1.14, xA: 1.0, xB: 0.42, xC: -0.48, xD: -0.62, tail: "flat", bed: true, grille: "big" },
   minivan: { name: "Minivan", L: 4.6, W: 1.98, wr: 0.36, wf: 1.5, wb: -1.42, noseY: 0.62, hoodY: 0.92, beltY: 1.02, roofY: 1.78, deckY: 1.02, xA: 1.25, xB: 0.45, xC: -2.1, xD: -2.24, tail: "hatch", grille: "slim", slide: true },
   ev: { name: "Electric Car", L: 4.4, W: 1.9, wr: 0.34, wf: 1.38, wb: -1.38, noseY: 0.55, hoodY: 0.74, beltY: 0.9, roofY: 1.38, deckY: 0.88, xA: 0.78, xB: 0.05, xC: -0.6, xD: -1.75, tail: "trunk", grille: "none", lightBar: true },
-  schoolvan: { name: "School Van", L: 5.4, W: 2.06, wr: 0.38, wf: 1.65, wb: -1.65, noseY: 0.72, hoodY: 1.02, beltY: 1.16, roofY: 2.12, deckY: 1.16, xA: 1.55, xB: 1.05, xC: -2.62, xD: -2.68, tail: "hatch", grille: "big", slide: true, decal: "VALOR ACADEMY" },
+  // a full-size passenger van (like a Transit): short sloped nose, raked windshield, tall rounded roof, a long band of
+  // side windows, dark lower cladding and bumpers, big hexagonal grille
+  schoolvan: { name: "Valor Van", L: 5.4, W: 2.06, wr: 0.38, wf: 1.85, wb: -1.7, noseY: 0.78, hoodY: 1.02, beltY: 1.22, roofY: 1.78, deckY: 1.22, xA: 1.95, xB: 1.18, xC: -2.6, xD: -2.66, tail: "hatch", grille: "none", slide: true, decal: "VALOR ACADEMY", pillars: [0.55, -0.62, -1.72], van: true },
 };
 
 // shared materials (per-car ones: body paint and the brake-light material)
@@ -183,9 +187,12 @@ export function buildCarModel(style: CarStyle, color: string, seed = 0): CarMode
     }
   };
   pillar(s.xA - 0.04, s.xB, s.beltY, s.roofY);
-  const bx = s.bed ? s.xD + 0.08 : s.xB + (s.xC - s.xB) * (s.slide ? 0.33 : 0.45);
-  pillar(bx, bx, s.beltY, s.roofY);
-  if (s.slide) pillar(s.xB + (s.xC - s.xB) * 0.72, s.xB + (s.xC - s.xB) * 0.72, s.beltY, s.roofY);
+  const bx = s.pillars ? s.pillars[0] : s.bed ? s.xD + 0.08 : s.xB + (s.xC - s.xB) * (s.slide ? 0.33 : 0.45);
+  if (s.pillars) for (const px of s.pillars) pillar(px, px, s.beltY, s.roofY);
+  else {
+    pillar(bx, bx, s.beltY, s.roofY);
+    if (s.slide) pillar(s.xB + (s.xC - s.xB) * 0.72, s.xB + (s.xC - s.xB) * 0.72, s.beltY, s.roofY);
+  }
   pillar(s.xC, s.xD + 0.06, s.roofY, s.beltY);
   for (const side of [-1, 1]) box(car, M.trim, s.xA - s.xD, 0.04, 0.03, (s.xA + s.xD) / 2, s.beltY - 0.01, side * (half - 0.06));
 
@@ -218,7 +225,8 @@ export function buildCarModel(style: CarStyle, color: string, seed = 0): CarMode
   if (s.lightBar) brakeLights.push(box(car, brakeLightMat, 0.05, 0.06, W - 0.4, rear - 0.01, tailY, 0));
   for (const side of [-1, 1]) {
     const tall = s.tail === "hatch" && !s.lightBar;
-    brakeLights.push(box(car, brakeLightMat, 0.1, tall ? 0.32 : 0.17, tall ? 0.3 : 0.42, rear + 0.03, tall ? tailY + 0.05 : tailY + 0.02, side * (half - (tall ? 0.22 : 0.27))));
+    if (s.van) brakeLights.push(box(car, brakeLightMat, 0.1, 0.7, 0.16, rear + 0.03, 1.08, side * (half - 0.1))); // tall corner lamps
+    else brakeLights.push(box(car, brakeLightMat, 0.1, tall ? 0.32 : 0.17, tall ? 0.3 : 0.42, rear + 0.03, tall ? tailY + 0.05 : tailY + 0.02, side * (half - (tall ? 0.22 : 0.27))));
   }
   brakeLights.push(box(car, brakeLightMat, 0.04, 0.04, 0.34, s.xD - 0.02, s.tail === "trunk" ? s.beltY + 0.06 : s.roofY - 0.04, 0)); // third brake light
 
@@ -251,9 +259,63 @@ export function buildCarModel(style: CarStyle, color: string, seed = 0): CarMode
     const mat = new THREE.MeshStandardMaterial({ map: decalTexture(s.decal), transparent: true, roughness: 0.5 });
     for (const side of [-1, 1]) {
       const d = new THREE.Mesh(new THREE.PlaneGeometry(s.L * 0.62, s.L * 0.62 / 8), mat);
-      d.position.set(-0.35, s.beltY - 0.24, side * (half + 0.001));
+      d.position.set(-0.35, s.van ? 0.88 : s.beltY - 0.24, side * (half + 0.001));
       if (side < 0) d.rotation.y = Math.PI;
       car.add(d);
+    }
+  }
+
+  if (s.van) {
+    const front0 = s.L / 2, rear0 = -s.L / 2, ar = s.wr + 0.07;
+    // the tall roof: a body-colored cap above the window band, rounded at the front over the windshield
+    const cap = new THREE.Shape();
+    cap.moveTo(s.xB + 0.02, s.roofY - 0.02);
+    cap.quadraticCurveTo(s.xB - 0.12, s.roofY + 0.24, s.xB - 0.45, s.roofY + 0.27);
+    cap.lineTo(rear0 + 0.18, s.roofY + 0.27);
+    cap.quadraticCurveTo(rear0 + 0.02, s.roofY + 0.25, rear0 + 0.02, s.roofY + 0.05);
+    cap.lineTo(rear0 + 0.02, s.roofY - 0.02);
+    const capMesh = new THREE.Mesh(extrude(`${style}-cap`, cap, W - 0.12, 0.05), paint);
+    capMesh.castShadow = true;
+    car.add(capMesh);
+    // dark lower cladding along the sides, between and around the wheel arches, and a running board
+    const clY0 = s.wr * 0.95, clY1 = 0.64;
+    const segs: Array<[number, number]> = [[front0 - 0.1, s.wf + ar], [s.wf - ar, s.wb + ar], [s.wb - ar, rear0 + 0.1]];
+    for (const side of [-1, 1]) for (const [a, b] of segs) box(car, M.trim, a - b, clY1 - clY0, 0.05, (a + b) / 2, (clY0 + clY1) / 2, side * (half - 0.02));
+    for (const side of [-1, 1]) box(car, M.trim, s.wf - s.wb - 2 * ar, 0.05, 0.12, (s.wf + s.wb) / 2, clY0 - 0.02, side * (half - 0.05));
+    // tall front bumper with a lower vent and fog-light pockets; the rear step bumper
+    box(car, M.trim, 0.3, 0.44, W + 0.04, front0 - 0.04, 0.54, 0);
+    box(car, M.well, 0.04, 0.1, W * 0.5, front0 + 0.12, 0.46, 0);
+    for (const sd of [-1, 1]) box(car, M.well, 0.04, 0.09, 0.26, front0 + 0.12, 0.62, sd * (half - 0.32));
+    box(car, M.trim, 0.32, 0.3, W + 0.04, rear0 + 0.04, 0.52, 0);
+    // big hexagonal grille with an oval badge
+    const hex = new THREE.Shape();
+    const gw = W * 0.29, gh = 0.24;
+    hex.moveTo(-gw, gh * 0.75); hex.lineTo(-gw * 0.82, -gh); hex.lineTo(gw * 0.82, -gh); hex.lineTo(gw, gh * 0.75); hex.lineTo(gw * 0.7, gh); hex.lineTo(-gw * 0.7, gh);
+    const grille = new THREE.Mesh(new THREE.ExtrudeGeometry(hex, { depth: 0.08, bevelEnabled: false }), M.trim);
+    grille.rotation.y = Math.PI / 2;
+    grille.position.set(front0 + 0.02, 0.98, 0);
+    car.add(grille);
+    for (let k = 0; k < 4; k++) box(car, M.well, 0.03, 0.025, gw * 1.7, front0 + 0.105, 0.86 + k * 0.08, 0);
+    const badge = new THREE.Mesh(new THREE.CircleGeometry(0.1, 20), new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.3, metalness: 0.5 }));
+    badge.scale.set(1, 0.42, 1);
+    badge.rotation.y = Math.PI / 2;
+    badge.position.set(front0 + 0.113, 1.0, 0);
+    car.add(badge);
+    // swept-back headlights with an amber strip, hood vents, big mirrors on stalks, an antenna
+    for (const side of [-1, 1]) {
+      const hl = box(car, M.head, 0.3, 0.1, 0.34, front0 - 0.12, 1.04, side * (half - 0.24));
+      hl.rotation.set(0, side * 0.35, -0.55); // following the sloped nose, wrapping toward the side
+      box(car, M.trim, 0.32, 0.12, 0.36, front0 - 0.135, 1.03, side * (half - 0.24)).rotation.set(0, side * 0.35, -0.55);
+      box(car, M.amber, 0.2, 0.04, 0.05, front0 - 0.3, 1.0, side * (half - 0.05));
+      box(car, M.well, 0.3, 0.02, 0.07, front0 - 0.6, s.hoodY + 0.12, side * 0.42);
+      box(car, M.trim, 0.06, 0.06, 0.18, s.xA - 0.12, s.beltY + 0.06, side * (half + 0.06));
+      box(car, M.trim, 0.12, 0.26, 0.12, s.xA - 0.12, s.beltY + 0.18, side * (half + 0.17));
+    }
+    box(car, M.trim, 0.02, 0.5, 0.02, s.xB - 0.3, s.roofY + 0.5, -half + 0.3);
+    // black window frames: dividers between the panes and a strip along the bottom and top of the window band
+    for (const side of [-1, 1]) {
+      for (const px of [...(s.pillars ?? []), s.xD + 0.12]) box(car, M.trim, 0.13, s.roofY - s.beltY, 0.05, px, (s.roofY + s.beltY) / 2, side * (half - 0.11));
+      box(car, M.trim, s.xB - s.xD, 0.05, 0.05, (s.xB + s.xD) / 2, s.roofY - 0.02, side * (half - 0.11));
     }
   }
 
@@ -266,7 +328,7 @@ export function buildCarModel(style: CarStyle, color: string, seed = 0): CarMode
   }
   const steerPivots: THREE.Group[] = [];
   const wheelMeshes: THREE.Mesh[] = [];
-  const rimMat = seed % 3 === 0 ? M.rimDark : M.rimSilver;
+  const rimMat = s.van ? M.rimSilver : seed % 3 === 0 ? M.rimDark : M.rimSilver;
   const tireW = s.wr * 0.62;
   for (const [x, steer] of [[s.wf, true], [s.wb, false]] as const) {
     for (const side of [-1, 1]) {
