@@ -6054,9 +6054,9 @@ export function startPlaceholderScene(
   // awning (layout.json `tables`). Decorative in the prototype (no
   // collision, like the parked cars) - furnished interiors arrive at
   // Milestone 7.
-  const tableTopMaterial = new THREE.MeshStandardMaterial({ color: 0x26385f, roughness: 0.7 }); // navy, a touch lighter than the umbrellas
-  const tablePoleMaterial = new THREE.MeshStandardMaterial({ color: 0x4a4f57, roughness: 0.7, metalness: 0.3 });
-  const chairMaterial = new THREE.MeshStandardMaterial({ color: 0x26385f, roughness: 0.7 }); // navy, a touch lighter than the umbrellas
+  const tableTopMaterial = new THREE.MeshStandardMaterial({ color: 0x3a3d42, roughness: 0.7 }); // dark gray table tops
+  const tablePoleMaterial = new THREE.MeshStandardMaterial({ color: 0x2e3034, roughness: 0.7, metalness: 0.3 }); // dark gray pole/base
+  const chairMaterial = new THREE.MeshStandardMaterial({ color: 0x3a3d42, roughness: 0.7 }); // dark gray chairs
   const umbrellaMaterials = ["#1b2a4e"].map( // all the lunch-table umbrellas are dark navy blue
     (hex) => new THREE.MeshStandardMaterial({ color: hex, roughness: 0.8 })
   );
@@ -6099,6 +6099,13 @@ export function startPlaceholderScene(
     memorialNote.classList.add("show");
   }
 
+  const noUmbrella = new Set(
+    tables
+      .map((tb, i) => ({ i, d: Math.hypot(tb.x - elevator.cx, tb.z - elevator.cz) }))
+      .sort((a, b) => a.d - b.d)
+      .slice(0, Math.floor(tables.length / 2))
+      .map((x) => x.i)
+  );
   tables.forEach((table, i) => {
     const group = new THREE.Group();
     group.position.set(table.x, 0, table.z);
@@ -6126,7 +6133,15 @@ export function startPlaceholderScene(
     const finial = new THREE.Mesh(finialGeometry, tablePoleMaterial);
     finial.position.y = UMBRELLA_POLE_HEIGHT + 0.36;
 
-    group.add(base, top, pole, canopy, finial);
+    // the half of the tables nearest the elevator (and the 5th / 8th grade wing) have no umbrella: just a short
+    // pole holding up the table top
+    if (noUmbrella.has(i)) {
+      const stub = new THREE.Mesh(umbrellaPoleGeometry, tablePoleMaterial);
+      stub.scale.y = TABLE_HEIGHT / UMBRELLA_POLE_HEIGHT;
+      stub.position.y = TABLE_HEIGHT / 2;
+      stub.castShadow = true;
+      group.add(base, top, stub);
+    } else group.add(base, top, pole, canopy, finial);
 
     // Four chairs around the table, backs facing outward.
     for (let c = 0; c < 4; c++) {
