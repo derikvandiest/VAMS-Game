@@ -6413,7 +6413,7 @@ export function startPlaceholderScene(
   // lunch tables. Pamphlet stacks, a trifold poster with community information, a sign-in clipboard. He stands
   // behind it (npcs.ts NPC_MARTINEZ_CS) and hands out the "Partners in Learning" handout (handout.ts).
   {
-    const TX = -9.5, TZ = 62.4; // table centre; the long side faces the lunch tables (-z)
+    const TX = -10.3, TZ = 60.6; // table centre, in line with Delma's and Raquel's tables; the long side faces the lunch tables (-z)
     const g = new THREE.Group();
     g.position.set(TX, 0, TZ);
     const white = new THREE.MeshStandardMaterial({ color: 0xf4f4f1, roughness: 0.6 });

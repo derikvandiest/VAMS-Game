@@ -1877,8 +1877,8 @@ const MR_MARTINEZ_NAVY = "#3b4558";
 export const NPC_MARTINEZ_CS: NpcDef = {
   id: "npc-martinez-cs",
   room: "campus",
-  x: -9.5, // behind the table (table centre z = 62.4)
-  z: 63.25,
+  x: -10.3, // behind the table (table centre z = 60.6, in line with Delma's)
+  z: 61.45,
   rotY: Math.PI, // facing the lunch tables across the plaza
   talkRange: 2.6, // talk across the table
   profile: {
@@ -2390,9 +2390,9 @@ export const NPC_QUINTANA: NpcDef = {
     gender: "feminine",
     look: "fem-suit", // jacket + shirt printed as one pinstripe button-up
     outfitColor: QUINTANA_NAVY,
-    hairStyle: "f-witch", // long and full
-    hairLength: 2.2,
-    hairColor: "#121116",
+    hairStyle: "f-long", // shoulder length, center part (same as Castaneda)
+    extraHair: "curls", // soft waves (same as Castaneda)
+    hairColor: "#121116", // keep black
     skinTone: "#E6B898",
     glasses: "none",
     shoes: "dress",
