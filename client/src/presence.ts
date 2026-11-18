@@ -217,6 +217,12 @@ export function startPresence(scene: THREE.Scene, cars?: CarSeats): Presence | n
         const seated = r.seatY !== null;
         if (seated) {
           animateAvatar(r.rig, r.clock, 0, { seated: true });
+          if ((r.seatY as number) > 0.55) {
+            // a high seat (the knee-high ledges): thighs tipped down, knees opened so the feet reach the ground
+            for (const leg of [r.rig.leftLegPivot, r.rig.rightLegPivot]) leg.rotation.x = -1.32;
+            for (const knee of [r.rig.leftKneePivot, r.rig.rightKneePivot]) knee.rotation.x = 1.12;
+            r.rig.syncSkeleton?.();
+          }
           r.rig.bodyGroup.position.y = r.rig.seatDrop ? r.rig.seatDrop(r.seatY as number) : 0;
           r.rig.setLocomotion?.(0);
         } else {

@@ -171,6 +171,8 @@ export function startPlaceholderScene(
   const gates: LayoutGate[] = layoutData.gates;
   const roofY = layoutData.boundary.wallHeight; // ground-story height (6)
   /** The ankle-high ledge along the 7th grade wing wall (between the fountain and the 7th UCLA door) */
+  /** Seat height on the knee-high ledges in front of the 8th grade rooms (their cap top) */
+  const LEDGE_SEAT_Y = 0.65;
   const LEDGE_PAD = { x0: -14, x1: -11.95, z0: 14.6, z1: 23.95, h: 0.16 }; // stops short of the walkway posts
   /** All the ankle-high ledges: the long one (beside the 7th UCLA door) and, after a short gap, a little one beside the
    *  7th LMU door (the drinking fountain stands in the gap between them) */
@@ -7135,7 +7137,8 @@ export function startPlaceholderScene(
     // The same knee-high ledges in front of the 5th/8th grade wing, between its walkway posts (z = 0.8) and the field
     // (z = 10.5): two U-shaped planters around grass patches with a single ledge between them. Each piece runs along
     // z (across the gap) or along x (beside the wing).
-    const addLedge = (cx: number, cz: number, alongX: boolean, len: number): void => {
+    // sides: which faces people can sit facing out from (+1 / -1 along the ledge's short axis)
+    const addLedge = (cx: number, cz: number, alongX: boolean, len: number, sides: number[] = []): void => {
       const w = alongX ? len : D, d = alongX ? D : len;
       const block = new THREE.Mesh(new THREE.BoxGeometry(w, H, d), ledgeMat);
       block.position.set(cx, H / 2, cz);
@@ -7148,6 +7151,26 @@ export function startPlaceholderScene(
       cap.receiveShadow = true;
       scene.add(block, cap);
       buildingSolids.push({ x: cx, z: cz, w: cw, d: cd, yBase: 0, yTop: H + 0.05 });
+      // seats along it, about one per 0.9 m, sitting near the edge you face out from
+      const n = Math.max(1, Math.floor(len / 0.9));
+      for (const sd of sides) {
+        for (let k = 0; k < n; k++) {
+          const along = -len / 2 + (len / n) * (k + 0.5);
+          const sx = alongX ? cx + along : cx + sd * 0.12;
+          const sz = alongX ? cz + sd * 0.12 : cz + along;
+          const ex = alongX ? sx : cx + sd * (D / 2 + 0.6);
+          const ez = alongX ? cz + sd * (D / 2 + 0.6) : sz;
+          chairSlots.push({
+            chairX: sx,
+            chairZ: sz,
+            seatY: LEDGE_SEAT_Y,
+            tableX: alongX ? sx : sx + sd * 2,
+            tableZ: alongX ? sz + sd * 2 : sz,
+            facingAngle: alongX ? (sd > 0 ? 0 : Math.PI) : sd > 0 ? Math.PI / 2 : -Math.PI / 2,
+            bench: { exitX: ex, exitZ: ez },
+          });
+        }
+      }
     };
     const patchMat = new THREE.MeshStandardMaterial({ map: makeNoiseTexture("#69a04f", 22, 6), roughness: 1 });
     const addPatch = (x0: number, x1: number, z0: number, z1: number): void => {
@@ -7163,20 +7186,20 @@ export function startPlaceholderScene(
     const zNear = zA + D / 2, zFar = zB - D / 2; // the legs' centers, flush with the cross pieces' ends
     // a U opening east (toward the stairs): cross piece at x = xb, legs running east from it
     const uEast = (xb: number): void => {
-      addLedge(xb, (zA + zB) / 2, false, BAR);
-      addLedge(xb + D / 2 + LEG / 2, zNear, true, LEG);
-      addLedge(xb + D / 2 + LEG / 2, zFar, true, LEG);
+      addLedge(xb, (zA + zB) / 2, false, BAR, [-1]);
+      addLedge(xb + D / 2 + LEG / 2, zNear, true, LEG, [-1]);
+      addLedge(xb + D / 2 + LEG / 2, zFar, true, LEG, [1]);
       addPatch(xb + D / 2, xb + D / 2 + LEG, zA + D, zB - D);
     };
     // a U opening west (toward the elevator), the leg on the field side a little longer
     const uWest = (xb: number, farLeg: number): void => {
-      addLedge(xb, (zA + zB) / 2, false, BAR);
-      addLedge(xb - D / 2 - LEG / 2, zNear, true, LEG);
-      addLedge(xb - D / 2 - farLeg / 2, zFar, true, farLeg);
+      addLedge(xb, (zA + zB) / 2, false, BAR, [1]);
+      addLedge(xb - D / 2 - LEG / 2, zNear, true, LEG, [-1]);
+      addLedge(xb - D / 2 - farLeg / 2, zFar, true, farLeg, [1]);
       addPatch(xb - D / 2 - LEG, xb - D / 2, zA + D, zB - D);
     };
     uEast(31.2); // in front of the 8th LMU / CSUN rooms
-    addLedge(26.5, (zA + zB) / 2, false, BAR); // the single one between them
+    addLedge(26.5, (zA + zB) / 2, false, BAR, [-1, 1]); // the single one between them
     uWest(21.2, LEG + 1.5); // in front of the 8th UCLA room
   }
 
@@ -8271,6 +8294,15 @@ export function startPlaceholderScene(
       standX = seatedChair.bench.exitX;
       standZ = seatedChair.bench.exitZ;
       candidates.length = 0;
+      // something in the way of the usual spot (a walkway post by a ledge): step a little to one side of it
+      for (const s of [0.7, -0.7, 1.1, -1.1]) {
+        if (!collides(standX, standZ, 0)) break;
+        const tx = seatedChair.bench.exitX + cosF * s, tz = seatedChair.bench.exitZ - sinF * s;
+        if (!collides(tx, tz, 0)) {
+          standX = tx;
+          standZ = tz;
+        }
+      }
     }
     for (const c of candidates) {
       const tx = seatedChair.chairX + sinF * c.fwd + cosF * c.side;
@@ -8301,6 +8333,17 @@ export function startPlaceholderScene(
     rig.syncSkeleton?.();
   }
 
+  /** Thighs along the seat and shins down over its front edge; on a high seat (the knee-high ledges) the thighs tip
+   *  down a little and the knees open so the feet reach down toward the ground */
+  function setSeatedLegs(seatY: number): void {
+    const high = seatY > 0.55;
+    const hip = high ? -1.32 : -1.52, knee = high ? 1.12 : 1.48;
+    leftLegPivot.rotation.set(hip, 0, -0.06);
+    rightLegPivot.rotation.set(hip, 0, 0.06);
+    leftKneePivot.rotation.set(knee, 0, 0);
+    rightKneePivot.rotation.set(knee, 0, 0);
+  }
+
   function sitInChair(chair: ChairSlot): void {
     if (drivingCar) exitCar();
     if (bballHeld) {
@@ -8325,10 +8368,7 @@ export function startPlaceholderScene(
     headGroup.rotation.set(-0.04, 0, 0);
 
     // Thighs horizontal along seat, knees bent 90° down over front edge
-    leftLegPivot.rotation.set(-1.52, 0, -0.06);
-    rightLegPivot.rotation.set(-1.52, 0, 0.06);
-    leftKneePivot.rotation.set(1.48, 0, 0);
-    rightKneePivot.rotation.set(1.48, 0, 0);
+    setSeatedLegs(chair.seatY);
 
     // Arms resting naturally on lap / table
     leftArmPivot.rotation.set(-0.48, 0.14, 0.18);
@@ -9414,10 +9454,7 @@ export function startPlaceholderScene(
       torsoGroup.rotation.set(0.06 + breathe, 0, 0);
       headGroup.rotation.set(-0.04 - breathe * 0.5, 0, 0);
 
-      leftLegPivot.rotation.set(-1.52, 0, -0.06);
-      rightLegPivot.rotation.set(-1.52, 0, 0.06);
-      leftKneePivot.rotation.set(1.48, 0, 0);
-      rightKneePivot.rotation.set(1.48, 0, 0);
+      setSeatedLegs(seatedChair.seatY);
 
       leftArmPivot.rotation.set(-0.48, 0.14, 0.18);
       rightArmPivot.rotation.set(-0.48, -0.14, -0.18);
