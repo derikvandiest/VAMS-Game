@@ -171,7 +171,7 @@ export function startPlaceholderScene(
   const gates: LayoutGate[] = layoutData.gates;
   const roofY = layoutData.boundary.wallHeight; // ground-story height (6)
   /** The ankle-high ledge along the 7th grade wing wall (between the fountain and the 7th UCLA door) */
-  const LEDGE_PAD = { x0: -14, x1: -11.25, z0: 14.6, z1: 23.95, h: 0.16 };
+  const LEDGE_PAD = { x0: -14, x1: -11.95, z0: 14.6, z1: 23.95, h: 0.16 }; // stops short of the walkway posts
   const onLedgePad = (px: number, pz: number): boolean =>
     px >= LEDGE_PAD.x0 && px <= LEDGE_PAD.x1 && pz >= LEDGE_PAD.z0 && pz <= LEDGE_PAD.z1;
   const floor2 = roofY + 0.1; // walkable second-floor surface height
