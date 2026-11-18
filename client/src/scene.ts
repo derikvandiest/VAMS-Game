@@ -172,9 +172,9 @@ export function startPlaceholderScene(
   const roofY = layoutData.boundary.wallHeight; // ground-story height (6)
   /** The ankle-high ledge along the 7th grade wing wall (between the fountain and the 7th UCLA door) */
   const LEDGE_PAD = { x0: -14, x1: -11.95, z0: 14.6, z1: 23.95, h: 0.16 }; // stops short of the walkway posts
-  /** All the ankle-high ledges: the long one (7th UCLA door to the fountain) and a short one between the 7th LMU and
-   *  CSUN doors */
-  const LEDGE_PADS = [LEDGE_PAD, { x0: -14, x1: -11.95, z0: 27.25, z1: 29.75, h: 0.16 }];
+  /** All the ankle-high ledges: the long one (beside the 7th UCLA door) and, after a short gap, a little one with the
+   *  drinking fountain beside the 7th LMU door */
+  const LEDGE_PADS = [LEDGE_PAD, { x0: -14, x1: -11.95, z0: 25.0, z1: 27.6, h: 0.16 }];
   const onLedgePad = (px: number, pz: number): boolean =>
     LEDGE_PADS.some((P) => px >= P.x0 && px <= P.x1 && pz >= P.z0 && pz <= P.z1);
   const floor2 = roofY + 0.1; // walkable second-floor surface height
@@ -6436,7 +6436,7 @@ export function startPlaceholderScene(
     }
     };
     // between the blue benches and the 7th LMU door (closest to LMU)
-    addFountain(-13.8, 23.4, LEDGE_PAD.h, "east"); // on the ankle-high ledge
+    addFountain(-13.8, 26.3, LEDGE_PADS[1].h, "east"); // on the little ankle-high ledge beside the 7th LMU door
     // upstairs, on the left of the ELD classroom door (x = -16) as you face it, on the office building's walkway
     addFountain(-18.4, -10.3, floor2, "south");
   }
