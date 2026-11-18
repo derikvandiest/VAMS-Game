@@ -361,10 +361,10 @@
       "axis": "z",
       "center": {
         "x": -12.5,
-        "z": 19.25
+        "z": 17.6
       },
       "width": 3,
-      "length": 42.5
+      "length": 39.2
     },
     {
       "building": "north",
@@ -402,14 +402,14 @@
       "building": "west",
       "center": {
         "x": -12.5,
-        "z": 43.5
+        "z": 40.2
       },
       "width": 3,
       "len": 6,
       "axis": "z",
       "dir": -1,
-      "bottom": 46.5,
-      "top": 40.5
+      "bottom": 43.2,
+      "top": 37.2
     },
     {
       "building": "north",

@@ -1021,7 +1021,7 @@ const NAYFELD_SHIRT = "#d8c8ad";
 export const NPC_NAYFELD: NpcDef = {
   id: "npc-nayfeld",
   room: "campus",
-  x: -12.5, // the MPR doors are at x = -14, z 50.5 .. 52.5; the stairs start at z = 46.5
+  x: -12.5, // the MPR doors are at x = -14, z 50.5 .. 52.5; the stairs start at z = 43.2
   z: 48.4,
   rotY: Math.PI / 2 + 0.4, // facing the courtyard, turned a little toward the doors
   talkRange: 1.8, // short, so E at the MPR doors still opens them
