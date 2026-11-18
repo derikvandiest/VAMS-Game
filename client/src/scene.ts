@@ -8904,19 +8904,10 @@ export function startPlaceholderScene(
     { passive: false }
   );
 
+  // The mouse only moves the camera: drag with the left or right button to orbit (actions are on the E key)
   canvas.addEventListener("mousedown", (e) => {
-    if (e.button === 0) {
-      if (bballHeld) {
-        shootBasketball();
-        return;
-      }
-      const distToBtn = Math.hypot(player.position.x - CAR_RESET_BTN_X, player.position.z - CAR_RESET_BTN_Z);
-      if (distToBtn <= 2.2) {
-        resetAllCars();
-        return;
-      }
-    }
-    if (e.button === 2) {
+    if (e.button === 0 || e.button === 2) {
+      e.preventDefault();
       orbiting = true;
       lastMouseX = e.clientX;
       lastMouseY = e.clientY;
@@ -10348,7 +10339,7 @@ export function startPlaceholderScene(
         );
       }
 
-      bballHint.textContent = "Press E or Click to shoot at hoop 🏀";
+      bballHint.textContent = "Press E to shoot at hoop 🏀";
       bballHint.style.display = "block";
       bballHint.style.opacity = "1";
     } else {
@@ -10637,7 +10628,7 @@ export function startPlaceholderScene(
       } else if (hintElev) {
         hintText = hintElev;
       } else if (distToCarResetBtn <= 2.2) {
-        hintText = "Press E or Click to reset cars 🚗";
+        hintText = "Press E to reset cars 🚗";
       } else if (nearbyPencil()) {
         hintText = "Press E to pick up the sharpened pencil ✏️";
       } else if (nearLaptopCart()) {
