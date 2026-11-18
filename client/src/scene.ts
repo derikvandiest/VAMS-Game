@@ -170,6 +170,10 @@ export function startPlaceholderScene(
   const walkways: LayoutWalkway[] = layoutData.walkways;
   const gates: LayoutGate[] = layoutData.gates;
   const roofY = layoutData.boundary.wallHeight; // ground-story height (6)
+  /** The ankle-high ledge along the 7th grade wing wall (between the fountain and the 7th UCLA door) */
+  const LEDGE_PAD = { x0: -14, x1: -11.25, z0: 14.6, z1: 23.95, h: 0.16 };
+  const onLedgePad = (px: number, pz: number): boolean =>
+    px >= LEDGE_PAD.x0 && px <= LEDGE_PAD.x1 && pz >= LEDGE_PAD.z0 && pz <= LEDGE_PAD.z1;
   const floor2 = roofY + 0.1; // walkable second-floor surface height
 
   // Height-aware solid boxes for collision detection
@@ -6082,6 +6086,8 @@ export function startPlaceholderScene(
     facingAngle: number;
     /** Ground-floor bench seats are not used from the walkway above; they stand up at a fixed spot in front */
     bench?: { exitX: number; exitZ: number };
+    /** The floor under the seat (e.g. the ankle-high ledge); default 0 */
+    floorY?: number;
     /** A dedication shown while someone sits here (the orange memorial bench) */
     memorial?: { line1: string; line2: string };
   };
@@ -6302,6 +6308,28 @@ export function startPlaceholderScene(
     /** "west" = the west building's courtyard wall (facing east), "westOut" = its outside wall on the parking-lot
      *  sidewalk (facing west), "north" = the north building's wall (facing south), "breezeway" = the west building's
      *  end wall (z = -2) facing the entrance breezeway inside the gate (facing north) */
+    // An ankle-high concrete platform along the 7th grade wing wall: from the drinking fountain to the side of the 7th
+    // UCLA door, from the wall out to the second-floor walkway posts, with rounded corners toward the lunch tables. The
+    // blue benches (and Ms. Carrera) and the fountain stand on it; players step up onto it.
+    {
+      const P = LEDGE_PAD;
+      const r = 0.45; // corner radius on the lunch-table side
+      const sh = new THREE.Shape();
+      // shape in (x, -z) so that after rotating it flat (rotation.x = -PI/2) it lies in x/z
+      sh.moveTo(P.x0, -P.z0);
+      sh.lineTo(P.x1 - r, -P.z0);
+      sh.quadraticCurveTo(P.x1, -P.z0, P.x1, -P.z0 - r);
+      sh.lineTo(P.x1, -P.z1 + r);
+      sh.quadraticCurveTo(P.x1, -P.z1, P.x1 - r, -P.z1);
+      sh.lineTo(P.x0, -P.z1);
+      sh.lineTo(P.x0, -P.z0);
+      const geo = new THREE.ExtrudeGeometry(sh, { depth: P.h, bevelEnabled: false, curveSegments: 10 });
+      const pad = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xb8b2a6, roughness: 0.9 }));
+      pad.rotation.x = -Math.PI / 2;
+      pad.castShadow = true;
+      pad.receiveShadow = true;
+      scene.add(pad);
+    }
     const addBench = (along: number, color: number, wall: "west" | "westOut" | "north" | "breezeway" = "west", len = BENCH_LEN, memorial?: ChairSlot["memorial"]): void => {
       const wood = new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
       const bench = new THREE.Group();
@@ -6310,7 +6338,8 @@ export function startPlaceholderScene(
       const out = wall === "westOut";
       const bx = north ? along : out ? -30.3 : BENCH_X; // the outside wall's face is at x = -30
       const bz = breeze ? -2.3 : north ? BENCH_NORTH_Z : along;
-      bench.position.set(bx, 0, bz);
+      const benchY = onLedgePad(bx, bz) ? LEDGE_PAD.h : 0; // standing on the ankle-high ledge
+      bench.position.set(bx, benchY, bz);
       bench.rotation.y = breeze ? Math.PI / 2 : north ? -Math.PI / 2 : out ? Math.PI : 0; // local +x is the way the bench faces
       const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, len), wood);
       seat.position.set(0, 0.39, 0);
@@ -6325,7 +6354,7 @@ export function startPlaceholderScene(
         bench.add(leg);
       }
       scene.add(bench);
-      buildingSolids.push({ x: bx, z: bz, w: north ? len : 0.5, d: north ? 0.5 : len, yBase: 0, yTop: 0.9 });
+      buildingSolids.push({ x: bx, z: bz, w: north ? len : 0.5, d: north ? 0.5 : len, yBase: benchY, yTop: benchY + 0.9 });
       for (const off of len > 1.5 ? [-0.5, 0.5] : [0]) {
         const sx = north ? bx + off : out ? bx - 0.05 : bx + 0.05;
         const sz = breeze ? bz - 0.05 : north ? bz + 0.05 : bz + off;
@@ -6344,6 +6373,7 @@ export function startPlaceholderScene(
                 ? { exitX: -31.1, exitZ: sz }
                 : { exitX: -12.7, exitZ: sz },
           memorial,
+          floorY: benchY,
         });
       }
     };
@@ -6404,7 +6434,7 @@ export function startPlaceholderScene(
     }
     };
     // between the blue benches and the 7th LMU door (closest to LMU)
-    addFountain(-13.8, 23.4, 0, "east");
+    addFountain(-13.8, 23.4, LEDGE_PAD.h, "east"); // on the ankle-high ledge
     // upstairs, on the left of the ELD classroom door (x = -16) as you face it, on the office building's walkway
     addFountain(-18.4, -10.3, floor2, "south");
   }
@@ -8235,7 +8265,7 @@ export function startPlaceholderScene(
     const seatBackOffset = 0.08;
     const seatedX = chair.chairX - Math.sin(chair.facingAngle) * seatBackOffset;
     const seatedZ = chair.chairZ - Math.cos(chair.facingAngle) * seatBackOffset;
-    player.position.set(seatedX, 0, seatedZ);
+    player.position.set(seatedX, chair.floorY ?? 0, seatedZ);
     player.rotation.y = chair.facingAngle;
 
     // Drop body so pelvis rests directly on top of the chair seat surface
@@ -8862,6 +8892,7 @@ export function startPlaceholderScene(
     }
 
     if (onRoof(px, pz)) return floor2;
+    if (onLedgePad(px, pz)) return LEDGE_PAD.h;
     return 0;
   }
 
@@ -9324,7 +9355,7 @@ export function startPlaceholderScene(
       const seatBackOffset = 0.08;
       const seatedX = seatedChair.chairX - Math.sin(seatedChair.facingAngle) * seatBackOffset;
       const seatedZ = seatedChair.chairZ - Math.cos(seatedChair.facingAngle) * seatBackOffset;
-      player.position.set(seatedX, 0, seatedZ);
+      player.position.set(seatedX, seatedChair.floorY ?? 0, seatedZ);
       player.rotation.y = seatedChair.facingAngle;
 
       const buttDrop = rig.seatDrop ? rig.seatDrop(seatedChair.seatY) : (seatedChair.seatY + 0.01) - 0.68;

@@ -2155,6 +2155,7 @@ export const NPC_CARRERA: NpcDef = {
   z: 19.5,
   rotY: Math.PI / 2, // facing the walkway
   seatY: 0.4,
+  y: 0.16, // the bench stands on the ankle-high ledge
   talkRange: 2.4,
   profile: {
     ...getDefaultProfile(),
