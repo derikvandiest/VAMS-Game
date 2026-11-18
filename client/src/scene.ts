@@ -6103,7 +6103,7 @@ export function startPlaceholderScene(
     tables
       .map((tb, i) => ({ i, d: Math.hypot(tb.x - elevator.cx, tb.z - elevator.cz) }))
       .sort((a, b) => a.d - b.d)
-      .slice(0, Math.floor(tables.length / 2))
+      .slice(0, Math.floor(tables.length / 2) - 1) // 4 without, 6 with (the middle row keeps both umbrellas)
       .map((x) => x.i)
   );
   tables.forEach((table, i) => {
@@ -6133,7 +6133,7 @@ export function startPlaceholderScene(
     const finial = new THREE.Mesh(finialGeometry, tablePoleMaterial);
     finial.position.y = UMBRELLA_POLE_HEIGHT + 0.36;
 
-    // the half of the tables nearest the elevator (and the 5th / 8th grade wing) have no umbrella: just a short
+    // the 4 tables nearest the elevator (and the 5th / 8th grade wing) have no umbrella: just a short
     // pole holding up the table top
     if (noUmbrella.has(i)) {
       const stub = new THREE.Mesh(umbrellaPoleGeometry, tablePoleMaterial);
