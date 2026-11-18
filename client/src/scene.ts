@@ -8180,6 +8180,8 @@ export function startPlaceholderScene(
         if (event === "reset-balls") doBallReset();
         // Mr. Ipina opens the campus map for you
         if (event === "open-map") setTimeout(() => openMap(), 0);
+        // Maria (custodian) takes your trash: the same choices as a trash can
+        if (event === "trash-dialog") setTimeout(() => openTrashDialog(), 0);
         // Delma and Raquel at the food truck: burritos (classic or vegan); Delma also replaces a thrown-away Stanley cup
         if (event === "give-burrito" || event === "give-burrito-vegan" || event === "give-bottle") {
           const r = event === "give-bottle" ? takeNewBottle() : takeFood(event === "give-burrito" ? "burrito" : "burrito-vegan");

@@ -35,6 +35,7 @@ import raquelPortrait from "./assets/raquel_portrait.png";
 import aparicioPortrait from "./assets/aparicio_portrait.png";
 import carreraPortrait from "./assets/carrera_portrait.png";
 import williamsPortrait from "./assets/williams_portrait.png";
+import mariaPortrait from "./assets/maria_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -2298,7 +2299,73 @@ export const NPC_WILLIAMS: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL, NPC_APARICIO, NPC_CARRERA, NPC_WILLIAMS];
+/**
+ * Maria, the school custodian, on the upper walkway next to the red trash can by the elevator. She speaks mostly
+ * Spanish and a little English, and she'll take your trash (the same choices as the trash can). Matches her portrait:
+ * shoulder-length wavy light-brown hair, fair skin, a black jacket over a royal blue top.
+ */
+export const NPC_MARIA: NpcDef = {
+  id: "npc-maria",
+  room: "campus",
+  floor: 1,
+  x: -9.75, // just west of the red trash can (x -8.75, z 0.55)
+  z: 0.15,
+  rotY: 0.45, // facing out over the walkway, turned a little toward the elevator
+  talkRange: 1.8,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Maria",
+    title: "Custodian · Conserje",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-suit", // the jacket is her black jacket, the shirt her blue top
+    outfitColor: "#1c1d22",
+    hairStyle: "f-witch", // shoulder length
+    hairLength: 1.4,
+    hairColor: "#8a6038",
+    hairTips: "#a9804f",
+    skinTone: "#EEC6A8",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#1f1f24",
+    partColors: { "Body:White": "#2557c9", "Legs:Black": "#25272d" },
+  },
+  portrait: mariaPortrait,
+  // SAMPLE TEXT (mostly Spanish, a little English): replace with Maria's real words
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Texto de muestra) ¡Hola, buenos días! Soy Maria, la conserje de la escuela. Hello!",
+          "Aquí cuido que todo esté limpio. ¿Tienes basura? Trash? Yo te ayudo.",
+        ],
+        options: [
+          { label: "Sí, tengo basura / I have trash", action: "trash-dialog" },
+          { label: "¿Qué hace una conserje?", next: "role" },
+          { label: "¡Gracias, Maria!", next: "bye" },
+        ],
+      },
+      role: {
+        paragraphs: [
+          "(Texto de muestra) Limpio los salones, los baños y el campus, y arreglo cositas. Todos los días, temprano, temprano.",
+          "Un poquito English: clean school, happy students! Si ves un problema, me avisas, ¿sí?",
+        ],
+        options: [
+          { label: "Sí, tengo basura / I have trash", action: "trash-dialog" },
+          { label: "Tengo otra pregunta", next: "root" },
+          { label: "¡Gracias, Maria!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Texto de muestra) ¡De nada, mijo! Have a nice day. ¡Que te vaya bien!"],
+        options: [{ label: "¡Adiós, Maria! Bye!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL, NPC_APARICIO, NPC_CARRERA, NPC_WILLIAMS, NPC_MARIA];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.
