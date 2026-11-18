@@ -172,8 +172,11 @@ export function startPlaceholderScene(
   const roofY = layoutData.boundary.wallHeight; // ground-story height (6)
   /** The ankle-high ledge along the 7th grade wing wall (between the fountain and the 7th UCLA door) */
   const LEDGE_PAD = { x0: -14, x1: -11.95, z0: 14.6, z1: 23.95, h: 0.16 }; // stops short of the walkway posts
+  /** All the ankle-high ledges: the long one (7th UCLA door to the fountain) and a short one between the 7th LMU and
+   *  CSUN doors */
+  const LEDGE_PADS = [LEDGE_PAD, { x0: -14, x1: -11.95, z0: 27.25, z1: 29.75, h: 0.16 }];
   const onLedgePad = (px: number, pz: number): boolean =>
-    px >= LEDGE_PAD.x0 && px <= LEDGE_PAD.x1 && pz >= LEDGE_PAD.z0 && pz <= LEDGE_PAD.z1;
+    LEDGE_PADS.some((P) => px >= P.x0 && px <= P.x1 && pz >= P.z0 && pz <= P.z1);
   const floor2 = roofY + 0.1; // walkable second-floor surface height
 
   // Height-aware solid boxes for collision detection
@@ -6311,8 +6314,7 @@ export function startPlaceholderScene(
     // An ankle-high concrete platform along the 7th grade wing wall: from the drinking fountain to the side of the 7th
     // UCLA door, from the wall out to the second-floor walkway posts, with rounded corners toward the lunch tables. The
     // blue benches (and Ms. Carrera) and the fountain stand on it; players step up onto it.
-    {
-      const P = LEDGE_PAD;
+    for (const P of LEDGE_PADS) {
       const r = 0.45; // corner radius on the lunch-table side
       const sh = new THREE.Shape();
       // shape in (x, -z) so that after rotating it flat (rotation.x = -PI/2) it lies in x/z
