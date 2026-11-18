@@ -7061,6 +7061,29 @@ export function startPlaceholderScene(
     scene.add(post);
   }
 
+  // --- A knee-high light-gray concrete ledge along the south side of the lunch awning (the side facing the 7th grade
+  // wing), running its full length in even segments with even breaks between them
+  {
+    const ledgeMat = new THREE.MeshStandardMaterial({ color: 0xc9ccd1, roughness: 0.9 });
+    const capMat = new THREE.MeshStandardMaterial({ color: 0xd9dce0, roughness: 0.85 });
+    const H = 0.6, D = 0.45, GAP = 1.2, N = 7;
+    const x = coverMinX + 0.3; // in line with the awning posts
+    const len = (cover.depth - GAP * (N - 1)) / N;
+    for (let k = 0; k < N; k++) {
+      const z = coverMinZ + len / 2 + k * (len + GAP);
+      const block = new THREE.Mesh(new THREE.BoxGeometry(D, H, len), ledgeMat);
+      block.position.set(x, H / 2, z);
+      block.castShadow = true;
+      block.receiveShadow = true;
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(D + 0.06, 0.05, len + 0.04), capMat);
+      cap.position.set(x, H + 0.025, z);
+      cap.castShadow = true;
+      cap.receiveShadow = true;
+      scene.add(block, cap);
+      buildingSolids.push({ x, z, w: D + 0.06, d: len + 0.04, yBase: 0, yTop: H + 0.05 });
+    }
+  }
+
   // --- Gate: an authentic ornamental double-door red security gate in the inner-corner gap
   // between the two buildings (layout.json `gates`). Matches the signature campus red ironwork
   // (terminal posts, tubular frame, security pickets with pointed spear finials, diagonal cross-braces,
