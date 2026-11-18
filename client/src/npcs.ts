@@ -2215,7 +2215,7 @@ export const NPC_CARRERA: NpcDef = {
 };
 
 /**
- * Ms. Williams, standing next to Ms. Roldan outside the Learning Center (to her right), turned a little toward her.
+ * Ms. Williams, the 8th grade IET and lead IET (the most knowledgeable IET on campus), standing next to Ms. Roldan outside the Learning Center (to her right), turned a little toward her.
  * Matches her portrait: long curly hair, dark at the roots and honey blonde toward the ends, warm brown skin, an open
  * pink cardigan over a navy tee.
  */
@@ -2229,7 +2229,7 @@ export const NPC_WILLIAMS: NpcDef = {
   profile: {
     ...getDefaultProfile(),
     name: "Ms. Williams",
-    title: "Valor Staff", // TODO: her real title
+    title: "8th Grade IET · Lead IET",
     noHomeroom: true,
     gender: "feminine",
     look: "fem-suit", // the jacket is her pink cardigan, the shirt her navy tee
@@ -2251,17 +2251,39 @@ export const NPC_WILLIAMS: NpcDef = {
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Hi there, welcome! I'm Ms. Williams. So glad you're here today!",
-          "Ms. Roldan and I were just talking about how we support every learner on campus.",
+          "(Sample text) Hi there, welcome! I'm Ms. Williams, the 8th grade IET and our lead IET here at Valor.",
+          "Ms. Roldan and I were just talking about how we support every learner on campus. Ask me anything about inclusion and supports!",
         ],
         options: [
-          { label: "What do you focus on?", next: "about" },
+          { label: "What does a lead IET do?", next: "lead" },
+          { label: "How do supports for IEPs help English learners?", next: "overlap" },
+          { label: "Any advice for supporting every learner?", next: "advice" },
           { label: "Thanks, Ms. Williams!", next: "bye" },
         ],
       },
-      about: {
+      lead: {
         paragraphs: [
-          "(Sample text) Empathy, compassion and inclusion. When students feel they belong, they take risks, and that's when learning happens, especially for our English learners.",
+          "(Sample text) Besides supporting my 8th graders with IEPs, I coach and support our IET team across every grade: planning accommodations, co-teaching models, IEP goals and progress monitoring.",
+          "If a teacher has a question about a student's plan, I'm usually the first person they come to.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Williams!", next: "bye" },
+        ],
+      },
+      overlap: {
+        paragraphs: [
+          "(Sample text) So much of what we do for students with IEPs is just good teaching for everyone: visuals, modeling, chunked directions, extra wait time, and sentence frames.",
+          "Some of our students are English learners and have an IEP too. For them we plan both together, so language support and learning support work as one. And we never confuse learning a new language with a disability.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Williams!", next: "bye" },
+        ],
+      },
+      advice: {
+        paragraphs: [
+          "(Sample text) Empathy, compassion and inclusion. Know your students, plan the supports before the lesson, and make every student feel they belong. When they feel safe, they take risks, and that's when the learning happens.",
         ],
         options: [
           { label: "I have another question", next: "root" },
@@ -2269,7 +2291,7 @@ export const NPC_WILLIAMS: NpcDef = {
         ],
       },
       bye: {
-        paragraphs: ["(Sample text) Have a wonderful day!"],
+        paragraphs: ["(Sample text) Have a wonderful day! Come find me if you ever have a question about supports."],
         options: [{ label: "See you, Ms. Williams!" }],
       },
     },
