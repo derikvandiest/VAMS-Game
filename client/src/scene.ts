@@ -13,6 +13,7 @@ import { assignmentDialog } from "./assignments";
 import { eldDoorDialog } from "./eldTurnIn";
 import { DOOR_TALK } from "./doorTalk";
 import { FRONT_DESK, NANCY, JOHANNA, FRONT_OFFICE_DOOR } from "./frontOffice";
+import { COUNSELORS_OFFICE, CHAVEZ, SOSA, MENDEZ, COUNSELORS_DOOR } from "./counselors";
 import { roomById } from "./rooms";
 import { startPresence } from "./presence";
 import { getSocket, isMultiplayerActive } from "./net";
@@ -5741,7 +5742,7 @@ export function startPlaceholderScene(
     scene.add(plaqueMesh);
   }
 
-  // A door that does not open, under the music room door: the ground-floor "Office" entrance (decoration only)
+  // The Counselors' Office door, under the music room door: press E to talk to the counselors (counselors.ts)
   {
     const OFFICE_DECOR_X = -26;
     const OFFICE_WALL_Z = -10.5;
@@ -5756,7 +5757,7 @@ export function startPlaceholderScene(
     const handle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.25, 0.42), doorHandleMaterial);
     handle.position.set(OFFICE_DECOR_X + 0.6, dyO - 0.1, OFFICE_WALL_Z);
     scene.add(frame, panel, glass, handle);
-    const officeSign = createHeaderPlaqueMesh(makeDoorHeaderSignTexture("OFFICE"), 1.42, 0.45);
+    const officeSign = createHeaderPlaqueMesh(makeDoorHeaderSignTexture("COUNSELORS", "OFFICE"), 1.42, 0.45);
     officeSign.scale.setScalar(0.8);
     officeSign.position.set(OFFICE_DECOR_X, dyO + 1.0, OFFICE_WALL_Z + 0.2);
     scene.add(officeSign);
@@ -7159,6 +7160,21 @@ export function startPlaceholderScene(
     showDialog(d.speaker, d.tree, undefined, (event) => {
       if (event === "office:nancy") setTimeout(() => openFrontOffice("nancy"), 0);
       if (event === "office:johanna") setTimeout(() => openFrontOffice("johanna"), 0);
+    });
+  }
+  /** At the Counselors' Office door (ground floor, inside campus, under the music room) */
+  const nearCounselors = (): boolean =>
+    !inMprRoom && !currentClassroom && !drivingCar && !seatedChair && player.position.y < 1.5 &&
+    player.position.z > COUNSELORS_DOOR.z &&
+    Math.hypot(player.position.x - COUNSELORS_DOOR.x, player.position.z - COUNSELORS_DOOR.z) <= 2.4;
+  /** The counselors' office: choose a counselor; each can hand you over to the others */
+  function openCounselors(who: "office" | "chavez" | "sosa" | "mendez" = "office"): void {
+    const d = who === "chavez" ? CHAVEZ : who === "sosa" ? SOSA : who === "mendez" ? MENDEZ : COUNSELORS_OFFICE;
+    showDialog(d.speaker, d.tree, undefined, (event) => {
+      if (event.startsWith("counsel:")) {
+        const next = event.slice(8) as "chavez" | "sosa" | "mendez";
+        setTimeout(() => openCounselors(next), 0);
+      }
     });
   }
   /** Throw something away: a list of what the player carries that can go in the trash */
@@ -8983,6 +8999,10 @@ export function startPlaceholderScene(
         openFrontOffice();
         return;
       }
+      if (nearCounselors()) {
+        openCounselors();
+        return;
+      }
       if (nearFountain()) {
         startDrinking();
         fillWaterBottle(); // an empty water bottle gets filled up too
@@ -10535,6 +10555,8 @@ export function startPlaceholderScene(
         hintText = countItem("chromebook") > 0 ? "Press E to return the Chromebook to the cart 💻" : "Press E to take a Chromebook from the laptop cart 💻";
       } else if (nearFrontOffice()) {
         hintText = "Press E to go into the front office 🏢";
+      } else if (nearCounselors()) {
+        hintText = "Press E to visit the Counselors' Office 💬";
       } else if (nearTrash()) {
         hintText = "Press E to throw something away 🗑️";
       } else if (nearFountain()) {
