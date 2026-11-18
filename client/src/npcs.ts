@@ -497,8 +497,9 @@ export const NPC_DANI: NpcDef = {
     noHomeroom: true,
     gender: "feminine",
     look: "fem-suit", // the jacket is her chore coat, the shirt her dark top
-    outfitColor: "#c2a57c", // tan jacket
-    hairStyle: "f-witch", // long and straight, center part
+    outfitColor: "#1e1f24", // black chore coat
+    hairStyle: "f-witch", // shoulder length, center part
+    hairLength: 1.4,
     hairColor: "#1f1a18",
     skinTone: "#F0C6A8",
     glasses: "none",
