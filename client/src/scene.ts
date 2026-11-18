@@ -10708,10 +10708,12 @@ export function startPlaceholderScene(
       if (cameraClearance(focusX, fy, focusZ, camX, baseY, camZ) < 1) {
         const lifts = [2, 4, 6.5, 9, 13, 18];
         const ok = lifts.find((l) => cameraClearance(focusX, fy, focusZ, camX, baseY + l, camZ) >= 1);
+        // around the elevator the camera never zooms in: it only rises over the building at its normal distance
+        const nearElevator = Math.hypot(focusX - elevator.cx, focusZ - elevator.cz) < 12;
         if (ok !== undefined) liftTarget = ok;
         else {
           liftTarget = lifts[lifts.length - 1];
-          occTarget = cameraClearance(focusX, fy, focusZ, camX, baseY + liftTarget, camZ);
+          if (!nearElevator) occTarget = cameraClearance(focusX, fy, focusZ, camX, baseY + liftTarget, camZ);
         }
       }
     }
