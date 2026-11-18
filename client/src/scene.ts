@@ -7066,8 +7066,8 @@ export function startPlaceholderScene(
   {
     const ledgeMat = new THREE.MeshStandardMaterial({ color: 0xc9ccd1, roughness: 0.9 });
     const capMat = new THREE.MeshStandardMaterial({ color: 0xd9dce0, roughness: 0.85 });
-    const H = 0.6, D = 0.45, GAP = 1.2, N = 7;
-    const x = coverMinX + 0.3; // in line with the awning posts
+    const H = 0.6, D = 0.45, GAP = 1.2, N = 4;
+    const x = coverMinX - 0.55; // just outside the awning posts, toward the 7th grade wing
     const len = (cover.depth - GAP * (N - 1)) / N;
     for (let k = 0; k < N; k++) {
       const z = coverMinZ + len / 2 + k * (len + GAP);
