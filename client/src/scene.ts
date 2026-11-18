@@ -14,6 +14,7 @@ import { eldDoorDialog } from "./eldTurnIn";
 import { DOOR_TALK } from "./doorTalk";
 import { FRONT_DESK, NANCY, JOHANNA, FRONT_OFFICE_DOOR } from "./frontOffice";
 import { COUNSELORS_OFFICE, CHAVEZ, SOSA, MENDEZ, COUNSELORS_DOOR } from "./counselors";
+import { showGameComplete } from "./ending";
 import { roomById } from "./rooms";
 import { startPresence } from "./presence";
 import { getSocket, isMultiplayerActive } from "./net";
@@ -7149,6 +7150,69 @@ export function startPlaceholderScene(
   const nearTrash = (): boolean =>
     !inMprRoom && !currentClassroom && !drivingCar && !seatedChair &&
     trashBins.some((b) => Math.abs(player.position.y - b.y) < 1 && Math.hypot(player.position.x - b.x, player.position.z - b.z) <= 1.4);
+  // --- The main quest starts in the MPR: until the player has taken a seat there, every character (except Ms. Castaneda,
+  // who opens the entrance gate) only points them to the MPR.
+  const questStarted = (): boolean => !!loadSlot(getActiveSlotId())?.objectives.completedIds.includes("obj_mpr_seat");
+  const SPANISH_ONLY = new Set(["npc-raquel", "npc-maria", "npc-nelly"]);
+  function goToMprDialog(speaker: { name: string; title?: string; portrait?: string }, spanish: boolean): void {
+    const inside = inMprRoom;
+    const tree = spanish
+      ? {
+          start: "r",
+          nodes: {
+            r: {
+              paragraphs: inside
+                ? ["¡Bienvenido! La sesión ya va a empezar aquí en el MPR. Siéntate en una de las mesas para comenzar."]
+                : ["¡Hola, bienvenido! La sesión empieza en el MPR. Ve al MPR y siéntate en una de las mesas para comenzar."],
+              options: [{ label: "¿Dónde está el MPR?", next: "w" }, { label: "¡Gracias, voy para allá!" }],
+            },
+            w: {
+              paragraphs: inside
+                ? ["¡Ya estás aquí! Busca una silla en cualquiera de las mesas y siéntate (presiona E)."]
+                : ["Es el edificio grande cerca de la entrada principal. Entra por las puertas dobles y siéntate en una mesa (presiona E en una silla). Presiona M para ver el mapa."],
+              options: [{ label: "¡Gracias, voy para allá!" }],
+            },
+          },
+        }
+      : {
+          start: "r",
+          nodes: {
+            r: {
+              paragraphs: inside
+                ? ["Welcome! The session is about to start right here in the MPR. Take a seat at one of the tables to begin."]
+                : ["Hi, welcome! The PD session starts in the MPR. Head over there and take a seat at one of the tables to get started. We'll talk more after that!"],
+              options: [{ label: "Where is the MPR?", next: "w" }, { label: "Thanks, I'll head there now!" }],
+            },
+            w: {
+              paragraphs: inside
+                ? ["You're already here! Find a chair at any of the tables and sit down (press E next to a chair)."]
+                : ["It's the big building by the main entrance. Go in through the double doors and sit at one of the tables (press E next to a chair). Press M any time to open the map."],
+              options: [{ label: "Thanks, I'll head there now!" }],
+            },
+          },
+        };
+    showDialog(speaker, tree);
+  }
+
+  // --- The end of the game: after turning in the work to Mrs. Carmona, getting in a car and driving away finishes it
+  let driveStart: { x: number; z: number } | null = null;
+  let endingShown = false;
+  function checkDriveHome(): void {
+    if (!drivingCar) {
+      driveStart = null;
+      return;
+    }
+    const done = loadSlot(getActiveSlotId())?.objectives.completedIds ?? [];
+    if (!done.includes("obj_turn_in") || done.includes("obj_exit_campus") || endingShown) return;
+    const p = drivingCar.group.position;
+    if (!driveStart) driveStart = { x: p.x, z: p.z };
+    if (Math.hypot(p.x - driveStart.x, p.z - driveStart.z) > 8) { // pulled out and driving away
+      endingShown = true;
+      (window as any).__completeObjective?.("obj_exit_campus");
+      showGameComplete(loadCharacterProfile().name);
+    }
+  }
+
   /** At the front office's glass doors (outside, in front of them, on the parking-lot side) */
   const nearFrontOffice = (): boolean =>
     !inMprRoom && !currentClassroom && !drivingCar && !seatedChair && player.position.y < 1.5 &&
@@ -7156,6 +7220,10 @@ export function startPlaceholderScene(
     Math.hypot(player.position.x - FRONT_OFFICE_DOOR.x, player.position.z - FRONT_OFFICE_DOOR.z) <= 2.4;
   /** The front desk: choose Nancy or Johanna; each can hand you over to the other */
   function openFrontOffice(who: "desk" | "nancy" | "johanna" = "desk"): void {
+    if (!questStarted()) {
+      goToMprDialog({ name: "Front Office", title: "Nancy & Johanna" }, false);
+      return;
+    }
     const d = who === "nancy" ? NANCY : who === "johanna" ? JOHANNA : FRONT_DESK;
     showDialog(d.speaker, d.tree, undefined, (event) => {
       if (event === "office:nancy") setTimeout(() => openFrontOffice("nancy"), 0);
@@ -7169,6 +7237,10 @@ export function startPlaceholderScene(
     Math.hypot(player.position.x - COUNSELORS_DOOR.x, player.position.z - COUNSELORS_DOOR.z) <= 2.4;
   /** The counselors' office: choose a counselor; each can hand you over to the others */
   function openCounselors(who: "office" | "chavez" | "sosa" | "mendez" = "office"): void {
+    if (!questStarted()) {
+      goToMprDialog({ name: "Counselors' Office", title: "Ms. Chavez, Ms. Sosa & Ms. Mendez" }, false);
+      return;
+    }
     const d = who === "chavez" ? CHAVEZ : who === "sosa" ? SOSA : who === "mendez" ? MENDEZ : COUNSELORS_OFFICE;
     showDialog(d.speaker, d.tree, undefined, (event) => {
       if (event.startsWith("counsel:")) {
@@ -7992,7 +8064,7 @@ export function startPlaceholderScene(
 
   // NPCs: in the MPR (they hide and show with the room) or outdoors on the campus
   /** Non-homeroom rooms that can still be entered (no assignment inside) */
-  const ENTERABLE_ROOMS = new Set(["music", "theater"]);
+  const ENTERABLE_ROOMS = new Set(["music", "theater", "eld"]);
   /** Turn an arm bone so its child (the next joint) points along a world direction (used for NPC arm poses) */
   const aimBone = (bone: THREE.Object3D, child: THREE.Object3D, dirW: THREE.Vector3): void => {
     bone.updateWorldMatrix(true, true);
@@ -8915,6 +8987,14 @@ export function startPlaceholderScene(
       }
       if (!inMprRoom && !currentClassroom && elevator.press(player.position.x, player.position.y, player.position.z)) return;
       const talkNpc = nearbyNpc();
+      if (talkNpc && !questStarted() && talkNpc.def.id !== "npc-castaneda") {
+        goToMprDialog({ name: talkNpc.def.profile.name, title: talkNpc.def.profile.title, portrait: talkNpc.def.portrait }, SPANISH_ONLY.has(talkNpc.def.id));
+        return;
+      }
+      if (talkNpc && talkNpc.def.id === "npc-carmona") {
+        openEldDoor();
+        return;
+      }
       if (talkNpc) {
         if (talkNpc.def.room === "classroom" && !talkNpc.def.chatFirst) openAssignment(); // the teacher hands out the assignment
         else talkToNpc(talkNpc);
@@ -8979,8 +9059,7 @@ export function startPlaceholderScene(
           if (inst.campusDoor.floor === pFloor) {
             const d = Math.hypot(player.position.x - inst.campusDoor.x, player.position.z - inst.campusDoor.z);
             if (d <= 2.4) {
-              if (cId === "eld") openEldDoor();
-              else if (DOOR_TALK[cId]) showDialog(DOOR_TALK[cId].speaker, DOOR_TALK[cId].tree); // a closed room whose teacher greets you at the door
+              if (DOOR_TALK[cId]) showDialog(DOOR_TALK[cId].speaker, DOOR_TALK[cId].tree); // a closed room whose teacher greets you at the door
               else if (roomById(cId)?.type === "stamp" || ENTERABLE_ROOMS.has(cId)) enterClassroom(cId); // the Learning Center stays closed (the hint says so)
               return;
             }
@@ -9943,9 +10022,7 @@ export function startPlaceholderScene(
               const d = Math.hypot(player.position.x - inst.campusDoor.x, player.position.z - inst.campusDoor.z);
               if (d <= 2.4) {
                 wanted =
-                  cId === "eld"
-                    ? "Press E to speak with Mr. Van Diest at the ELD door 🚪"
-                    : DOOR_TALK[cId]
+                  DOOR_TALK[cId]
                       ? DOOR_TALK[cId].hint
                       : roomById(cId)?.type !== "stamp" && !ENTERABLE_ROOMS.has(cId)
                         ? `${inst.data.label}: closed 🔒`
@@ -10592,6 +10669,8 @@ export function startPlaceholderScene(
       }
     }
 
+    checkDriveHome();
+
     // --- Camera: locked to player / vehicle, orbiting at camAngle ---------
     const focusX = drivingCar ? drivingCar.group.position.x : player.position.x;
     const focusY = drivingCar ? drivingCar.group.position.y : player.position.y;
@@ -10721,6 +10800,8 @@ export function startPlaceholderScene(
     setPlayer: (x: number, z: number, y?: number) => { player.position.x = x; player.position.z = z; if (y !== undefined) player.position.y = y; },
     setCamera: (angle: number, elev: number, dist: number) => { camAngle = angle; camElevation = elev; camDistance = dist; },
     setPlayerVisible: (v: boolean) => { player.visible = v; },
+    /** Testing aid: the car being driven, and where the drive home started */
+    carInfo: () => (drivingCar ? { x: drivingCar.group.position.x, z: drivingCar.group.position.z, start: driveStart, ended: endingShown } : null),
     /** Testing aid: where an NPC is and whether it is shown */
     npcInfo: (id: string) => {
       const n = npcList.find((x) => x.def.id === id);

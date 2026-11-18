@@ -22,12 +22,12 @@ const STEPS: Array<{ icon: string; title: string; text: string }> = [
   {
     icon: "📝",
     title: "Turn in your work",
-    text: "After all 16 assignments are done, go to the ELD classroom and turn in your work to Mr. Van Diest.",
+    text: "After all 16 assignments are done, go to the ELD classroom upstairs and turn in your work to Mrs. Carmona, the ELD Director.",
   },
   {
     icon: "🚗",
     title: "Head home",
-    text: "Once you have turned in your assignments and received the completed message, go to the parking lot and drive away in one of the cars to finish the game.",
+    text: "Once you have turned in your assignments, get in a car in the parking lot and drive home for the day to finish the game.",
   },
 ];
 

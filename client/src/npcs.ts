@@ -135,7 +135,7 @@ export const NPC_VAN_DIEST: NpcDef = {
       tasks: {
         paragraphs: [
           "Explore the campus! Every homeroom classroom has an assignment, and a green exclamation mark floats above the door of each one you still need to do.",
-          "Complete all 16 assignments in any order, then turn in your work to me in the ELD classroom. After that, head to the parking lot and drive away in one of the cars to finish the game.",
+          "Complete all 16 assignments in any order, then turn in your work to Mrs. Carmona, our ELD Director, in the ELD classroom upstairs. After that, get in your car in the parking lot and head home for the day.",
         ],
         options: [
           { label: "Got it! I have another question", next: "root" },
@@ -651,7 +651,7 @@ export const NPC_IPENA: NpcDef = {
       mapTips: {
         paragraphs: [
           "(Sample text) Find the yellow room on the map, close it, and walk toward it, checking the map again whenever you need to. When you get close, look for the green ! over the door, then press E to go inside.",
-          "Inside, talk to the teacher or read the whiteboard to get the assignment. When you finish them all, take your work to Mr. Van Diest at the ELD classroom upstairs.",
+          "Inside, talk to the teacher or read the whiteboard to get the assignment. When you finish them all, take your work to Mrs. Carmona, the ELD Director, in the ELD classroom upstairs.",
         ],
         options: [
           { label: "Open the map for me", action: "open-map" },
@@ -2526,7 +2526,40 @@ export const NPC_NELLY: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL, NPC_APARICIO, NPC_CARRERA, NPC_WILLIAMS, NPC_MARIA, NPC_QUINTANA, NPC_NELLY];
+/**
+ * Mrs. Carmona, the ELD Director, in the ELD classroom (upstairs, office building) in front of the whiteboard. She
+ * collects the 16 assignments (eldTurnIn.ts; her conversation is opened by scene.ts because it depends on progress).
+ * TODO: her look is a placeholder until we have her photo.
+ */
+export const NPC_CARMONA: NpcDef = {
+  id: "npc-carmona",
+  room: "classroom",
+  classroomId: "eld",
+  x: 0, // set from the classroom's whiteboard
+  z: 0,
+  rotY: 0,
+  talkRange: 2.4,
+  chatFirst: true,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Mrs. Carmona",
+    title: "ELD Director",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-suit",
+    outfitColor: "#7f1d1d",
+    hairStyle: "f-witch",
+    hairLength: 1.6,
+    hairColor: "#2a1d16",
+    skinTone: "#D9A47E",
+    glasses: "none",
+    shoes: "dress",
+    shoeColor: "#1f1f24",
+  },
+  dialog: { start: "root", nodes: { root: { paragraphs: [""], options: [] } } }, // replaced at run time (eldTurnIn.ts)
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL, NPC_APARICIO, NPC_CARRERA, NPC_WILLIAMS, NPC_MARIA, NPC_QUINTANA, NPC_NELLY, NPC_CARMONA];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.

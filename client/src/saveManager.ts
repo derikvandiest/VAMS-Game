@@ -43,8 +43,8 @@ export const GAME_OBJECTIVES: ObjectiveDef[] = [
   { id: "obj_8th_usc", title: "8th Grade USC", roomName: "8th Grade USC (Science)", description: "Visit 8th Grade USC and earn stamp", isStamp: true },
 
   // Culminating Objectives
-  { id: "obj_turn_in", title: "Turn in Report Card", roomName: "ELD Classroom", description: "Deliver your completed report card to Mr. Van Diest", isStamp: false },
-  { id: "obj_exit_campus", title: "Leave Campus", roomName: "Parking Lot", description: "Exit campus through the parking lot to receive completion certificate", isStamp: false },
+  { id: "obj_turn_in", title: "Turn in your assignments", roomName: "ELD Classroom", description: "Turn in all 16 assignments to Mrs. Carmona, the ELD Director", isStamp: false },
+  { id: "obj_exit_campus", title: "Go home for the day", roomName: "Parking Lot", description: "Get in a car in the parking lot and drive away", isStamp: false },
 
   // Optional: Mr. Van Diest's feedback survey (removes the "!" over his head)
   { id: "obj_survey", title: "Feedback Survey", roomName: "MPR", description: "Complete the feedback survey with Mr. Van Diest", isStamp: false },

@@ -54,10 +54,10 @@ export function openAgenda(playerName: string): void {
     : doneCount < rooms.length
       ? `Visit the classrooms and complete their assignments: ${rooms.length - doneCount} still to go.`
       : !turnedIn
-        ? "Take your 16 assignments to Mr. Van Diest at the ELD classroom (upstairs, by the office) and turn them in."
+        ? "Take your 16 assignments to Mrs. Carmona, the ELD Director, in the ELD classroom (upstairs, office building) and turn them in."
         : !left
-          ? "Go to the parking lot and drive away in one of the cars."
-          : "You've finished the PD. Thank you for playing!";
+          ? "Get in your car in the parking lot and drive home for the day."
+          : "Free play: you've finished the PD! Explore campus and do whatever you like.";
 
   const q = pencilQuest();
   const optDone = new Set(optionalDone());
@@ -101,8 +101,8 @@ export function openAgenda(playerName: string): void {
               )
               .join("")}</div>
           </div></li>
-          <li>${box(turnedIn)}<div><b>Turn in your work</b><small>Bring all 16 assignments to Mr. Van Diest at the ELD classroom (upstairs, office building).</small></div></li>
-          <li>${box(left)}<div><b>Leave campus</b><small>Go to the parking lot and drive away in one of the cars.</small></div></li>
+          <li>${box(turnedIn)}<div><b>Turn in your work</b><small>Bring all 16 assignments to Mrs. Carmona, the ELD Director, in the ELD classroom (upstairs, office building).</small></div></li>
+          <li>${box(left)}<div><b>Go home for the day</b><small>After turning in your work, get in a car in the parking lot and drive away.</small></div></li>
         </ol>
 
         <h3>Optional objectives</h3>

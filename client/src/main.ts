@@ -10,6 +10,7 @@ import {
   getActiveSlotId,
   loadSlot,
   completeObjective,
+  showSaveToast,
 } from "./saveManager";
 import { saveCharacterProfile } from "./profile";
 import { StartMenu } from "./startMenu";
@@ -80,9 +81,11 @@ function updateObjectiveHud(slot: SaveSlotData): void {
     } else if (n < 16) {
       descEl.textContent = `Complete the assignment in every classroom (${n} / 16 done)`;
     } else if (!done.includes("obj_turn_in")) {
-      descEl.textContent = "Turn in your assignments in the ELD classroom";
+      descEl.textContent = "Turn in all 16 assignments to Mrs. Carmona in the ELD classroom (upstairs)";
+    } else if (!done.includes("obj_exit_campus")) {
+      descEl.textContent = "Get in your car in the parking lot and drive home for the day";
     } else {
-      descEl.textContent = "Go to the parking lot and drive away in one of the cars";
+      descEl.textContent = "Free play: do whatever you want! 🎉";
     }
   }
 }
@@ -210,10 +213,18 @@ window.addEventListener("beforeunload", () => {
 // Global API for completing objectives (callable from quizzes, dialogues, or interactions)
 (window as any).__completeObjective = (objectiveId: string) => {
   const transform = activeScene ? activeScene.getPlayerTransform() : undefined;
+  const before = loadSlot(getActiveSlotId())?.objectives.stampsCount ?? 0;
   const result = completeObjective(objectiveId, transform);
   const currentSlot = loadSlot(getActiveSlotId());
   if (currentSlot) {
     updateObjectiveHud(currentSlot);
+    // the next step of the main quest
+    if (!result.alreadyDone) {
+      if (before < 16 && currentSlot.objectives.stampsCount >= 16 && !currentSlot.objectives.completedIds.includes("obj_turn_in"))
+        window.setTimeout(() => showSaveToast("📁 All 16 assignments done! New objective: turn them in to Mrs. Carmona in the ELD classroom."), 3400);
+      if (objectiveId === "obj_turn_in")
+        window.setTimeout(() => showSaveToast("🚗 New objective: get in your car in the parking lot and drive home for the day."), 3400);
+    }
   }
   return result;
 };
