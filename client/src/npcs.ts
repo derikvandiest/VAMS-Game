@@ -37,6 +37,7 @@ import carreraPortrait from "./assets/carrera_portrait.png";
 import williamsPortrait from "./assets/williams_portrait.png";
 import mariaPortrait from "./assets/maria_portrait.png";
 import quintanaPortrait from "./assets/quintana_portrait.png";
+import nellyPortrait from "./assets/nelly_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -2451,7 +2452,81 @@ export const NPC_QUINTANA: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL, NPC_APARICIO, NPC_CARRERA, NPC_WILLIAMS, NPC_MARIA, NPC_QUINTANA];
+/**
+ * Nelly, a custodian like Maria, inside the MPR standing next to the storage room door (the door is at x 408.4 on the
+ * back wall, z 388.12). She only speaks Spanish, and she'll take your trash like Maria. Matches her portrait: wavy
+ * black hair swept back to below the shoulders, warm light-medium skin, a purple floral blouse with a black tie.
+ */
+export const NPC_NELLY: NpcDef = {
+  id: "npc-nelly",
+  room: "mpr",
+  x: 406.35, // just west of the storage door, against the back wall
+  z: 388.85,
+  rotY: 0.25, // facing into the room, turned a little toward the storage door
+  talkRange: 1.4, // short, so E in front of the storage door still opens the storage room
+  profile: {
+    ...getDefaultProfile(),
+    name: "Nelly",
+    title: "Conserje",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-casual",
+    outfitColor: "#8b6cc4",
+    hairStyle: "f-witch",
+    hairLength: 1.6,
+    hairColor: "#15131a",
+    skinTone: "#DDA984",
+    glasses: "none",
+    shoes: "sneakers",
+    shoeColor: "#1f1f24",
+    partColors: { "Legs:Orange": "#25272d" },
+    polkaDots: { parts: ["Body:White"], base: "#8b6cc4", dot: "#f3ead8", accent: "#2b2440", shape: "dots" },
+  },
+  portrait: nellyPortrait,
+  // SAMPLE TEXT (Spanish only): replace with Nelly's real words
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Texto de muestra) ¡Hola, buenos días! Soy Nelly, la conserje del MPR.",
+          "Aquí mantengo todo limpio y ordenado para el día de hoy. ¿Necesitas algo? ¿Tienes basura?",
+        ],
+        options: [
+          { label: "Sí, tengo basura", action: "trash-dialog" },
+          { label: "¿Qué hay en el cuarto de almacén?", next: "storage" },
+          { label: "¿Qué hace una conserje?", next: "role" },
+          { label: "¡Gracias, Nelly!", next: "bye" },
+        ],
+      },
+      storage: {
+        paragraphs: [
+          "(Texto de muestra) ¡Muchas cosas! Lápices, carpetas, papel y estuches para lápices de todos los colores. Toca la puerta del almacén si necesitas un estuche.",
+          "Y las mochilas están en la pared, cerca de la entrada del MPR.",
+        ],
+        options: [
+          { label: "Tengo otra pregunta", next: "root" },
+          { label: "¡Gracias, Nelly!", next: "bye" },
+        ],
+      },
+      role: {
+        paragraphs: [
+          "(Texto de muestra) Limpio el MPR, pongo las mesas y las sillas para los eventos, y ayudo a Maria con todo el campus. Un lugar limpio ayuda a los estudiantes a aprender.",
+        ],
+        options: [
+          { label: "Tengo otra pregunta", next: "root" },
+          { label: "¡Gracias, Nelly!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Texto de muestra) ¡De nada! ¡Que tengas un bonito día!"],
+        options: [{ label: "¡Adiós, Nelly!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL, NPC_APARICIO, NPC_CARRERA, NPC_WILLIAMS, NPC_MARIA, NPC_QUINTANA, NPC_NELLY];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.

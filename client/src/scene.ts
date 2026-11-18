@@ -10721,6 +10721,13 @@ export function startPlaceholderScene(
     setPlayer: (x: number, z: number, y?: number) => { player.position.x = x; player.position.z = z; if (y !== undefined) player.position.y = y; },
     setCamera: (angle: number, elev: number, dist: number) => { camAngle = angle; camElevation = elev; camDistance = dist; },
     setPlayerVisible: (v: boolean) => { player.visible = v; },
+    /** Testing aid: where an NPC is and whether it is shown */
+    npcInfo: (id: string) => {
+      const n = npcList.find((x) => x.def.id === id);
+      if (!n) return null;
+      const w = n.rig.player.getWorldPosition(new THREE.Vector3());
+      return { x: w.x, y: w.y, z: w.z, visible: n.rig.player.visible, parentVisible: n.rig.player.parent?.visible, inMpr: inMprRoom };
+    },
     /** Testing aid: where the basketball is and whether the player holds it */
     bballInfo: () => ({ x: bballPos.x, y: bballPos.y, z: bballPos.z, held: bballHeld, rotY: player.rotation.y, px: player.position.x, pz: player.position.z }),
     /** Testing aid: put a ball somewhere (still), e.g. setBall("soccer", x, y, z) */
