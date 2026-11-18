@@ -313,7 +313,7 @@ export function takePencilPouch(): "ok" | "no-backpack" | "has" | "full" {
   placePencils();
   save();
   render();
-  toast("✏️ Optional objective: find 5 sharpened pencils hidden in the classrooms!");
+  toast("⭐ You found the pencil pouch! New optional objective: find 5 sharpened pencils hidden in the classrooms.");
   return "ok";
 }
 
@@ -379,13 +379,14 @@ function renderOptional(): void {
   }
   const n = Math.min(state.pencilsFound.length, PENCILS_NEEDED);
   const pencilsDone = n >= PENCILS_NEEDED;
-  const total = OPTIONAL.length + 1; // + the pencil pouch
-  const doneCount = state.optDone.length + (pencilsDone ? 1 : 0);
+  // the pencil objective has two steps: find the pencil pouch (in the MPR storage room), then fill it with 5 pencils
+  const total = OPTIONAL.length + 2;
+  const doneCount = state.optDone.length + (state.pencilQuest ? 1 : 0) + (pencilsDone ? 1 : 0);
   const next = OPTIONAL.find((o) => !state.optDone.includes(o.id));
   let text: string;
   if (state.pencilQuest && !pencilsDone) text = `Find 5 sharpened pencils for your pencil pouch (${n}/${PENCILS_NEEDED})`;
   else if (next) text = next.todo;
-  else if (!state.pencilQuest) text = "Get a pencil pouch from the storage room in the MPR";
+  else if (!state.pencilQuest) text = "Find the pencil pouch in the storage room in the MPR";
   else text = "All optional objectives complete ✓";
   el.style.display = "flex";
   el.classList.toggle("done", doneCount >= total);

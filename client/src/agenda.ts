@@ -109,13 +109,19 @@ export function openAgenda(playerName: string): void {
         <ul class="ag-opt">${OPTIONAL.map(
           (o) => `<li>${box(optDone.has(o.id))}<div><b>${esc(o.title)}</b><small>${esc(optDone.has(o.id) ? o.done : optHow[o.id])}</small></div></li>`
         ).join("")}
-          <li>${box(q.done)}<div><b>Fill your pencil pouch</b> <em>${q.active ? `${Math.min(q.found.length, PENCILS_NEEDED)}/${PENCILS_NEEDED}` : "not started"}</em>
+          <li>${box(q.active)}<div><b>Find the pencil pouch</b>
+            <small>${
+              q.active
+                ? "Found it in the MPR storage room!"
+                : "The pencil pouch is in the storage room in the MPR (the door on the back wall, next to Nelly). Press E at the door to look inside. You'll need a backpack first."
+            }</small></div></li>
+          <li class="${q.active ? "" : "ag-locked"}">${box(q.done)}<div><b>Fill your pencil pouch</b> <em>${q.active ? `${Math.min(q.found.length, PENCILS_NEEDED)}/${PENCILS_NEEDED}` : "🔒 find the pencil pouch first"}</em>
             <small>${
               q.active
                 ? q.done
                   ? "All 5 sharpened pencils found. Nice work!"
                   : "Find 5 sharpened pencils hidden in 5 of the homeroom classrooms, on a desk or the floor (look for the sparkle), and press E to pick them up."
-                : "Get a pencil pouch from the storage room in the MPR (you'll need a backpack first), then find 5 sharpened pencils hidden in the classrooms."
+                : "This objective starts once you have the pencil pouch. Then 5 sharpened pencils will be hidden in the classrooms for you to find."
             }</small></div></li>
           <li>${box(surveyDone)}<div><b>Feedback survey</b><small>Talk to Mr. Van Diest in the MPR and fill out the feedback survey.</small></div></li>
         </ul>
