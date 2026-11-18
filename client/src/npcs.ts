@@ -2462,7 +2462,7 @@ export const NPC_NELLY: NpcDef = {
   room: "mpr",
   x: 406.35, // just west of the storage door, against the back wall
   z: 388.85,
-  rotY: 0.25, // facing into the room, turned a little toward the storage door
+  rotY: -0.3, // facing Mr. Van Diest at the front of the MPR (x 400, z 409.3)
   talkRange: 1.4, // short, so E in front of the storage door still opens the storage room
   profile: {
     ...getDefaultProfile(),
