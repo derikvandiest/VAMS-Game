@@ -36,6 +36,7 @@ import aparicioPortrait from "./assets/aparicio_portrait.png";
 import carreraPortrait from "./assets/carrera_portrait.png";
 import williamsPortrait from "./assets/williams_portrait.png";
 import mariaPortrait from "./assets/maria_portrait.png";
+import quintanaPortrait from "./assets/quintana_portrait.png";
 
 /** Feedback survey QR code image. TODO: put the real QR code image URL here (e.g. "/survey-qr.png"). Empty = placeholder. */
 export const SURVEY_QR_IMAGE = "";
@@ -2365,7 +2366,92 @@ export const NPC_MARIA: NpcDef = {
   },
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL, NPC_APARICIO, NPC_CARRERA, NPC_WILLIAMS, NPC_MARIA];
+/**
+ * Ms. Quintana, the school psychologist, sitting outside the 8th grade classrooms on the blue bench nearest the 8th
+ * grade LMU door (bench at x = 25.9 against the north building, facing the walkway). Matches her portrait: long,
+ * voluminous curly black hair, light-medium skin, a navy pinstripe button-up shirt.
+ */
+const QUINTANA_NAVY = "#1f2740";
+export const NPC_QUINTANA: NpcDef = {
+  id: "npc-quintana",
+  room: "campus",
+  x: 26.4, // the bench seat nearer the 8th LMU door (seat x 26.4, z -1.45)
+  z: -1.67,
+  rotY: 0, // facing the walkway and the field
+  seatY: 0.4,
+  talkRange: 2.4,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Ms. Quintana",
+    title: "School Psychologist",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-suit", // jacket + shirt printed as one pinstripe button-up
+    outfitColor: QUINTANA_NAVY,
+    hairStyle: "f-witch", // long and full
+    hairLength: 2.2,
+    hairColor: "#121116",
+    skinTone: "#E6B898",
+    glasses: "none",
+    shoes: "dress",
+    shoeColor: "#1f1f24",
+    partColors: { "Body:White": QUINTANA_NAVY, "Legs:Black": "#25272d" },
+    polkaDots: { parts: ["Body:Black", "Body:White"], base: QUINTANA_NAVY, dot: "#6b7799", shape: "stripes" },
+  },
+  portrait: quintanaPortrait,
+  // SAMPLE TEXT: replace with Ms. Quintana's real dialogue
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "(Sample text) Hi there! I'm Ms. Quintana, the school psychologist. Have a seat if you'd like!",
+          "I'm just catching my breath between student meetings. How's your PD day going?",
+        ],
+        options: [
+          { label: "What does a school psychologist do?", next: "role" },
+          { label: "How do you work with English learners?", next: "mll" },
+          { label: "Any tip for supporting students' well-being?", next: "tip" },
+          { label: "Thanks, Ms. Quintana!", next: "bye" },
+        ],
+      },
+      role: {
+        paragraphs: [
+          "(Sample text) I support students' learning and mental health: assessments for special education, counseling, crisis support, and working with teachers and families on plans that help students succeed.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Quintana!", next: "bye" },
+        ],
+      },
+      mll: {
+        paragraphs: [
+          "(Sample text) Carefully! When an English learner is struggling, the first question is whether it's language, learning, or something else, like trauma or adjusting to a new country.",
+          "I look at progress in both languages, use interpreters with families, and choose assessments that are fair for students learning English. Learning a new language is never a disability.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Quintana!", next: "bye" },
+        ],
+      },
+      tip: {
+        paragraphs: [
+          "(Sample text) Connection first. A warm greeting at the door, knowing each student's name and story, and a calm, predictable classroom go a long way, especially for newcomers who have been through big changes.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Quintana!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["(Sample text) Take care of yourself today too! See you around."],
+        options: [{ label: "See you, Ms. Quintana!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL, NPC_APARICIO, NPC_CARRERA, NPC_WILLIAMS, NPC_MARIA, NPC_QUINTANA];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.
