@@ -7064,9 +7064,9 @@ export function startPlaceholderScene(
   // --- A knee-high light-gray concrete ledge along the south side of the lunch awning (the side facing the 7th grade
   // wing), running its full length in even segments with even breaks between them
   {
-    const ledgeMat = new THREE.MeshStandardMaterial({ color: 0xc9ccd1, roughness: 0.9 });
-    const capMat = new THREE.MeshStandardMaterial({ color: 0xd9dce0, roughness: 0.85 });
-    const H = 0.6, D = 0.45, GAP = 1.2, N = 4;
+    const ledgeMat = new THREE.MeshStandardMaterial({ color: 0xb8b2a6, roughness: 0.9 }); // warm gray, close to the ground
+    const capMat = new THREE.MeshStandardMaterial({ color: 0xc6c0b4, roughness: 0.85 });
+    const H = 0.6, D = 0.62, GAP = 1.2, N = 4;
     const x = coverMinX - 0.55; // just outside the awning posts, toward the 7th grade wing
     const len = (cover.depth - GAP * (N - 1)) / N;
     for (let k = 0; k < N; k++) {
