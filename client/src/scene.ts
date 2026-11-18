@@ -12,6 +12,7 @@ import { confirmAction } from "./confirm";
 import { assignmentDialog } from "./assignments";
 import { eldDoorDialog } from "./eldTurnIn";
 import { DOOR_TALK } from "./doorTalk";
+import { FRONT_DESK, NANCY, JOHANNA, FRONT_OFFICE_DOOR } from "./frontOffice";
 import { roomById } from "./rooms";
 import { startPresence } from "./presence";
 import { getSocket, isMultiplayerActive } from "./net";
@@ -7147,6 +7148,19 @@ export function startPlaceholderScene(
   const nearTrash = (): boolean =>
     !inMprRoom && !currentClassroom && !drivingCar && !seatedChair &&
     trashBins.some((b) => Math.abs(player.position.y - b.y) < 1 && Math.hypot(player.position.x - b.x, player.position.z - b.z) <= 1.4);
+  /** At the front office's glass doors (outside, in front of them, on the parking-lot side) */
+  const nearFrontOffice = (): boolean =>
+    !inMprRoom && !currentClassroom && !drivingCar && !seatedChair && player.position.y < 1.5 &&
+    player.position.x < FRONT_OFFICE_DOOR.x + 0.2 &&
+    Math.hypot(player.position.x - FRONT_OFFICE_DOOR.x, player.position.z - FRONT_OFFICE_DOOR.z) <= 2.4;
+  /** The front desk: choose Nancy or Johanna; each can hand you over to the other */
+  function openFrontOffice(who: "desk" | "nancy" | "johanna" = "desk"): void {
+    const d = who === "nancy" ? NANCY : who === "johanna" ? JOHANNA : FRONT_DESK;
+    showDialog(d.speaker, d.tree, undefined, (event) => {
+      if (event === "office:nancy") setTimeout(() => openFrontOffice("nancy"), 0);
+      if (event === "office:johanna") setTimeout(() => openFrontOffice("johanna"), 0);
+    });
+  }
   /** Throw something away: a list of what the player carries that can go in the trash */
   function openTrashDialog(): void {
     const throwable: Array<[string, string]> = [
@@ -8965,6 +8979,10 @@ export function startPlaceholderScene(
         openTrashDialog();
         return;
       }
+      if (nearFrontOffice()) {
+        openFrontOffice();
+        return;
+      }
       if (nearFountain()) {
         startDrinking();
         fillWaterBottle(); // an empty water bottle gets filled up too
@@ -10515,6 +10533,8 @@ export function startPlaceholderScene(
         hintText = "Press E to pick up the sharpened pencil ✏️";
       } else if (nearLaptopCart()) {
         hintText = countItem("chromebook") > 0 ? "Press E to return the Chromebook to the cart 💻" : "Press E to take a Chromebook from the laptop cart 💻";
+      } else if (nearFrontOffice()) {
+        hintText = "Press E to go into the front office 🏢";
       } else if (nearTrash()) {
         hintText = "Press E to throw something away 🗑️";
       } else if (nearFountain()) {
