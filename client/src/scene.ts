@@ -7082,6 +7082,23 @@ export function startPlaceholderScene(
       scene.add(block, cap);
       buildingSolids.push({ x, z, w: D + 0.06, d: len + 0.04, yBase: 0, yTop: H + 0.05 });
     }
+    // two more along the east end of the awning (across its width), with one break between them
+    const ze = cover.center.z + cover.depth / 2 + 0.55;
+    const N2 = 2;
+    const len2 = (cover.width - GAP * (N2 - 1)) / N2;
+    for (let k = 0; k < N2; k++) {
+      const xe = coverMinX + len2 / 2 + k * (len2 + GAP);
+      const block = new THREE.Mesh(new THREE.BoxGeometry(len2, H, D), ledgeMat);
+      block.position.set(xe, H / 2, ze);
+      block.castShadow = true;
+      block.receiveShadow = true;
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(len2 + 0.04, 0.05, D + 0.06), capMat);
+      cap.position.set(xe, H + 0.025, ze);
+      cap.castShadow = true;
+      cap.receiveShadow = true;
+      scene.add(block, cap);
+      buildingSolids.push({ x: xe, z: ze, w: len2 + 0.04, d: D + 0.06, yBase: 0, yTop: H + 0.05 });
+    }
   }
 
   // --- Gate: an authentic ornamental double-door red security gate in the inner-corner gap
