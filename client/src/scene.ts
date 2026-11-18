@@ -7131,6 +7131,53 @@ export function startPlaceholderScene(
       scene.add(block, cap);
       buildingSolids.push({ x: xe, z: ze, w: len2 + 0.04, d: D + 0.06, yBase: 0, yTop: H + 0.05 });
     }
+
+    // The same knee-high ledges in front of the 5th/8th grade wing, between its walkway posts (z = 0.8) and the field
+    // (z = 10.5): two U-shaped planters around grass patches with a single ledge between them. Each piece runs along
+    // z (across the gap) or along x (beside the wing).
+    const addLedge = (cx: number, cz: number, alongX: boolean, len: number): void => {
+      const w = alongX ? len : D, d = alongX ? D : len;
+      const block = new THREE.Mesh(new THREE.BoxGeometry(w, H, d), ledgeMat);
+      block.position.set(cx, H / 2, cz);
+      block.castShadow = true;
+      block.receiveShadow = true;
+      const cw = alongX ? len + 0.04 : D + 0.06, cd = alongX ? D + 0.06 : len + 0.04;
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(cw, 0.05, cd), capMat);
+      cap.position.set(cx, H + 0.025, cz);
+      cap.castShadow = true;
+      cap.receiveShadow = true;
+      scene.add(block, cap);
+      buildingSolids.push({ x: cx, z: cz, w: cw, d: cd, yBase: 0, yTop: H + 0.05 });
+    };
+    const patchMat = new THREE.MeshStandardMaterial({ map: makeNoiseTexture("#69a04f", 22, 6), roughness: 1 });
+    const addPatch = (x0: number, x1: number, z0: number, z1: number): void => {
+      const g = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, z1 - z0), patchMat);
+      g.rotation.x = -Math.PI / 2;
+      g.position.set((x0 + x1) / 2, 0.04, (z0 + z1) / 2);
+      g.receiveShadow = true;
+      scene.add(g);
+    };
+    const BAR = len2; // the cross pieces match the awning's east-end segments
+    const LEG = len; // the side pieces match its south-side segments
+    const zA = 1.6, zB = zA + BAR; // the cross pieces' ends: just past the walkway posts, toward the field
+    const zNear = zA + D / 2, zFar = zB - D / 2; // the legs' centers, flush with the cross pieces' ends
+    // a U opening east (toward the stairs): cross piece at x = xb, legs running east from it
+    const uEast = (xb: number): void => {
+      addLedge(xb, (zA + zB) / 2, false, BAR);
+      addLedge(xb + D / 2 + LEG / 2, zNear, true, LEG);
+      addLedge(xb + D / 2 + LEG / 2, zFar, true, LEG);
+      addPatch(xb + D / 2, xb + D / 2 + LEG, zA + D, zB - D);
+    };
+    // a U opening west (toward the elevator), the leg on the field side a little longer
+    const uWest = (xb: number, farLeg: number): void => {
+      addLedge(xb, (zA + zB) / 2, false, BAR);
+      addLedge(xb - D / 2 - LEG / 2, zNear, true, LEG);
+      addLedge(xb - D / 2 - farLeg / 2, zFar, true, farLeg);
+      addPatch(xb - D / 2 - LEG, xb - D / 2, zA + D, zB - D);
+    };
+    uEast(31.2); // in front of the 8th LMU / CSUN rooms
+    addLedge(26.5, (zA + zB) / 2, false, BAR); // the single one between them
+    uWest(21.2, LEG + 1.5); // in front of the 8th UCLA room
   }
 
   // --- Gate: an authentic ornamental double-door red security gate in the inner-corner gap

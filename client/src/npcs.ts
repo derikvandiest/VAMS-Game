@@ -162,8 +162,8 @@ export const NPC_VAN_DIEST: NpcDef = {
 export const NPC_PRINCIPAL: NpcDef = {
   id: "npc-principal",
   room: "campus",
-  x: -1.3, // moved diagonally toward the elevator (in front of the Learning Center / Theater, x = -6.8)
-  z: 6.8,
+  x: 2.4, // near the corner of the field, toward the lunch tables
+  z: 8.8,
   rotY: 0.8, // looking out toward the field
   profile: {
     ...getDefaultProfile(),
@@ -953,8 +953,8 @@ const GUERRERO_SHIRT = "#eef2f6";
 export const NPC_GUERRERO: NpcDef = {
   id: "npc-guerrero",
   room: "campus",
-  x: 18.6, // in front of the 8th UCLA door (x = 18, wall z = -2), halfway to the field (its edge is at z = 10.5)
-  z: 5.2,
+  x: 23.4, // between the ledges in front of the 8th grade rooms, at the edge of the field (z = 10.5)
+  z: 8.7,
   rotY: 0.08, // looking out at the field
   profile: {
     ...getDefaultProfile(),
