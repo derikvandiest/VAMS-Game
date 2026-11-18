@@ -2310,7 +2310,7 @@ export const NPC_MARIA: NpcDef = {
   floor: 1,
   x: -9.75, // just west of the red trash can (x -8.75, z 0.55)
   z: 0.15,
-  rotY: 0.45, // facing out over the walkway, turned a little toward the elevator
+  rotY: 1.93, // facing the Theatre door (x -4, z -2 on the upper walkway)
   talkRange: 1.8,
   profile: {
     ...getDefaultProfile(),
