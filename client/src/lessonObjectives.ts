@@ -5,7 +5,7 @@
  * Built from the ELD Director's deck on language objectives for multilingual learners (MLLs) and the CDE guidance
  * summarized in assets/Learning-Objectives-Room-Blueprint.md, boiled down to five quick stations: the dual purpose,
  * content (WHAT) vs. language (HOW), the formula "Students will [DO] + [USE] + [HOW]" (function, demand, domain), a
- * quality check against the 3 criteria (the check for understanding), and a takeaway + commitment. Finishing the last
+ * quality check against the 3 criteria (the check for understanding), and the takeaways. Finishing the last
  * station completes the assignment.
  */
 import weberPortrait from "./assets/weber_portrait.png";
@@ -274,7 +274,7 @@ const STEPS: Step[] = [
   {
     title: "You're an Objective Architect!",
     weber:
-      "That's it! Language objectives make language development intentional. One last thing: keep the content rigorous for everyone and adjust the support, from substantial (Emerging) to moderate (Expanding) to light (Bridging). Make one commitment before you go. Oh, and don't forget to log your reading minutes for the week and have an adult sign off on it!",
+      "That's it! Language objectives make language development intentional. One last thing: keep the content rigorous for everyone and adjust the support, from substantial (Emerging) to moderate (Expanding) to light (Bridging). Oh, and don't forget to log your reading minutes for the week and have an adult sign off on it!",
     body: () => `
       <div class="lo-badge"><span>🏅</span><div><b>Objective Architect</b><small>Learning Objectives · ELD PD with Mrs. Weber</small></div></div>
       <ul class="lo-takeaways">
@@ -282,10 +282,7 @@ const STEPS: Step[] = [
         <li><b>The formula:</b> Students will <b class="f1">[DO]</b> + <b class="f2">[USE]</b> + <b class="f3">[HOW]</b>.</li>
         <li><b>The check:</b> connects to the task · names the language · gives chances to use it.</li>
         <li><b>Make it visible:</b> post it with domain icons. Your curriculum (and the Unit Map's Language section) often gives you part of it already!</li>
-      </ul>
-      <div class="lo-commit one">
-        <label><b>📣 My commitment</b> <i>(optional, share it with your table!)</i><textarea rows="2" placeholder="In my next lesson, I will…"></textarea></label>
-      </div>`,
+      </ul>`,
   },
 ];
 
