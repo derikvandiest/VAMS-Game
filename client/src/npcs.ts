@@ -2269,13 +2269,12 @@ export const NPC_WILLIAMS: NpcDef = {
     partColors: { "Body:White": "#24315a", "Legs:Black": "#25272d" },
   },
   portrait: williamsPortrait,
-  // SAMPLE TEXT: replace with Ms. Williams's real dialogue
   dialog: {
     start: "root",
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Hi there, welcome! I'm Ms. Williams, the 8th grade IET and our lead IET here at Valor.",
+          "Hi there, welcome! I'm Ms. Williams, the 8th grade IET and our lead IET here at Valor.",
           "Ms. Roldan and I were just talking about how we support every learner on campus. Ask me anything about inclusion and supports, and grab my handout on supporting multilingual learners with IEPs!",
         ],
         options: [
@@ -2300,7 +2299,7 @@ export const NPC_WILLIAMS: NpcDef = {
       },
       lead: {
         paragraphs: [
-          "(Sample text) Besides supporting my 8th graders with IEPs, I coach and support our IET team across every grade: planning accommodations, co-teaching models, IEP goals and progress monitoring.",
+          "Besides supporting my 8th graders with IEPs, I coach and support our IET team across every grade: planning accommodations, co-teaching models, IEP goals and progress monitoring.",
           "If a teacher has a question about a student's plan, I'm usually the first person they come to.",
         ],
         options: [
@@ -2311,7 +2310,7 @@ export const NPC_WILLIAMS: NpcDef = {
       },
       overlap: {
         paragraphs: [
-          "(Sample text) So much of what we do for students with IEPs is just good teaching for everyone: visuals, modeling, chunked directions, extra wait time, and sentence frames.",
+          "So much of what we do for students with IEPs is just good teaching for everyone: visuals, modeling, chunked directions, extra wait time, and sentence frames.",
           "Some of our students are English learners and have an IEP too. For them we plan both together, so language support and learning support work as one. And we never confuse learning a new language with a disability.",
         ],
         options: [
@@ -2322,7 +2321,7 @@ export const NPC_WILLIAMS: NpcDef = {
       },
       advice: {
         paragraphs: [
-          "(Sample text) Empathy, compassion and inclusion. Know your students, plan the supports before the lesson, and make every student feel they belong. When they feel safe, they take risks, and that's when the learning happens.",
+          "Empathy, compassion and inclusion. Know your students, plan the supports before the lesson, and make every student feel they belong. When they feel safe, they take risks, and that's when the learning happens.",
         ],
         options: [
           { label: "I have another question", next: "root" },
@@ -2331,7 +2330,7 @@ export const NPC_WILLIAMS: NpcDef = {
         ],
       },
       bye: {
-        paragraphs: ["(Sample text) Have a wonderful day! Come find me if you ever have a question about supports."],
+        paragraphs: ["Have a wonderful day! Come find me if you ever have a question about supports."],
         options: [{ label: "See you, Ms. Williams!" }],
       },
     },
