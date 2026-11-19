@@ -14,6 +14,7 @@ import { ROOMS } from "./rooms";
 import { openChromebook, isChromebookOpen, closeChromebook } from "./chromebook";
 import { openAgenda, isAgendaOpen, closeAgenda } from "./agenda";
 import { openHandout, isHandoutOpen, closeHandout } from "./handout";
+import { isLessonOpen } from "./lessonObjectives";
 import { loadCharacterProfile, saveCharacterProfile } from "./profile";
 
 export interface ItemDef {
@@ -744,7 +745,7 @@ export function closeBackpack(): void {
 
 function onGlobalKey(e: KeyboardEvent): void {
   if (!bar) return; // not in a game
-  if (isChromebookOpen() || isAgendaOpen() || isHandoutOpen()) return; // the laptop / agenda / handout has the keyboard
+  if (isChromebookOpen() || isAgendaOpen() || isHandoutOpen() || isLessonOpen()) return; // the laptop / agenda / handout has the keyboard
   const t = e.target as HTMLElement | null;
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
   if (document.querySelector(".dialog-overlay, #map-overlay, #settings-modal-overlay[style*='flex']")) return;

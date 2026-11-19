@@ -1,3 +1,4 @@
+import { openLesson, hasLesson } from "./lessonObjectives";
 import type { DialogTree } from "./dialog";
 import * as THREE from "three";
 import layout from "../../content/layout.json";
@@ -8148,6 +8149,13 @@ export function startPlaceholderScene(
     const room = roomById(currentClassroom.id);
     const objectiveId = room?.objectiveId;
     const done = !!objectiveId && !!loadSlot(getActiveSlotId())?.objectives.completedIds.includes(objectiveId);
+    if (hasLesson(currentClassroom.id)) {
+      // an interactive lesson (e.g. Mrs. Weber's "Learning Objectives"): its exit ticket completes the assignment
+      openLesson(currentClassroom.id, done, () => {
+        if (objectiveId) (window as any).__completeObjective?.(objectiveId);
+      });
+      return;
+    }
     const { speaker, tree } = assignmentDialog(currentClassroom.id, done);
     showDialog(speaker, tree, undefined, (event) => {
       if (event === "assignment-complete" && objectiveId) (window as any).__completeObjective?.(objectiveId);
@@ -10551,6 +10559,8 @@ export function startPlaceholderScene(
   }
 
   (window as any).__debug = {
+    enterRoom: (id: string) => enterClassroom(id),
+    openAssignment: () => openAssignment(),
     setPlayer: (x: number, z: number, y?: number) => { player.position.x = x; player.position.z = z; if (y !== undefined) player.position.y = y; },
     setCamera: (angle: number, elev: number, dist: number) => { camAngle = angle; camElevation = elev; camDistance = dist; },
     setPlayerVisible: (v: boolean) => { player.visible = v; },

@@ -1215,8 +1215,8 @@ export const NPC_WEBER: NpcDef = {
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Hi there! I'm Mrs. Weber, and I teach 7th grade English here in USC. Welcome!",
-          "Your assignment is ready whenever you are. Make yourself at home.",
+          "Hi there! I'm Mrs. Weber, and I teach 7th grade English here in USC. Welcome!",
+          "Today's assignment is all about Learning Objectives: how a language objective helps our multilingual learners reach grade-level content. It's hands-on, I promise. There's a slot machine!",
         ],
         options: [
           { label: "Show me the assignment!", action: "open-assignment" },
@@ -1226,8 +1226,8 @@ export const NPC_WEBER: NpcDef = {
       },
       learn: {
         paragraphs: [
-          "(Sample text) We're looking at how authors develop a character's perspective over time. My students cite evidence from the text to back up their thinking.",
-          "Then we hold a Socratic seminar. Sentence frames help everyone join the conversation, especially my English learners.",
+          "We're looking at how authors develop a character's perspective over time. My students cite evidence from the text to back up their thinking.",
+          "Every lesson has a language objective on the board, like \"Students will explain how the narrator changes using because and as a result in a partner discussion.\" That way everyone, especially my English learners, knows exactly what language to use.",
         ],
         options: [
           { label: "Show me the assignment!", action: "open-assignment" },
