@@ -370,11 +370,11 @@
       "building": "north",
       "axis": "x",
       "center": {
-        "x": 16.75,
+        "x": 17.5,
         "z": -0.5
       },
       "width": 3,
-      "length": 55.5
+      "length": 57
     },
     {
       "building": "office",
@@ -414,7 +414,7 @@
     {
       "building": "north",
       "center": {
-        "x": 43,
+        "x": 44.5,
         "z": 4
       },
       "width": 3,
@@ -799,14 +799,14 @@
     },
     {
       "id": "8th-lmu-humanities",
-      "x": 34.2,
+      "x": 35.45,
       "z": -2,
       "axis": "x",
       "floor": 0
     },
     {
       "id": "8th-csun-english",
-      "x": 38.7,
+      "x": 39.95,
       "z": -2,
       "axis": "x",
       "floor": 0
