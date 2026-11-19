@@ -7268,7 +7268,7 @@ export function startPlaceholderScene(
     };
     const BAR = len2; // the cross pieces match the awning's east-end segments
     const LEG = len2; // the side pieces are as long as the cross pieces
-    const zA = 1.6, zB = zA + BAR; // the cross pieces' ends: just past the walkway posts, toward the field
+    const zA = 2.6, zB = zA + BAR; // the cross pieces' ends: a little out from the walkway posts, toward the field
     const zNear = zA + D / 2, zFar = zB - D / 2; // the legs' centers, flush with the cross pieces' ends
     // a U opening east (toward the stairs): cross piece at x = xb, legs running east from it
     const uEast = (xb: number): void => {
