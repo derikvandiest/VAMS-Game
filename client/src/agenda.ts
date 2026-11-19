@@ -94,9 +94,10 @@ export function openAgenda(playerName: string): void {
               .map(
                 ({ g, rooms: rs }) => `<div class="ag-grade"><div class="ag-grade-title">${g}th Grade <span>${floorOf(rs[0]?.id ?? "")}</span></div>${rs
                   .map((r) => {
-                    // the classroom by its name, grade and the topic of its assignment, e.g. "USC · 7th Grade · Learning Objectives"
+                    // the classroom by its name and the topic of its assignment, e.g. "USC · Learning Objectives" (the grade is
+                    // the heading it sits under)
                     const topic = lessonTitle(r.id);
-                    const name = r.homeroom && r.grade ? `${r.homeroom} · ${r.grade}th Grade${topic ? ` · ${topic}` : ""}` : r.label;
+                    const name = r.homeroom ? `${r.homeroom}${topic ? ` · ${topic}` : ""}` : r.label;
                     return `<div class="ag-room${done.has(r.objectiveId!) ? " done" : ""}">${box(done.has(r.objectiveId!))}<span>${esc(name)}</span></div>`;
                   })
                   .join("")}</div>`
