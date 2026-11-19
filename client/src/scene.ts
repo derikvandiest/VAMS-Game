@@ -3628,13 +3628,13 @@ export function startPlaceholderScene(
     metalness: 0.1,
   });
 
-  // goal netting: a white square mesh (one texture cell = NET_CELL meters), see-through between the cords
+  // goal netting: a black square mesh (one texture cell = NET_CELL meters), see-through between the cords
   const NET_CELL = 0.14;
   const netTex = (() => {
     const c = document.createElement("canvas");
     c.width = c.height = 64;
     const g = c.getContext("2d")!;
-    g.strokeStyle = "#f4f4f2";
+    g.strokeStyle = "#ffffff"; // the alpha mask; the cords are colored by the material
     g.lineWidth = 5;
     g.strokeRect(0, 0, 64, 64);
     const tex = new THREE.CanvasTexture(c);
@@ -3642,7 +3642,7 @@ export function startPlaceholderScene(
     tex.anisotropy = 4;
     return tex;
   })();
-  const netMat = new THREE.MeshStandardMaterial({ map: netTex, alphaMap: netTex, transparent: true, alphaTest: 0.35, side: THREE.DoubleSide, roughness: 0.9 });
+  const netMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, alphaMap: netTex, transparent: true, alphaTest: 0.35, side: THREE.DoubleSide, roughness: 0.9 });
 
   function createSoccerGoal(): THREE.Group {
     const goal = new THREE.Group();
