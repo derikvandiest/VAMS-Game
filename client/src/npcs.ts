@@ -916,48 +916,51 @@ export const NPC_ROLDAN: NpcDef = {
     polkaDots: { parts: ["Body:White"], base: "#f272b8", dot: "#d24f98", accent: "#a970d8", shape: "ribs" },
   },
   portrait: roldanPortrait,
-  // SAMPLE TEXT: replace with Ms. Roldan's real dialogue
   dialog: {
     start: "root",
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Hi! I'm Ms. Roldan, the 5th grade IET. I'm also the creator of our co-teaching program here at Valor!",
-          "Co-teaching means two teachers sharing one classroom, planning, teaching and assessing together so every student gets what they need.",
+          "Hi! I'm Ms. Roldan, the 5th grade IET. I'm also the creator of our co-teaching program here at Valor!",
+          "Co-teaching means two teachers sharing one classroom, planning, teaching and assessing together so every student gets what they need. Grab my handout on how co-teaching supports our multilingual learners!",
         ],
         options: [
           { label: "How did the co-teaching program start?", next: "start" },
           { label: "What does co-teaching look like in a classroom?", next: "models" },
           { label: "What does a 5th grade IET do?", next: "iet" },
+          { label: "Can I have your handout?", action: "give-coteach-handout" },
           { label: "Thanks, Ms. Roldan!" },
         ],
       },
       start: {
         paragraphs: [
-          "(Sample text) I saw how much our students grew when two teachers brought their strengths into the same room. So I built a program that pairs teachers, gives them common planning time, and helps them grow as a team.",
+          "I saw how much our students grew when two teachers brought their strengths into the same room. So I built a program that pairs teachers, gives them common planning time, and helps them grow as a team.",
           "Now co-teaching is part of how we make sure all of our learners, including our English learners and students with IEPs, are supported in the general education classroom.",
         ],
         options: [
           { label: "I have another question", next: "root" },
+          { label: "Can I have your handout?", action: "give-coteach-handout" },
           { label: "Thanks, Ms. Roldan!" },
         ],
       },
       models: {
         paragraphs: [
-          "(Sample text) There are a few models we use: station teaching, where students rotate through small groups; parallel teaching, where each teacher teaches half the class the same lesson; alternative teaching for a small group that needs something different; and team teaching, where both teachers lead together.",
+          "There are a few models we use: station teaching, where students rotate through small groups; parallel teaching, where each teacher teaches half the class the same lesson; alternative teaching for a small group that needs something different; and team teaching, where both teachers lead together.",
           "The key is planning together and both teachers owning every student in the room.",
         ],
         options: [
           { label: "I have another question", next: "root" },
+          { label: "Can I have your handout?", action: "give-coteach-handout" },
           { label: "Thanks, Ms. Roldan!" },
         ],
       },
       iet: {
         paragraphs: [
-          "(Sample text) I work alongside our 5th grade teachers to support students who need extra help, co-planning lessons, adapting materials and teaching small groups so everyone can access grade-level learning.",
+          "I work alongside our 5th grade teachers to support students who need extra help, co-planning lessons, adapting materials and teaching small groups so everyone can access grade-level learning.",
         ],
         options: [
           { label: "I have another question", next: "root" },
+          { label: "Can I have your handout?", action: "give-coteach-handout" },
           { label: "Thanks, Ms. Roldan!" },
         ],
       },

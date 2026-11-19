@@ -70,6 +70,13 @@
       "stack": 1
     },
     {
+      "id": "coteach-handout",
+      "name": "Co-Teaching Handout",
+      "icon": "📗",
+      "description": "\"Two Experts, One Classroom\" from Ms. Roldan, creator of Valor's co-teaching program: how co-teaching supports multilingual learners. Click it to read it (you can print it or save it as a PDF).",
+      "stack": 1
+    },
+    {
       "id": "burrito",
       "name": "Burrito",
       "icon": "🌯",

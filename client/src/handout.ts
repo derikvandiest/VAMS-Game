@@ -10,6 +10,7 @@
  */
 
 import { IEP_HANDOUT_HTML } from "./handoutIep";
+import { COTEACH_HANDOUT_HTML } from "./handoutCoteach";
 
 let overlay: HTMLElement | null = null;
 
@@ -142,7 +143,8 @@ const HANDOUT_HTML = `
 /** The handouts, by their backpack item id */
 const HANDOUTS: Record<string, { bar: string; title: string; theme: string; html: string }> = {
   "community-handout": { bar: "📄 Community Schools Handout", title: "Partners in Learning – Valor Community Schools", theme: "", html: HANDOUT_HTML },
-  "iep-handout": { bar: "📘 Ms. Williams's Handout", title: "Both/And – Supporting MLLs with IEPs", theme: "ho-iep", html: IEP_HANDOUT_HTML },
+  "iep-handout": { bar: "📘 Ms. Williams's Handout", title: "Both/And – Supporting MLLs with IEPs", theme: "ho-onepage ho-iep", html: IEP_HANDOUT_HTML },
+  "coteach-handout": { bar: "📗 Ms. Roldan's Handout", title: "Two Experts, One Classroom – Co-Teaching for MLLs", theme: "ho-onepage ho-cot", html: COTEACH_HANDOUT_HTML },
 };
 
 /** Open a print-friendly copy (the browser's print dialog can save it as a PDF) */
@@ -168,7 +170,7 @@ export function openHandout(id = "community-handout"): void {
   overlay.id = "handout-overlay";
   overlay.className = "modal-overlay ho-overlay";
   overlay.innerHTML = `
-    <div class="ho-wrap ${h.theme ? h.theme + "-wrap" : ""}" role="dialog" aria-modal="true" aria-label="${h.bar.replace(/^\S+ /, "")}">
+    <div class="ho-wrap ${h.theme.includes("ho-onepage") ? "ho-onepage-wrap" : ""}" role="dialog" aria-modal="true" aria-label="${h.bar.replace(/^\S+ /, "")}">
       <div class="ho-bar">
         <span>${h.bar}</span>
         <button type="button" class="ho-print">🖨️ Print / Save as PDF</button>

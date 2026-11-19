@@ -445,7 +445,7 @@ export function takeHandout(id = "community-handout", from = "Mr. Martinez's"): 
   state.bag[k] = { id, qty: 1 };
   save();
   render();
-  toast(`${id === "iep-handout" ? "📘" : "📄"} ${from} handout is in your backpack. Click it to read it!`);
+  toast(`${id === "iep-handout" ? "📘" : id === "coteach-handout" ? "📗" : "📄"} ${from} handout is in your backpack. Click it to read it!`);
   return "ok";
 }
 
@@ -835,7 +835,7 @@ function onPointerUp(e: PointerEvent): void {
     if (clicked === "water-bottle-full") drinkWaterBottle();
     if (clicked === "chromebook") openChromebook(loadCharacterProfile().name); // open the laptop at its login screen
     if (clicked === "student-agenda") openAgenda(loadCharacterProfile().name); // every objective, in detail
-    if (clicked === "community-handout" || clicked === "iep-handout") openHandout(clicked); // Mr. Martinez's / Ms. Williams's handout
+    if (clicked === "community-handout" || clicked === "iep-handout" || clicked === "coteach-handout") openHandout(clicked); // Mr. Martinez's / Ms. Williams's / Ms. Roldan's handout
     if (clicked === "burrito" || clicked === "burrito-vegan") eatBurrito(clicked);
     return;
   }
