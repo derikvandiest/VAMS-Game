@@ -3628,6 +3628,22 @@ export function startPlaceholderScene(
     metalness: 0.1,
   });
 
+  // goal netting: a white square mesh (one texture cell = NET_CELL meters), see-through between the cords
+  const NET_CELL = 0.14;
+  const netTex = (() => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 64;
+    const g = c.getContext("2d")!;
+    g.strokeStyle = "#f4f4f2";
+    g.lineWidth = 5;
+    g.strokeRect(0, 0, 64, 64);
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.anisotropy = 4;
+    return tex;
+  })();
+  const netMat = new THREE.MeshStandardMaterial({ map: netTex, alphaMap: netTex, transparent: true, alphaTest: 0.35, side: THREE.DoubleSide, roughness: 0.9 });
+
   function createSoccerGoal(): THREE.Group {
     const goal = new THREE.Group();
     const goalWidth = 6.0;
@@ -3699,6 +3715,40 @@ export function startPlaceholderScene(
     rightGusset.castShadow = true;
     goal.add(rightGusset);
 
+    // 5. The net, behind the mouth: a top panel back from the crossbar, a back panel sloping down to the ground 1.6 m
+    // behind the goal line (where the ball physics stops the ball), and the two sides; held by a thin white frame
+    const w = goalWidth / 2, H = goalHeight, dt = 0.8, db = 1.6;
+    const quad = (a: number[], b: number[], c: number[], d: number[], uv: number[][]): THREE.BufferGeometry => {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute([...a, ...b, ...c, ...a, ...c, ...d], 3));
+      const u = (k: number) => uv[k].map((v) => v / NET_CELL);
+      g.setAttribute("uv", new THREE.Float32BufferAttribute([...u(0), ...u(1), ...u(2), ...u(0), ...u(2), ...u(3)], 2));
+      g.computeVertexNormals();
+      return g;
+    };
+    const backLen = Math.hypot(db - dt, H);
+    const panels = [
+      quad([-w, H, 0], [w, H, 0], [w, H, -dt], [-w, H, -dt], [[0, 0], [2 * w, 0], [2 * w, dt], [0, dt]]), // top
+      quad([-w, H, -dt], [w, H, -dt], [w, 0, -db], [-w, 0, -db], [[0, 0], [2 * w, 0], [2 * w, backLen], [0, backLen]]), // back
+      ...[-w, w].map((x) => quad([x, 0, 0], [x, H, 0], [x, H, -dt], [x, 0, -db], [[0, 0], [0, H], [dt, H], [db, 0]])), // sides
+    ];
+    for (const g of panels) goal.add(new THREE.Mesh(g, netMat));
+    const tube = (a: THREE.Vector3, b: THREE.Vector3, r = 0.022): void => {
+      const len = a.distanceTo(b);
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 8), goalPostMat);
+      m.position.copy(a).add(b).multiplyScalar(0.5);
+      m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+      goal.add(m);
+    };
+    const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
+    tube(V(-w, 0.03, -db), V(w, 0.03, -db), 0.03); // ground bar along the back
+    tube(V(-w, H, -dt), V(w, H, -dt)); // top back bar
+    for (const x of [-w, w]) {
+      tube(V(x, 0.03, 0), V(x, 0.03, -db), 0.03); // ground bars along the sides
+      tube(V(x, H, 0), V(x, H, -dt)); // top side bars
+      tube(V(x, H, -dt), V(x, 0.03, -db)); // sloping back stanchions
+    }
+
     return goal;
   }
 
@@ -3716,6 +3766,11 @@ export function startPlaceholderScene(
   const southGoal = createSoccerGoal();
   southGoal.position.set(field.center.x, 0.04, 40.0);
   southGoal.rotation.y = Math.PI; // facing north (facing each other)
+  // the nets' sides and backs are solid (players can walk into the mouth but not through the netting)
+  for (const [lineZ, dir] of [[12.0, -1], [40.0, 1]] as const) {
+    for (const sx of [-3, 3]) buildingSolids.push({ x: field.center.x + sx, z: lineZ + dir * 0.8, w: 0.1, d: 1.6, yBase: 0, yTop: 2.44 });
+    buildingSolids.push({ x: field.center.x, z: lineZ + dir * 1.6, w: 6, d: 0.1, yBase: 0, yTop: 1.2 });
+  }
   scene.add(southGoal);
   buildingSolids.push(
     { x: field.center.x - 3.0, z: 40.0, w: 0.35, d: 0.35, yBase: 0, yTop: 2.5 },
