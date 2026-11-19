@@ -900,6 +900,7 @@ export const NPC_STAUFFER: NpcDef = {
   z: 0,
   rotY: 0, // facing the class
   talkRange: 2.2,
+  chatFirst: true,
   profile: {
     ...getDefaultProfile(),
     name: "Mr. Stauffer",
@@ -917,6 +918,37 @@ export const NPC_STAUFFER: NpcDef = {
     shoeColor: "#5b4636",
   },
   portrait: staufferPortrait,
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "Hey, welcome to the lab! I'm Mr. Stauffer, and I teach 6th grade science here in LMU.",
+          "Today I'm facilitating part of our ELD PD: Using Manipulatives to Support MLLs. Hands on the tools, words in their mouths! It only takes about three minutes.",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "What are your students learning?", next: "learn" },
+          { label: "Thanks, Mr. Stauffer!", next: "bye" },
+        ],
+      },
+      learn: {
+        paragraphs: [
+          "We're studying rocks and minerals. Every table gets real samples and a hand lens, and a word bank with texture, layers and crystals (and the cognates: textura, capas, cristales).",
+          "Students describe a rock to a partner before they ever write about it. When they can hold it, they can talk about it.",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Stauffer!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["Thanks for stopping by the lab! Enjoy the rest of your classrooms."],
+        options: [{ label: "See you, Mr. Stauffer!" }],
+      },
+    },
+  },
 };
 
 /**
