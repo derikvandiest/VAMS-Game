@@ -3331,3 +3331,39 @@ button.al-read:hover { background: #ede9fe; }
 .op-models li { margin-bottom: 1px; }
 .op-checks { list-style: none; padding-left: 0 !important; }
 .op-checks li::before { content: "☐ "; color: #6d28d9; font-weight: 800; }
+
+/* --- "Graphic Organizers for MLLs" lesson with Ms. Blessing (lessonOrganizers.ts) --- */
+.go-dense { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px 16px; font-size: 14px; line-height: 1.55; color: #334155; }
+.go-organize { display: block; margin: 10px auto; border: 0; border-radius: 12px; background: #b8312f; color: #fff; font-weight: 800; font-size: 14px; padding: 10px 18px; cursor: pointer; box-shadow: inset 0 -4px 0 rgba(0,0,0,0.2); }
+.go-venn { display: grid; grid-template-columns: 1fr 0.9fr 1fr; align-items: center; margin-bottom: 10px; }
+.go-circle, .go-mid { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; font-size: 13px; }
+.go-circle { border-radius: 50%; aspect-ratio: 1.25; justify-content: center; padding: 10px 18px; }
+.go-circle.l { background: rgba(59,130,246,0.18); border: 3px solid #3b82f6; margin-right: -30px; }
+.go-circle.r { background: rgba(236,72,153,0.16); border: 3px solid #ec4899; margin-left: -30px; }
+.go-mid { z-index: 1; background: rgba(139,92,246,0.18); border: 3px solid #8b5cf6; border-radius: 40%; padding: 14px 6px; }
+.go-circle b, .go-mid b { font-size: 14px; }
+.go-venn.mini { grid-template-columns: 170px 90px 170px; justify-content: center; margin: 0 auto 8px; }
+.go-venn.mini .go-circle { aspect-ratio: 1.5; padding: 4px; }
+.go-venn.mini .go-circle.l { align-items: flex-start; padding-left: 36px; }
+.go-venn.mini .go-circle.r { align-items: flex-end; padding-right: 36px; }
+.go-venn.mini .go-mid { padding: 14px 4px; }
+.go-match { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.go-signals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.go-signal { background: #fff; border: 2px solid #e5e7eb; border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.go-signal b { font-size: 18px; color: #1e3a8a; font-style: italic; }
+.go-signal small { color: #166534; font-weight: 700; }
+.go-signal.good { border-color: #22c55e; background: #f0fdf4; }
+.go-signal.bad { border-color: #fca5a5; }
+.go-upgrade { display: grid; grid-template-columns: 1fr 230px; gap: 12px; align-items: start; }
+.go-plain { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.go-added { display: flex; gap: 8px; align-items: flex-start; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 10px; animation: lo-shake 0.3s; }
+.go-added span { font-size: 18px; }
+.go-added b { display: block; font-size: 12.5px; }
+.go-added small { font-size: 12.5px; color: #475569; }
+.go-tools { display: flex; flex-direction: column; gap: 8px; }
+.go-tool { text-align: left; border: 2px solid #fecaca; background: #fff; color: #7f1d1d; border-radius: 10px; padding: 10px 12px; font-weight: 800; cursor: pointer; font-size: 13.5px; }
+.go-tool:hover:not(:disabled) { background: #fef2f2; }
+.go-tool.on { background: #dcfce7; border-color: #22c55e; color: #166534; cursor: default; }
+.go-route { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; color: #94a3b8; font-weight: 900; }
+.go-route span { background: #b8312f; color: #fff; border-radius: 999px; padding: 6px 12px; font-size: 13px; }
+@media (max-width: 700px) { .go-match, .go-upgrade { grid-template-columns: 1fr; } .go-signals { grid-template-columns: 1fr 1fr; } }

@@ -20,6 +20,7 @@ import nayfeldPortrait from "./assets/nayfeld_portrait.png";
 import daniPortrait from "./assets/dani_portrait.png";
 import somozaPortrait from "./assets/somoza_portrait.png";
 import weberPortrait from "./assets/weber_portrait.png";
+import blessingPortrait from "./assets/blessing_portrait.png";
 import dominguezPortrait from "./assets/dominguez_portrait.png";
 import larkPortrait from "./assets/lark_portrait.png";
 import gillettPortrait from "./assets/gillett_portrait.png";
@@ -298,6 +299,7 @@ export const NPC_BLESSING: NpcDef = {
   z: 0,
   rotY: 0, // facing the class
   talkRange: 2.2,
+  chatFirst: true,
   profile: {
     ...getDefaultProfile(),
     name: "Ms. Blessing",
@@ -316,6 +318,38 @@ export const NPC_BLESSING: NpcDef = {
     shoeColor: BLACK,
     partColors: { "Legs:Black": "#2b3245" },
     polkaDots: { parts: ["Body:White"], base: "#f4f6f8", dot: "#9cc3d5", accent: "#c0392b", shape: "diamonds" },
+  },
+  portrait: blessingPortrait,
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "Hi, welcome to 5th grade CSUN! I'm Ms. Blessing, and I teach humanities.",
+          "Today I'm facilitating part of our ELD PD: Graphic Organizers for MLLs. They're maps for thinking AND for language. It only takes about three minutes!",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "What are your students learning?", next: "learn" },
+          { label: "Thanks, Ms. Blessing!", next: "bye" },
+        ],
+      },
+      learn: {
+        paragraphs: [
+          "We're comparing ancient civilizations right now, like the Aztec and the Maya.",
+          "My students sort their notes into a double bubble map, talk it through with a partner using \"Both ___ and ___, but ___,\" and then write their paragraph. The organizer is the bridge from thinking to talking to writing.",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Blessing!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["Thanks for visiting! Enjoy the rest of your classrooms."],
+        options: [{ label: "See you, Ms. Blessing!" }],
+      },
+    },
   },
 };
 
