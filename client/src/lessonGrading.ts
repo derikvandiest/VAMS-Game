@@ -11,7 +11,7 @@
 import ramirezPortrait from "./assets/ramirez_portrait.png";
 import { esc, rerender, type LessonDef, type LessonStep } from "./lessonEngine";
 
-const state = {
+const fresh = () => ({
   leaks: new Set<number>(),
   zeroAdded: false,
   scale: "100" as "100" | "4",
@@ -19,7 +19,8 @@ const state = {
   content: -1,
   language: -1,
   am: new Map<number, "A" | "M">(),
-};
+});
+let state = fresh();
 
 // Station 1: two students, same history learning, different grades
 const BEN = [90, 100, 90, 95, 90];
@@ -241,4 +242,7 @@ export const GRADING_LESSON: LessonDef = {
   teacher: "Mr. Ramirez",
   portrait: ramirezPortrait,
   steps: STEPS,
+  reset: () => {
+    state = fresh();
+  },
 };

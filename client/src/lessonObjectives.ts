@@ -12,13 +12,14 @@ import weberPortrait from "./assets/weber_portrait.png";
 import { esc, rerender, type LessonDef, type LessonStep } from "./lessonEngine";
 
 /** Each activity's progress, so Back / reopening keep what the player already did */
-const state = {
+const fresh = () => ({
   purposes: new Set<number>(),
   sortCV: new Map<number, "C" | "L">(),
   reels: [0, 0, 0],
   spun: false,
   quality: new Map<number, number>(),
-};
+});
+let state = fresh();
 
 // ---------------------------------------------------------------------------------------------------------------
 // Content
@@ -251,4 +252,7 @@ export const OBJECTIVES_LESSON: LessonDef = {
   teacher: "Mrs. Weber",
   portrait: weberPortrait,
   steps: STEPS,
+  reset: () => {
+    state = fresh();
+  },
 };

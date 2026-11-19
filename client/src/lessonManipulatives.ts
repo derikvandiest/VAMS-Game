@@ -1,214 +1,235 @@
 /**
  * "Using Manipulatives to Support MLLs" — a short (2–3 minute) hands-on part of today's ELD PD, facilitated by
- * Mr. Stauffer in his classroom (6th grade LMU science).
+ * Mr. Stauffer in his classroom (6th grade LMU science), with science manipulatives and realia.
  *
- * Built from assets/Manipulatives-for-MLLs-Room-Blueprint.md (Carbonneau, Marley & Selig 2013; Witzel, Mercer & Miller
- * 2003 on CRA; Moyer-Packenham & Westenskow on virtual manipulatives; Chval & Chávez; the 2023 CA Math Framework, Ch. 7),
- * as five quick stations: zero pairs with two-color counters, solving 2x + 3 = 7 with algebra tiles (concrete, drawn
- * and written side by side: CRA), stocking the tool bin (math and science examples), myth busters from the research,
- * and the takeaways (show it → say it → draw it → write it). Finishing the last station completes the assignment.
+ * Built from assets/Manipulatives-for-MLLs-Room-Blueprint.md (realia and models in science, D10; CRA, C1; the research
+ * in Part B: Carbonneau, Marley & Selig 2013; the language routines in Part E; CA Math/ELD connections), as five quick
+ * stations: rock samples under a hand lens (show before tell), building a water molecule with bead atoms (concrete,
+ * drawn and written side by side: CRA), a cell model with analogy frames, myth busters from the research, and the
+ * takeaways (show it → say it → draw it → write it). Finishing the last station completes the assignment.
  */
 import staufferPortrait from "./assets/stauffer_portrait.png";
 import { esc, rerender, type LessonDef, type LessonStep } from "./lessonEngine";
 
-const state = {
-  pairs: 0,
-  left: -1,
-  units: 3, // unit tiles on the left of 2x + 3 = 7
-  right: 7,
-  split: false,
-  tipped: false,
-  said: "",
-  pickTool: -1,
-  linked: new Map<number, number>(),
-  wrongLink: "",
+const fresh = () => ({
+  looked: new Set<number>(),
+  rockType: new Map<number, number>(),
+  atoms: [] as string[],
+  atomMsg: "",
+  pickPart: -1,
+  linked: new Set<number>(),
+  wrongJob: -1,
   myths: new Map<number, boolean>(),
-};
+});
+let state = fresh();
 
-// Station 3: the tool bin (tools on the left, what they teach on the right, shuffled)
-const TOOLS = [
-  { icon: "🔴🟡", name: "Two-color counters", what: "Adding and subtracting integers", word: "zero pair" },
-  { icon: "🧊", name: "Unit cubes", what: "Volume of a prism", word: "cubic units" },
-  { icon: "▭▭", name: "Fraction strips", what: "How many 1/8s fit in 3/4?", word: "denominator" },
-  { icon: "🪨🔍", name: "Rock samples + hand lens", what: "Describing rock properties", word: "texture, layers, crystals" },
-  { icon: "🔵⚪", name: "Beads as atoms", what: "How molecules form", word: "atom, molecule, combine" },
+// Station 1: three rock samples under the hand lens
+const ROCK_TYPES = ["Igneous", "Sedimentary", "Metamorphic"];
+const ROCKS = [
+  { name: "Sample A", color: "#b9a37d", stripes: "layers", see: "flat <b>layers</b> of sand, a gritty <b>texture</b>", a: 1, es: "sedimentaria" },
+  { name: "Sample B", color: "#4b4f57", stripes: "crystals", see: "speckled <b>crystals</b>; it formed from cooled lava", a: 0, es: "ígnea" },
+  { name: "Sample C", color: "#8a8fa0", stripes: "bands", see: "wavy, squeezed <b>bands</b> that sparkle", a: 2, es: "metamórfica" },
 ];
-const WHAT_ORDER = [2, 4, 0, 3, 1];
+
+// Station 2: the bead atoms for a water molecule
+const BEADS = [
+  { id: "H", name: "Hydrogen", color: "#f8fafc", text: "#334155" },
+  { id: "O", name: "Oxygen", color: "#ef4444", text: "#fff" },
+  { id: "C", name: "Carbon", color: "#1f2937", text: "#fff" },
+];
+
+// Station 3: the cell model — parts and what they do (with an analogy)
+const PARTS = [
+  { name: "Nucleus", es: "núcleo", like: "a control center", job: "holds the DNA and directs the cell" },
+  { name: "Cell membrane", es: "membrana celular", like: "a security gate", job: "controls what goes in and out" },
+  { name: "Mitochondria", es: "mitocondria", like: "a power plant", job: "turns food into energy" },
+  { name: "Chloroplast", es: "cloroplasto", like: "a solar panel", job: "uses sunlight to make food (plants)" },
+];
+const JOB_ORDER = [2, 0, 3, 1];
 
 const MYTHS = [
-  { t: "Fancier, more realistic manipulatives work better.", a: false, why: "Plain, simple tools did far better on retention (effect size ≈ 0.80) than realistic, decorative ones (≈ 0.27). Flashy details distract from the math." },
-  { t: "Students learn just by exploring with the tools.", a: false, why: "With high teacher guidance the effect on problem solving was ≈ 1.06; with low guidance, ≈ 0.04. Tools don't teach by themselves: model it, guide it, then release it." },
-  { t: "Manipulatives are for the “low” kids.", a: false, why: "Offer them to everyone (that's UDL), and make them grown-up: “these are models, like engineers and architects use.” Advanced students use them to justify and generalize." },
+  { t: "Fancier, more realistic models work better.", why: "In a meta-analysis of 55 studies, plain, simple tools did far better on retention (≈ 0.80) than realistic, decorative ones (≈ 0.27). Flashy details distract." },
+  { t: "Students learn just by exploring with the models.", why: "High teacher guidance (≈ 1.06) far outperformed free exploration (≈ 0.04). Model it, guide it, then release it, and always connect it to words and symbols." },
+  { t: "Hands-on models are for the “low” kids.", why: "Offer them to everyone (that's UDL) and make them grown-up: “scientists and engineers build models too.” Advanced students use them to explain and predict." },
 ];
 
-/** Algebra tiles + the drawn sketch + the equation for the current state of 2x + 3 = 7 */
-function tileView(): string {
-  const xs = state.split ? 1 : 2;
-  const r = state.split ? state.right / 2 : state.right;
-  const tiles = (n: number, cls: string) => Array.from({ length: n }, () => `<i class="${cls}"></i>`).join("");
-  const side = (x: number, u: number) => `<div class="mn-side">${tiles(x, "mn-x")}${tiles(u, "mn-u")}</div>`;
-  const sketch = (x: number, u: number) => `${"▭".repeat(x)}${u ? " " + "•".repeat(u) : ""}`;
-  const eq = state.split ? "x = 2" : `2x${state.units ? ` + ${state.units}` : ""} = ${state.right}`;
+const count = (id: string) => state.atoms.filter((a) => a === id).length;
+const isWater = () => count("H") === 2 && count("O") === 1;
+
+function moleculeView(): string {
+  const h = count("H");
+  const o = count("O");
+  const done = isWater();
+  const bead = (id: string) => {
+    const b = BEADS.find((x) => x.id === id)!;
+    return `<i class="mn-bead" style="background:${b.color};color:${b.text}">${id}</i>`;
+  };
+  const drawn = done ? "H — O — H" : state.atoms.length ? state.atoms.join(" — ") : "…";
+  const formula = done ? "H<sub>2</sub>O" : `${h ? `H${h > 1 ? `<sub>${h}</sub>` : ""}` : ""}${o ? "O" : ""}` || "?";
   return `
     <div class="mn-cra">
       <div class="mn-col"><span class="mn-tag">Concrete · build it</span>
-        <div class="mn-mat ${state.tipped ? "tipped" : ""}">${side(xs, state.split ? 0 : state.units)}<div class="mn-eq">=</div>${side(0, r)}</div>
+        <div class="mn-mol ${done ? "done" : ""}">${state.atoms.map(bead).join("") || `<span class="mn-empty">tap the beads below to add atoms</span>`}</div>
       </div>
-      <div class="mn-col"><span class="mn-tag">Representational · draw it</span>
-        <div class="mn-sketch">${sketch(xs, state.split ? 0 : state.units)} <b>=</b> ${"•".repeat(r)}</div>
-      </div>
-      <div class="mn-col"><span class="mn-tag">Abstract · write it</span>
-        <div class="mn-alg">${eq}</div>
-      </div>
+      <div class="mn-col"><span class="mn-tag">Representational · draw it</span><div class="mn-sketch">${drawn}</div></div>
+      <div class="mn-col"><span class="mn-tag">Abstract · write it</span><div class="mn-alg">${formula}</div></div>
     </div>`;
 }
 
 const STEPS: LessonStep[] = [
   {
-    title: "Zero pairs",
+    title: "Show before tell",
     say:
-      "Welcome to the lab! I teach 6th grade science, and today I'm facilitating part of our ELD PD: Using Manipulatives to Support MLLs. Grab some counters: yellow is +1, red is −1. Let's solve −3 + 5. Tap a red counter to pair it with a yellow one. Each pair cancels out!",
-    body: () => {
-      const reds = 3 - state.pairs;
-      const yellows = 5 - state.pairs;
-      const counters =
-        Array.from({ length: reds }, () => `<button type="button" class="mn-c red" data-pair>−1</button>`).join("") +
-        Array.from({ length: yellows }, () => `<span class="mn-c yel">+1</span>`).join("");
-      return `
-      <div class="mn-tray">
-        <div class="mn-counters">${counters}</div>
-        <div class="mn-zeros">${Array.from({ length: state.pairs }, () => `<span class="mn-zp"><i class="red"></i><i class="yel"></i> = 0</span>`).join("")}</div>
+      "Welcome to the lab! I teach 6th grade science, and today I'm facilitating part of our ELD PD: Using Manipulatives to Support MLLs. Every table gets real rock samples and a hand lens. Tap 🔍 on each rock to look closely, then sort it.",
+    body: () => `
+      <div class="mn-rocks">
+        ${ROCKS.map((r, i) => {
+          const seen = state.looked.has(i);
+          const pick = state.rockType.get(i);
+          const right = pick === r.a;
+          return `<div class="mn-rock ${right ? "good" : pick !== undefined ? "bad" : ""}">
+            <div class="mn-stone ${r.stripes}" style="--c:${r.color}"></div>
+            <b>${r.name}</b>
+            ${
+              seen
+                ? `<small>${r.see}</small>
+                   ${
+                     right
+                       ? `<small class="ok">✓ ${ROCK_TYPES[r.a]} (<i>${r.es}</i>)</small>`
+                       : `<div class="lo-btns">${ROCK_TYPES.map((t, k) => `<button type="button" data-rock="${i}" data-v="${k}">${t}</button>`).join("")}</div>`
+                   }`
+                : `<button type="button" class="mn-lens" data-look="${i}">🔍 Look closely</button>`
+            }
+          </div>`;
+        }).join("")}
       </div>
       ${
-        state.pairs === 3
-          ? `<div class="al-q"><b>What's left? So −3 + 5 = …</b>
-              <div class="lo-btns">${["+2", "−2", "+8"].map((o, k) => `<button type="button" class="${state.left === k ? (k === 0 ? "right" : "wrong") : ""}" data-left="${k}">${o}</button>`).join("")}</div>
-              ${state.left === 0 ? "" : state.left > 0 ? `<small class="no">Count the counters still on the tray.</small>` : ""}
-            </div>`
+        ROCKS.every((r, i) => state.rockType.get(i) === r.a)
+          ? `<div class="lo-reveal"><p><b>Everyone held the same rocks</b>, so “this one has lines” (plus pointing) worked before the word <i>layers</i> did. Then the teacher attaches the academic term. MLLs can <b>show before they tell</b>.</p></div>`
           : ""
-      }
+      }`,
+    wire: (root) => {
+      root.querySelectorAll<HTMLElement>("[data-look]").forEach((b) =>
+        b.addEventListener("click", () => {
+          state.looked.add(Number(b.dataset.look));
+          rerender();
+        })
+      );
+      root.querySelectorAll<HTMLElement>("[data-rock]").forEach((b) =>
+        b.addEventListener("click", () => {
+          state.rockType.set(Number(b.dataset.rock), Number(b.dataset.v));
+          rerender();
+        })
+      );
+    },
+    ready: () => ROCKS.every((r, i) => state.rockType.get(i) === r.a),
+    need: "Look at and sort all three rocks",
+  },
+  {
+    title: "Build a molecule",
+    say:
+      "Now build a water molecule with bead atoms. Watch the drawing and the formula change as you build: that's CRA, concrete → representational → abstract. Don't skip the drawing!",
+    body: () => {
+      const done = isWater();
+      return `
+      ${moleculeView()}
+      <div class="mn-moves">
+        ${BEADS.map((b) => `<button type="button" data-bead="${b.id}" ${done ? "disabled" : ""}><i class="mn-bead sm" style="background:${b.color};color:${b.text}">${b.id}</i> Add ${b.name.toLowerCase()}</button>`).join("")}
+        <button type="button" data-clear ${state.atoms.length && !done ? "" : "disabled"}>↺ Clear</button>
+      </div>
+      <div class="mn-say ${state.atomMsg.startsWith("⚠") ? "warn" : ""}">${state.atomMsg || "🗣️ Water is made of hydrogen and oxygen. How many of each?"}</div>
       ${
-        state.left === 0
-          ? `<div class="lo-reveal"><p><b>+2!</b> Everyone looked at the <b>same objects</b>, and pointing at “this one” worked before the English did. Then the teacher attaches the term: <i>that's a <b>zero pair</b></i>. MLLs can <b>show before they tell</b>.</p></div>`
+        done
+          ? `<p class="lo-tip">Frames by level · <b>E:</b> “Water has ___ hydrogen and ___ oxygen.” · <b>X:</b> “When ___ combines with ___, it forms ___.” · <b>B:</b> “A water molecule forms when two hydrogen atoms bond to one oxygen atom, which is why its formula is ___.”</p>`
           : ""
       }`;
     },
     wire: (root) => {
-      root.querySelectorAll<HTMLElement>("[data-pair]").forEach((b) =>
+      root.querySelectorAll<HTMLElement>("[data-bead]").forEach((b) =>
         b.addEventListener("click", () => {
-          state.pairs = Math.min(3, state.pairs + 1);
-          rerender();
-        })
-      );
-      root.querySelectorAll<HTMLElement>("[data-left]").forEach((b) =>
-        b.addEventListener("click", () => {
-          state.left = Number(b.dataset.left);
-          rerender();
-        })
-      );
-    },
-    ready: () => state.left === 0,
-    need: "Cancel the zero pairs and answer",
-  },
-  {
-    title: "The algebra tile workbench",
-    say:
-      "Now solve 2x + 3 = 7 with algebra tiles: the long tiles are x, the small squares are 1. Watch the drawing and the equation change with every move. That's CRA: concrete, representational, abstract. And say each move out loud!",
-    body: () => `
-      ${tileView()}
-      <div class="mn-moves">
-        <button type="button" data-move="both" ${state.units === 0 || state.split ? "disabled" : ""}>➖ Take 1 unit from <b>both</b> sides</button>
-        <button type="button" data-move="left" ${state.units === 0 || state.split ? "disabled" : ""}>➖ Take 1 unit from the left side only</button>
-        <button type="button" data-move="split" ${state.units !== 0 || state.split ? "disabled" : ""}>✂️ Split both sides into 2 equal groups</button>
-      </div>
-      <div class="mn-say ${state.tipped ? "warn" : ""}">${state.said || "🗣️ Make a move…"}</div>
-      ${
-        state.split
-          ? `<p class="lo-tip">Frames by level · <b>E:</b> “I take away ___ from both sides.” · <b>X:</b> “I removed ___ units from both sides to keep it balanced.” · <b>B:</b> “To isolate the variable, I subtracted ___, then divided into ___ equal groups because the coefficient is ___.” Don't skip the drawing: it's the bridge students need most (Witzel et al., 2003).</p>`
-          : ""
-      }`,
-    wire: (root) => {
-      root.querySelectorAll<HTMLElement>("[data-move]").forEach((b) =>
-        b.addEventListener("click", () => {
-          const m = b.dataset.move;
-          if (m === "left") {
-            state.tipped = true;
-            state.said = "⚖️ Unbalanced! Whatever you do to one side, you must do to the other. (Try the two-hands “scale” gesture with your students.)";
-          } else if (m === "both") {
-            state.tipped = false;
-            state.units--;
-            state.right--;
-            state.said = `🗣️ “I removed 1 unit from both sides to keep the equation balanced.”${state.units === 0 ? " Now the x-tiles are alone." : ""}`;
-          } else if (m === "split") {
-            state.split = true;
-            state.said = "🗣️ “I split both sides into 2 equal groups because the coefficient is 2. One x-tile equals 2 units: x = 2!”";
+          const id = b.dataset.bead!;
+          if (id === "C") state.atomMsg = "⚠️ Carbon isn't part of water. That one belongs in CO₂ (carbon dioxide)!";
+          else if ((id === "H" && count("H") >= 2) || (id === "O" && count("O") >= 1)) state.atomMsg = `⚠️ Water only has ${id === "H" ? "two hydrogen atoms" : "one oxygen atom"}.`;
+          else {
+            state.atoms.push(id);
+            if (isWater()) {
+              state.atoms = ["H", "O", "H"];
+              state.atomMsg = "🗣️ “When two hydrogen atoms combine with one oxygen atom, they form a water molecule: H₂O!”";
+            } else state.atomMsg = `🗣️ “I added ${id === "H" ? "a hydrogen" : "an oxygen"} atom.”`;
           }
           rerender();
         })
       );
+      root.querySelector("[data-clear]")?.addEventListener("click", () => {
+        state.atoms = [];
+        state.atomMsg = "";
+        rerender();
+      });
     },
-    ready: () => state.split,
-    need: "Solve for x",
+    ready: () => isWater(),
+    need: "Build H₂O",
   },
   {
-    title: "Stock the tool bin",
+    title: "The cell model",
     say:
-      "Manipulatives aren't just for math. In my science room we use rocks, cell models and bead atoms too. Tap a tool, then tap what it teaches.",
+      "Models give students something to talk ABOUT. Tap a part of the cell model, then tap its job. Each match becomes an analogy frame: “The ___ is like a ___ because it ___.”",
     body: () => `
       <div class="mn-bin">
-        <div class="mn-list">
-          ${TOOLS.map((t, i) => {
-            const done = state.linked.has(i);
-            return `<button type="button" class="mn-tool ${done ? "done" : state.pickTool === i ? "on" : ""} ${state.wrongLink === "t" + i ? "shake" : ""}" data-tool="${i}" ${done ? "disabled" : ""}><span>${t.icon}</span>${t.name}${done ? `<small>${esc(t.word)}</small>` : ""}</button>`;
-          }).join("")}
+        <div class="mn-cellwrap">
+          <div class="mn-cell">
+            ${PARTS.map((p, i) => `<button type="button" class="mn-part p${i} ${state.linked.has(i) ? "done" : state.pickPart === i ? "on" : ""}" data-part="${i}" ${state.linked.has(i) ? "disabled" : ""}>${p.name}</button>`).join("")}
+          </div>
         </div>
         <div class="mn-list">
-          ${WHAT_ORDER.map((i) => {
-            const done = [...state.linked.values()].includes(i);
-            return `<button type="button" class="mn-what ${done ? "done" : ""} ${state.wrongLink === "w" + i ? "shake" : ""}" data-what="${i}" ${done ? "disabled" : ""}>${esc(TOOLS[i].what)}</button>`;
+          ${JOB_ORDER.map((i) => {
+            const p = PARTS[i];
+            const done = state.linked.has(i);
+            return `<button type="button" class="mn-what ${done ? "done" : ""} ${state.wrongJob === i ? "shake" : ""}" data-job="${i}" ${done ? "disabled" : ""}>${
+              done ? `The <b>${p.name.toLowerCase()}</b> (<i>${p.es}</i>) is like ${p.like} because it ${p.job}.` : esc(p.job.charAt(0).toUpperCase() + p.job.slice(1))
+            }</button>`;
           }).join("")}
         </div>
       </div>
-      ${state.linked.size === TOOLS.length ? `<p class="lo-tip">Label every bin <b>bilingually</b> with cognates (<i>cube / cubo, fraction / fracción, tile / teja</i>), and post each tool on the word wall with the vocabulary and a frame it teaches.</p>` : ""}`,
+      ${state.linked.size === PARTS.length ? `<p class="lo-tip">Label models <b>bilingually</b>: so many science words are cognates (<i>célula, núcleo, átomo, molécula, energía</i>). Post each model on the word wall with its vocabulary and a frame.</p>` : ""}`,
     wire: (root) => {
-      root.querySelectorAll<HTMLElement>("[data-tool]").forEach((b) =>
+      root.querySelectorAll<HTMLElement>("[data-part]").forEach((b) =>
         b.addEventListener("click", () => {
-          state.pickTool = Number(b.dataset.tool);
-          state.wrongLink = "";
+          state.pickPart = Number(b.dataset.part);
+          state.wrongJob = -1;
           rerender();
         })
       );
-      root.querySelectorAll<HTMLElement>("[data-what]").forEach((b) =>
+      root.querySelectorAll<HTMLElement>("[data-job]").forEach((b) =>
         b.addEventListener("click", () => {
-          const w = Number(b.dataset.what);
-          if (state.pickTool < 0) return;
-          if (state.pickTool === w) {
-            state.linked.set(state.pickTool, w);
-            state.wrongLink = "";
-          } else state.wrongLink = "w" + w;
-          state.pickTool = -1;
+          const j = Number(b.dataset.job);
+          if (state.pickPart < 0) return;
+          if (state.pickPart === j) {
+            state.linked.add(j);
+            state.wrongJob = -1;
+          } else state.wrongJob = j;
+          state.pickPart = -1;
           rerender();
         })
       );
     },
-    ready: () => state.linked.size === TOOLS.length,
-    need: "Match all five tools",
+    ready: () => state.linked.size === PARTS.length,
+    need: "Match all four parts",
   },
   {
     title: "Myth busters",
-    say: "Let's check the research (a meta-analysis of 55 studies, 7,237 students). True or false?",
+    say: "Let's check the research. True or false?",
     body: () => `
       <div class="mn-myths">
         ${MYTHS.map((m, i) => {
           const pick = state.myths.get(i);
-          const right = pick === m.a;
+          const right = pick === false;
           return `<div class="lo-card wide ${pick !== undefined ? (right ? "good" : "bad") : ""}">
             <p>“${esc(m.t)}”</p>
             ${
               right
                 ? `<small>❌ Myth! ${esc(m.why)}</small>`
                 : `<div class="lo-btns"><button type="button" data-myth="${i}" data-v="1">True</button><button type="button" data-myth="${i}" data-v="0">False</button></div>
-                   ${pick !== undefined ? `<small class="lo-try">Hmm, that's what many people think. Look again!</small>` : ""}`
+                   ${pick !== undefined ? `<small class="lo-try">That's what many people think. Look again!</small>` : ""}`
             }
           </div>`;
         }).join("")}
@@ -221,21 +242,21 @@ const STEPS: LessonStep[] = [
         })
       );
     },
-    ready: () => MYTHS.every((m, i) => state.myths.get(i) === m.a),
+    ready: () => MYTHS.every((_, i) => state.myths.get(i) === false),
     need: "Bust all three myths",
   },
   {
     title: "You're a Master Builder!",
     say:
-      "Great building! A model a student built is real evidence of learning, even before they can explain it in English. Hands on the tools, words in their mouths!",
+      "Great work, scientist! A model a student built is real evidence of learning, even before they can explain it in English. Hands on the models, words in their mouths!",
     body: () => `
-      <div class="lo-badge"><span>🧱</span><div><b>Master Builder</b><small>Manipulatives for MLLs · ELD PD with Mr. Stauffer</small></div></div>
+      <div class="lo-badge"><span>🔬</span><div><b>Master Builder</b><small>Manipulatives for MLLs · ELD PD with Mr. Stauffer</small></div></div>
       <div class="go-route mn-route"><span>🧱 Show it</span>→<span>🗣️ Say it</span>→<span>✏️ Draw it</span>→<span>✍️ Write it</span></div>
       <ul class="lo-takeaways">
-        <li><b>Concrete → drawing → symbols.</b> Don't skip the drawing, and connect every move to the equation.</li>
+        <li><b>Real objects and simple models:</b> rock kits, bead or molecule kits, cell models, a water cycle in a zip bag, magnets, balances and masses.</li>
+        <li><b>Concrete → drawing → symbols.</b> Don't skip the drawing, and connect it to the scientific words.</li>
         <li><b>High guidance, plain tools.</b> Model it, guide it, release it.</li>
-        <li><b>Pair every move with language:</b> partners narrate (Builder / Recorder), with frames and a word bank.</li>
-        <li><b>Physical first, virtual for practice:</b> free tools like Polypad, Desmos and Didax have algebra tiles, counters and fraction bars.</li>
+        <li><b>Pair every move with language:</b> partners narrate (Builder / Recorder) with frames, or describe a hidden model for a partner to rebuild.</li>
       </ul>`,
   },
 ];
@@ -247,4 +268,7 @@ export const MANIPULATIVES_LESSON: LessonDef = {
   teacher: "Mr. Stauffer",
   portrait: staufferPortrait,
   steps: STEPS,
+  reset: () => {
+    state = fresh();
+  },
 };

@@ -11,13 +11,14 @@
 import blessingPortrait from "./assets/blessing_portrait.png";
 import { esc, rerender, type LessonDef, type LessonStep } from "./lessonEngine";
 
-const state = {
+const fresh = () => ({
   organized: false,
   both: -1,
   match: new Map<number, number>(),
   signals: new Map<number, number>(),
   upgrades: new Set<number>(),
-};
+});
+let state = fresh();
 
 const BOTH_OPTS = ["Chinampas (floating farms)", "Pyramids and calendars", "A writing system with glyphs"];
 
@@ -209,4 +210,7 @@ export const ORGANIZERS_LESSON: LessonDef = {
   teacher: "Ms. Blessing",
   portrait: blessingPortrait,
   steps: STEPS,
+  reset: () => {
+    state = fresh();
+  },
 };

@@ -24,6 +24,8 @@ export interface LessonDef {
   teacher: string;
   portrait: string;
   steps: LessonStep[];
+  /** Clear everything the player did (the "Start over" button) */
+  reset: () => void;
 }
 
 export const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -106,6 +108,8 @@ export function openLessonDef(def: LessonDef, alreadyDone: boolean, complete: ()
       <div class="lo-main"></div>
       <div class="lo-foot">
         <button type="button" class="lo-back">← Back</button>
+        <button type="button" class="lo-reset" title="Start the assignment over from the first station">↺ Start over</button>
+        <span class="lo-confirm" hidden>Start over from station 1? <button type="button" class="lo-yes">Yes, start over</button><button type="button" class="lo-no">No</button></span>
         <span class="lo-need"></span>
         <button type="button" class="lo-next">Next →</button>
       </div>
@@ -113,6 +117,24 @@ export function openLessonDef(def: LessonDef, alreadyDone: boolean, complete: ()
   document.body.appendChild(overlay);
   const id = def.roomId;
   overlay.querySelector(".lo-close")!.addEventListener("click", closeLesson);
+  // Start over: a quick confirm right in the footer, then every station is fresh again
+  const confirmBar = overlay.querySelector<HTMLElement>(".lo-confirm")!;
+  const resetBtn = overlay.querySelector<HTMLElement>(".lo-reset")!;
+  resetBtn.addEventListener("click", () => {
+    confirmBar.hidden = false;
+    resetBtn.hidden = true;
+  });
+  const hideConfirm = () => {
+    confirmBar.hidden = true;
+    resetBtn.hidden = false;
+  };
+  overlay.querySelector(".lo-no")!.addEventListener("click", hideConfirm);
+  overlay.querySelector(".lo-yes")!.addEventListener("click", () => {
+    def.reset();
+    stepOf.set(id, 0);
+    hideConfirm();
+    rerender();
+  });
   overlay.querySelector(".lo-back")!.addEventListener("click", () => {
     stepOf.set(id, Math.max(0, (stepOf.get(id) ?? 0) - 1));
     rerender();

@@ -11,7 +11,7 @@
 import kurisuPortrait from "./assets/kurisu_portrait.png";
 import { esc, rerender, type LessonDef, type LessonStep } from "./lessonEngine";
 
-const state = {
+const fresh = () => ({
   guess: -1,
   flips: new Set<number>(),
   wordOrder: -1,
@@ -21,7 +21,8 @@ const state = {
   zoo: -1,
   found: new Set<string>(),
   miss: "",
-};
+});
+let state = fresh();
 
 const GUESSES = ["About 10%", "About 25%", "About 40%"];
 
@@ -257,4 +258,7 @@ export const ALGEBRA_LESSON: LessonDef = {
   teacher: "Mr. Kurisu",
   portrait: kurisuPortrait,
   steps: STEPS,
+  reset: () => {
+    state = fresh();
+  },
 };
