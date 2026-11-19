@@ -53,7 +53,7 @@ const ASSIGNMENTS: Record<string, AssignmentContent> = {
 /** The teacher of a classroom, if one has been set up (for the student agenda) */
 /** The teacher character standing in a classroom (npcs.ts), if it has one */
 function classroomNpc(roomId: string) {
-  return NPCS.find((n) => n.room === "classroom" && n.classroomId === roomId);
+  return NPCS.find((n) => (n.room === "classroom" && n.classroomId === roomId) || n.teaches === roomId);
 }
 
 export function teacherFor(roomId: string): string | undefined {

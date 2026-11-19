@@ -51,6 +51,8 @@ export interface NpcDef {
    */
   room: "mpr" | "campus" | "classroom";
   classroomId?: string;
+  /** A teacher who stands somewhere else (not in their room): the room whose assignment carries their name/portrait */
+  teaches?: string;
   x: number;
   z: number;
   /** Rotation about Y in radians (0 faces +z, PI faces -z) */
@@ -234,7 +236,7 @@ export const NPC_KURISU: NpcDef = {
   profile: {
     ...getDefaultProfile(),
     name: "Mr. Kurisu",
-    title: "8th Grade Math Teacher",
+    title: "8th Grade Math Teacher & Grade Level Lead",
     noHomeroom: true,
     gender: "masculine",
     look: "masc-suit",
@@ -1190,7 +1192,7 @@ export const NPC_WEBER: NpcDef = {
   profile: {
     ...getDefaultProfile(),
     name: "Mrs. Weber",
-    title: "7th Grade English Teacher",
+    title: "7th Grade English Teacher & Grade Level Lead",
     noHomeroom: true,
     gender: "feminine",
     look: "fem-casual",
@@ -1411,7 +1413,7 @@ export const NPC_GILLETT: NpcDef = {
   profile: {
     ...getDefaultProfile(),
     name: "Ms. Gillett",
-    title: "6th Grade English Teacher",
+    title: "6th Grade English Teacher & Grade Level Lead",
     noHomeroom: true,
     gender: "feminine",
     look: "fem-casual",
@@ -1667,23 +1669,23 @@ export const NPC_MARTINEZ: NpcDef = {
 };
 
 /**
- * Mrs. Trae, the 5th grade USC science teacher, standing in front of the whiteboard in her classroom (talk to her for
- * the assignment). Matches her portrait: long, straight black hair with a center part, a green-and-white striped
+ * Mrs. Trae, a founding member of the school: the 5th grade USC science teacher, grade level lead and an administrator.
+ * She stands beside Mr. Perry, on his left (her room's assignment is on its whiteboard and still carries her name).
+ * Matches her portrait: long, straight black hair with a center part, a green-and-white striped
  * button-up shirt.
  */
 export const NPC_TRAE: NpcDef = {
   id: "npc-trae",
-  room: "classroom",
-  classroomId: "5th-usc-science",
-  x: 0, // set from the classroom's whiteboard
-  z: 0,
-  rotY: 0, // facing the class
+  room: "campus",
+  teaches: "5th-usc-science",
+  x: 3.31, // a step to Mr. Perry's left (he is at 2.4, 8.8 facing rotY 0.8)
+  z: 7.87,
+  rotY: 0.8, // looking out toward the field with him
   talkRange: 2.2,
-  chatFirst: true,
   profile: {
     ...getDefaultProfile(),
     name: "Mrs. Trae",
-    title: "5th Grade Science Teacher",
+    title: "5th Grade Science Teacher, Grade Level Lead & Administrator",
     noHomeroom: true,
     gender: "feminine",
     look: "fem-suit", // jacket + shirt printed as one long-sleeved striped shirt
@@ -1705,11 +1707,10 @@ export const NPC_TRAE: NpcDef = {
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Hello and welcome! I'm Mrs. Trae, and I teach 5th grade science here in USC.",
-          "Your assignment is ready whenever you are. Come explore with us!",
+          "(Sample text) Hello and welcome! I'm Mrs. Trae. I've been here since the very beginning: I'm one of Valor's founding members.",
+          "I teach 5th grade science in USC, I'm the 5th grade level lead, and I'm part of the administration team. My room's assignment is on the whiteboard upstairs!",
         ],
         options: [
-          { label: "Show me the assignment!", action: "open-assignment" },
           { label: "What are your students learning?", next: "learn" },
           { label: "Thanks, Mrs. Trae!", next: "bye" },
         ],
@@ -1720,7 +1721,6 @@ export const NPC_TRAE: NpcDef = {
           "My students observe, record what they see in their science journals, and explain it to a partner with sentence frames. Every student is a scientist here, especially my English learners!",
         ],
         options: [
-          { label: "Show me the assignment!", action: "open-assignment" },
           { label: "I have another question", next: "root" },
           { label: "Thanks, Mrs. Trae!", next: "bye" },
         ],

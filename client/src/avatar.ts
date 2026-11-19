@@ -163,7 +163,17 @@ function makeNameTagTexture(name: string, homeroom: Homeroom, noHomeroom = false
     ctx.font = "bold 36px system-ui, -apple-system, Segoe UI, sans-serif";
     const nameW = ctx.measureText(name).width;
     ctx.font = "600 23px system-ui, -apple-system, Segoe UI, sans-serif";
-    const titleW = ctx.measureText(title).width;
+    // a title too long for one line goes on two, split after a comma (else at the space) nearest the middle
+    let lines = [title];
+    if (ctx.measureText(title).width > 444) {
+      const cuts = [...title.matchAll(/, /g)].map((m) => m.index! + 1);
+      const spaces = [...title.matchAll(/ /g)].map((m) => m.index!);
+      const pick = (cuts.length ? cuts : spaces).reduce((a, b) => (Math.abs(b - title.length / 2) < Math.abs(a - title.length / 2) ? b : a));
+      lines = [title.slice(0, pick).trim(), title.slice(pick).trim()];
+    }
+    const titleFont = lines.length > 1 ? "600 21px system-ui, -apple-system, Segoe UI, sans-serif" : ctx.font;
+    ctx.font = titleFont;
+    const titleW = Math.max(...lines.map((l) => ctx.measureText(l).width));
     const w = Math.min(500, Math.max(220, Math.ceil(Math.max(nameW, titleW) + 56)));
     const h = 108;
     const x = (c.width - w) / 2;
@@ -185,10 +195,15 @@ function makeNameTagTexture(name: string, homeroom: Homeroom, noHomeroom = false
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 36px system-ui, -apple-system, Segoe UI, sans-serif";
-    ctx.fillText(name, c.width / 2, y + 38);
+    const two = lines.length > 1;
+    if (two) ctx.font = "bold 32px system-ui, -apple-system, Segoe UI, sans-serif";
+    ctx.fillText(name, c.width / 2, y + (two ? 28 : 38));
     ctx.fillStyle = "#facc15";
-    ctx.font = "600 23px system-ui, -apple-system, Segoe UI, sans-serif";
-    ctx.fillText(title, c.width / 2, y + 78);
+    ctx.font = titleFont;
+    if (two) {
+      ctx.fillText(lines[0], c.width / 2, y + 62);
+      ctx.fillText(lines[1], c.width / 2, y + 87);
+    } else ctx.fillText(title, c.width / 2, y + 78);
     const t = new THREE.CanvasTexture(c);
     t.needsUpdate = true;
     return t;

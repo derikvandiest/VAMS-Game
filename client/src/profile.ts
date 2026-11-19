@@ -189,7 +189,7 @@ export function sanitizeProfile(raw: unknown): CharacterProfile {
     // older saves had no outfit color: they were tinted with the homeroom color, so keep that look
     outfitColor: isHex(p.outfitColor) ? p.outfitColor : npc ? "" : HOMEROOM_INFO[homeroom].shirtColor,
     noHomeroom: npc,
-    title: npc && typeof p.title === "string" ? p.title.slice(0, 40) : "",
+    title: npc && typeof p.title === "string" ? p.title.slice(0, 80) : "",
     backpack: isHex(p.backpack) ? p.backpack : "",
     ...(npc && p.partColors && typeof p.partColors === "object"
       ? { partColors: Object.fromEntries(Object.entries(p.partColors as Record<string, unknown>).filter(([, v]) => isHex(v))) as Record<string, string> }
