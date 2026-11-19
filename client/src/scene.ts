@@ -176,7 +176,13 @@ export function startPlaceholderScene(
   const LEDGE_PAD = { x0: -14, x1: -11.95, z0: 14.6, z1: 23.95, h: 0.16 }; // stops short of the walkway posts
   /** All the ankle-high ledges: the long one (beside the 7th UCLA door) and, after a short gap, a little one beside the
    *  7th LMU door (the drinking fountain stands in the gap between them) */
-  const LEDGE_PADS = [LEDGE_PAD, { x0: -14, x1: -11.95, z0: 25.0, z1: 27.6, h: 0.16 }];
+  const LEDGE_PADS: Array<{ x0: number; x1: number; z0: number; z1: number; h: number; squareZ0?: boolean }> = [
+    LEDGE_PAD,
+    { x0: -14, x1: -11.95, z0: 25.0, z1: 27.6, h: 0.16 },
+    // along the east side of the 5th/8th grade wing's stairs, from the building wall to the bottom step (square where
+    // it meets the wall, rounded at the far corner)
+    { x0: 44.55, x1: 46.0, z0: -2, z1: 7.0, h: 0.16, squareZ0: true },
+  ];
   const onLedgePad = (px: number, pz: number): boolean =>
     LEDGE_PADS.some((P) => px >= P.x0 && px <= P.x1 && pz >= P.z0 && pz <= P.z1);
   const floor2 = roofY + 0.1; // walkable second-floor surface height
@@ -6321,8 +6327,11 @@ export function startPlaceholderScene(
       const sh = new THREE.Shape();
       // shape in (x, -z) so that after rotating it flat (rotation.x = -PI/2) it lies in x/z
       sh.moveTo(P.x0, -P.z0);
-      sh.lineTo(P.x1 - r, -P.z0);
-      sh.quadraticCurveTo(P.x1, -P.z0, P.x1, -P.z0 - r);
+      if (P.squareZ0) sh.lineTo(P.x1, -P.z0);
+      else {
+        sh.lineTo(P.x1 - r, -P.z0);
+        sh.quadraticCurveTo(P.x1, -P.z0, P.x1, -P.z0 - r);
+      }
       sh.lineTo(P.x1, -P.z1 + r);
       sh.quadraticCurveTo(P.x1, -P.z1, P.x1 - r, -P.z1);
       sh.lineTo(P.x0, -P.z1);
