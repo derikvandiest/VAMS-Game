@@ -6361,13 +6361,14 @@ export function startPlaceholderScene(
       pad.receiveShadow = true;
       scene.add(pad);
     }
-    const addBench = (along: number, color: number, wall: "west" | "westOut" | "north" | "breezeway" = "west", len = BENCH_LEN, memorial?: ChairSlot["memorial"]): void => {
+    const addBench = (along: number, color: number, wall: "west" | "westOut" | "north" | "breezeway" | "stairs" = "west", len = BENCH_LEN, memorial?: ChairSlot["memorial"]): void => {
       const wood = new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
       const bench = new THREE.Group();
       const breeze = wall === "breezeway";
       const north = wall === "north" || breeze; // both run along x
-      const out = wall === "westOut";
-      const bx = north ? along : out ? -30.3 : BENCH_X; // the outside wall's face is at x = -30
+      const stairSide = wall === "stairs"; // on the ankle ledge west of the 5th/8th grade wing stairs, facing west
+      const out = wall === "westOut" || stairSide;
+      const bx = north ? along : stairSide ? 42.45 : out ? -30.3 : BENCH_X; // the outside wall's face is at x = -30
       const bz = breeze ? -2.3 : north ? BENCH_NORTH_Z : along;
       const benchY = onLedgePad(bx, bz) ? LEDGE_PAD.h : 0; // standing on the ankle-high ledge
       bench.position.set(bx, benchY, bz);
@@ -6401,7 +6402,7 @@ export function startPlaceholderScene(
             : north
               ? { exitX: sx, exitZ: -0.7 }
               : out
-                ? { exitX: -31.1, exitZ: sz }
+                ? { exitX: stairSide ? 41.2 : -31.1, exitZ: sz }
                 : { exitX: -12.7, exitZ: sz },
           memorial,
           floorY: benchY,
@@ -6412,6 +6413,9 @@ export function startPlaceholderScene(
     addBench(8.5, 0xf47a20, "west", BENCH_LEN, { line1: "In memory of Ted Christiansen", line2: "ELA Teacher" });
     addBench(16.6, 0x2563eb); // two blue benches in a row (with a gap) between the 7th UCLA and 7th LMU doors
     addBench(20.0, 0x2563eb);
+    // two on the ankle ledge beside the 5th/8th grade wing stairs, facing the field side
+    addBench(3.2, 0x2563eb, "stairs");
+    addBench(5.7, 0x2563eb, "stairs");
     // two more on the 7th USC classroom's outside wall inside the campus: the end wall facing the entrance
     // breezeway (just inside the gate), spaced apart
     addBench(-25.0, 0x2563eb, "breezeway");
