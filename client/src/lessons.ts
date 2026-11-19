@@ -10,6 +10,11 @@ export { isLessonOpen, closeLesson } from "./lessonEngine";
 
 const LESSONS: Record<string, LessonDef> = Object.fromEntries([OBJECTIVES_LESSON, GRADING_LESSON, ALGEBRA_LESSON, ORGANIZERS_LESSON, MANIPULATIVES_LESSON].map((l) => [l.roomId, l]));
 
+/** The topic of a room's assignment (its lesson's title), if it has one yet */
+export function lessonTitle(roomId: string): string | undefined {
+  return LESSONS[roomId]?.title;
+}
+
 /** The rooms that have one of these interactive lessons */
 export function hasLesson(roomId: string): boolean {
   return roomId in LESSONS;

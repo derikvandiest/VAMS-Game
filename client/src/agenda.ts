@@ -3,6 +3,7 @@
  * what is done and what is left: the main steps of the PD (seat in the MPR, the 16 classroom assignments with their
  * teacher and floor, turning the work in, leaving campus) and the optional objectives.
  */
+import { lessonTitle } from "./lessons";
 import layout from "../../content/layout.json";
 import { loadSlot, getActiveSlotId } from "./saveManager";
 import { ROOMS } from "./rooms";
@@ -93,8 +94,9 @@ export function openAgenda(playerName: string): void {
               .map(
                 ({ g, rooms: rs }) => `<div class="ag-grade"><div class="ag-grade-title">${g}th Grade <span>${floorOf(rs[0]?.id ?? "")}</span></div>${rs
                   .map((r) => {
-                    // the classroom by its name, grade and subject, e.g. "USC · 7th Grade · English"
-                    const name = r.homeroom && r.grade && r.subject ? `${r.homeroom} · ${r.grade}th Grade · ${r.subject}` : r.label;
+                    // the classroom by its name, grade and the topic of its assignment, e.g. "USC · 7th Grade · Learning Objectives"
+                    const topic = lessonTitle(r.id);
+                    const name = r.homeroom && r.grade ? `${r.homeroom} · ${r.grade}th Grade${topic ? ` · ${topic}` : ""}` : r.label;
                     return `<div class="ag-room${done.has(r.objectiveId!) ? " done" : ""}">${box(done.has(r.objectiveId!))}<span>${esc(name)}</span></div>`;
                   })
                   .join("")}</div>`
