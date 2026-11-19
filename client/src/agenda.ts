@@ -6,7 +6,6 @@
 import layout from "../../content/layout.json";
 import { loadSlot, getActiveSlotId } from "./saveManager";
 import { ROOMS } from "./rooms";
-import { teacherFor } from "./assignments";
 import { pencilQuest, PENCILS_NEEDED, OPTIONAL, optionalDone } from "./inventory";
 
 let overlay: HTMLElement | null = null;
@@ -94,8 +93,9 @@ export function openAgenda(playerName: string): void {
               .map(
                 ({ g, rooms: rs }) => `<div class="ag-grade"><div class="ag-grade-title">${g}th Grade <span>${floorOf(rs[0]?.id ?? "")}</span></div>${rs
                   .map((r) => {
-                    const t = teacherFor(r.id);
-                    return `<div class="ag-room${done.has(r.objectiveId!) ? " done" : ""}">${box(done.has(r.objectiveId!))}<span>${esc(r.label)}${t ? ` <i>· ${esc(t)}</i>` : ""}</span></div>`;
+                    // the classroom by its name, grade and subject, e.g. "USC · 7th Grade · English"
+                    const name = r.homeroom && r.grade && r.subject ? `${r.homeroom} · ${r.grade}th Grade · ${r.subject}` : r.label;
+                    return `<div class="ag-room${done.has(r.objectiveId!) ? " done" : ""}">${box(done.has(r.objectiveId!))}<span>${esc(name)}</span></div>`;
                   })
                   .join("")}</div>`
               )
