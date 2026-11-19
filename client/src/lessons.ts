@@ -2,10 +2,11 @@
 import { openLessonDef, type LessonDef } from "./lessonEngine";
 import { OBJECTIVES_LESSON } from "./lessonObjectives";
 import { GRADING_LESSON } from "./lessonGrading";
+import { ALGEBRA_LESSON } from "./lessonAlgebra";
 
 export { isLessonOpen, closeLesson } from "./lessonEngine";
 
-const LESSONS: Record<string, LessonDef> = Object.fromEntries([OBJECTIVES_LESSON, GRADING_LESSON].map((l) => [l.roomId, l]));
+const LESSONS: Record<string, LessonDef> = Object.fromEntries([OBJECTIVES_LESSON, GRADING_LESSON, ALGEBRA_LESSON].map((l) => [l.roomId, l]));
 
 /** The rooms that have one of these interactive lessons */
 export function hasLesson(roomId: string): boolean {

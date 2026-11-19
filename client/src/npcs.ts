@@ -233,6 +233,7 @@ export const NPC_KURISU: NpcDef = {
   z: 0,
   rotY: 0, // facing the class
   talkRange: 2.2,
+  chatFirst: true,
   profile: {
     ...getDefaultProfile(),
     name: "Mr. Kurisu",
@@ -251,16 +252,34 @@ export const NPC_KURISU: NpcDef = {
     partColors: { White: KURISU_SHIRT, Tie: "#9b1b30", Black: "#2a2d33" },
   },
   portrait: kurisuPortrait,
-  // SAMPLE TEXT: replace with Mr. Kurisu's real dialogue
   dialog: {
     start: "root",
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Hi! I'm Mr. Kurisu, I teach 8th grade math here in UCLA.",
-          "Come on in when you're ready, your assignment is on the whiteboard.",
+          "Hi! I'm Mr. Kurisu, and I teach 8th grade math here in UCLA.",
+          "Today I'm facilitating part of our ELD PD: Supporting MLLs in Math, with a focus on algebra. Algebra is a language of its own, so let's crack the code. It only takes about three minutes!",
         ],
-        options: [{ label: "Thanks, Mr. Kurisu!" }],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "What are your students learning?", next: "learn" },
+          { label: "Thanks, Mr. Kurisu!", next: "bye" },
+        ],
+      },
+      learn: {
+        paragraphs: [
+          "We're writing linear equations from real situations, like phone plans and savings goals.",
+          "Every problem gets Three Reads before anyone touches the numbers, and we connect the table, the graph and the equation. My students explain their thinking with sentence frames, in English or in their home language.",
+        ],
+        options: [
+          { label: "Show me the assignment!", action: "open-assignment" },
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Mr. Kurisu!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["Thanks for stopping by! Good luck with the rest of your classrooms."],
+        options: [{ label: "See you, Mr. Kurisu!" }],
       },
     },
   },
