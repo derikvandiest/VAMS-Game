@@ -1,13 +1,12 @@
 /**
- * "Learning Objectives" — the interactive assignment Mrs. Weber facilitates in her classroom (7th grade USC English).
+ * "Learning Objectives" — a short (2–3 minute) interactive part of today's ELD PD, facilitated by Mrs. Weber in her
+ * classroom (7th grade USC English).
  *
  * Built from the ELD Director's deck on language objectives for multilingual learners (MLLs) and the CDE guidance
- * summarized in assets/Learning-Objectives-Room-Blueprint.md: the dual purpose, content vs. language objectives, the
- * 4 (+1) language domains, language function vs. demand, the formula "Students will [DO] + [USE] + [HOW]", the 3
- * quality criteria, one goal at three proficiency levels (CA ELD Standards), a write-your-own, a 2-question exit
- * ticket, and a public/private commitment.
- *
- * The exit ticket completes the assignment whatever the score (it is a check for understanding, not a test).
+ * summarized in assets/Learning-Objectives-Room-Blueprint.md, boiled down to five quick stations: the dual purpose,
+ * content (WHAT) vs. language (HOW), the formula "Students will [DO] + [USE] + [HOW]" (function, demand, domain), a
+ * quality check against the 3 criteria (the check for understanding), and a takeaway + commitment. Finishing the last
+ * station completes the assignment.
  */
 import weberPortrait from "./assets/weber_portrait.png";
 
@@ -18,15 +17,9 @@ let onDone: (() => void) | null = null;
 const state = {
   purposes: new Set<number>(),
   sortCV: new Map<number, "C" | "L">(),
-  domains: new Set<number>(),
-  sortFD: new Map<number, "F" | "D">(),
   reels: [0, 0, 0],
   spun: false,
   quality: new Map<number, number>(),
-  flips: new Set<number>(),
-  mine: { content: "", exemplar: "", objective: "", checks: [false, false, false] },
-  answers: [-1, -1],
-  submitted: false,
 };
 
 export function isLessonOpen(): boolean {
@@ -68,29 +61,10 @@ const PURPOSES = [
 ];
 
 const CV_CARDS: Array<{ t: string; a: "C" | "L"; why: string }> = [
-  { t: "Identify the causes of the American Revolution.", a: "C", why: "It names WHAT students learn (history), not the language they use." },
-  { t: "Retell the story's events to a partner using first, next, then, finally.", a: "L", why: "It names HOW: retelling out loud with sequence words." },
-  { t: "Solve two-step equations.", a: "C", why: "Pure math content: what students will be able to do." },
-  { t: "Summarize the article in writing using three key vocabulary words.", a: "L", why: "Summarizing in writing with named vocabulary is the language students use." },
-  { t: "Investigate how plants make their own food.", a: "C", why: "The science they'll learn: content." },
-  { t: "Persuade a partner using “I believe ___ because ___.”", a: "L", why: "A language function (persuade) + a frame + speaking: language." },
-];
-
-const DOMAINS = [
-  { icon: "👂", name: "Listening", d: "Students take in spoken language: a read-aloud, a partner's idea, directions.", idea: "“Listen for the two reasons your partner gives.”" },
-  { icon: "🗣️", name: "Speaking", d: "Students produce spoken language: partner talk, presenting, asking questions.", idea: "Stand Up, Hand Up, Pair Up with a sentence frame." },
-  { icon: "📖", name: "Reading", d: "Students make meaning from text: articles, word problems, lab steps.", idea: "Annotate the text for cause-and-effect words." },
-  { icon: "✍️", name: "Writing", d: "Students produce written language: sentences, paragraphs, explanations.", idea: "Write two sentences using the frame on the board." },
-  { icon: "🌎", name: "+1 Translanguaging", d: "Students use their whole language repertoire, home language included, and notice how languages connect (cognates!).", idea: "“Do you know this word in another language?”" },
-];
-
-const FD_CARDS: Array<{ t: string; a: "F" | "D" }> = [
-  { t: "Explain how a character changes", a: "F" },
-  { t: "Use because and therefore", a: "D" },
-  { t: "Compare two habitats", a: "F" },
-  { t: "The frame “Both ___ and ___, but ___”", a: "D" },
-  { t: "Justify a solution", a: "F" },
-  { t: "Precise adjectives and past-tense verbs", a: "D" },
+  { t: "Identify the causes of the American Revolution.", a: "C", why: "WHAT students learn." },
+  { t: "Retell the story's events to a partner using first, next, then, finally.", a: "L", why: "HOW: retelling out loud with sequence words." },
+  { t: "Solve two-step equations.", a: "C", why: "WHAT: math content." },
+  { t: "Persuade a partner using “I believe ___ because ___.”", a: "L", why: "HOW: a frame, spoken with a partner." },
 ];
 
 const REELS: string[][] = [
@@ -99,7 +73,6 @@ const REELS: string[][] = [
     "explain how the water cycle works",
     "justify their solution to a word problem",
     "summarize the main idea of an article",
-    "describe a historical event",
     "predict what will happen next in the story",
   ],
   [
@@ -108,7 +81,6 @@ const REELS: string[][] = [
     "using because and therefore",
     "using academic vocabulary (evidence, analyze)",
     "using precise adjectives",
-    "using complex sentences",
   ],
   [
     "by speaking with a partner",
@@ -116,48 +88,15 @@ const REELS: string[][] = [
     "by listening for key details and retelling them",
     "by reading the text, then writing two sentences",
     "in a partner discussion and an exit slip",
-    "by presenting to their table",
   ],
 ];
-const REEL_NAMES = ["DO (function)", "USE (demand)", "HOW (domain)"];
+const REEL_NAMES = ["DO · function", "USE · demand", "HOW · domain"];
 
-const QUALITY_TAGS = ["✅ Strong", "Missing the demand", "Missing the domain", "Content only"];
+const QUALITY_TAGS = ["✅ Strong", "Missing the demand", "Content only"];
 const QUALITY: Array<{ t: string; a: number; why: string }> = [
-  { t: "Students will explain how the water cycle works using the sequence words first, next, finally by speaking with a partner.", a: 0, why: "Function (explain) + demand (sequence words) + domain (speaking). All three criteria!" },
-  { t: "Students will describe the setting of the story by writing a paragraph.", a: 1, why: "We know what they DO and HOW, but not what language they need: which adjectives? which frame?" },
-  { t: "Students will compare fractions using “greater than” and “less than” and the frame “___ is greater than ___ because ___.”", a: 2, why: "Great function and demand, but will they say it, write it, or both? Name the domain." },
-  { t: "Students will identify the parts of a plant cell.", a: 3, why: "This is a strong content objective, but there's no language in it yet." },
-];
-
-const LEVELS = [
-  { lvl: "Emerging", sup: "substantial support", obj: "Students will explain one cause of the American Revolution using a word bank and the frame “One cause was ___ because ___” by speaking with a partner." },
-  { lvl: "Expanding", sup: "moderate support", obj: "Students will explain how the French and Indian War led to the American Revolution using cause/effect connectives (because, as a result) and topic vocabulary by speaking with a partner and writing two sentences." },
-  { lvl: "Bridging", sup: "light support", obj: "Students will explain and justify the connection between the French and Indian War and the American Revolution using complex sentences, citation verbs (“The text states…”), and precise vocabulary in a partner discussion and a written paragraph." },
-];
-
-const QUIZ = [
-  {
-    q: "Which of these is a language objective?",
-    opts: [
-      "Students will identify the causes of the American Revolution.",
-      "Students will explain the connection between the French and Indian War and the American Revolution using because and as a result by speaking with a partner.",
-      "Students will complete the worksheet on page 42.",
-      "Students will enjoy learning about history.",
-    ],
-    a: 1,
-    why: "It names what students DO with language (explain), the language they USE (because, as a result), and HOW (speaking with a partner). The first choice is a content objective, and the last two aren't objectives at all.",
-  },
-  {
-    q: "A teacher wrote: “Students will compare two characters by speaking with a partner.” Using the 3 criteria, what is it missing?",
-    opts: [
-      "The language function",
-      "The language demand: the specific language students need, like a frame or vocabulary",
-      "The language domain",
-      "Nothing, it's complete",
-    ],
-    a: 1,
-    why: "“Compare” is the function and “speaking with a partner” is the domain. What's missing is the road to get there: e.g. “using character-trait adjectives and the frame ‘Both ___ and ___, but ___.’”",
-  },
+  { t: "Students will explain how the water cycle works using the sequence words first, next, finally by speaking with a partner.", a: 0, why: "Function + demand + domain. All 3 criteria!" },
+  { t: "Students will describe the setting of the story by writing a paragraph.", a: 1, why: "What language do they need? Name the adjectives or the frame." },
+  { t: "Students will identify the parts of a plant cell.", a: 2, why: "A fine content objective, but no language in it yet." },
 ];
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -179,30 +118,9 @@ interface Step {
 
 const STEPS: Step[] = [
   {
-    title: "Welcome to Room 7 USC",
+    title: "Why language objectives?",
     weber:
-      "Hi, I'm Mrs. Weber! Grab a seat. Today we're becoming Objective Architects: we're going to learn how to write language objectives that help our multilingual learners (MLLs) take on grade-level content. It's quick, it's hands-on, and there's a badge at the end. Ready?",
-    body: () => `
-      <div class="lo-map">
-        ${[
-          ["🎯", "Why bother?"],
-          ["🧭", "What vs. How"],
-          ["👂", "The 4 (+1) domains"],
-          ["🛣️", "Function vs. Demand"],
-          ["🎰", "The Formula Machine"],
-          ["🔍", "Quality Check"],
-          ["🪜", "One goal, three levels"],
-          ["✏️", "Your turn"],
-          ["🎟️", "Exit ticket"],
-        ]
-          .map(([i, t], k) => `<div class="lo-map-stop"><span>${i}</span><b>${k + 1}</b>${t}</div>`)
-          .join("")}
-      </div>
-      <p class="lo-tip">Tip: tap the cards and buttons. Every station has something to do. You can close this any time (Esc) and pick up where you left off.</p>`,
-  },
-  {
-    title: "Why bother? The dual purpose",
-    weber: "Quick warm-up! Language objectives have TWO jobs. Tap the two you think are right.",
+      "Welcome to my classroom! I teach 7th grade English, and today I'm facilitating part of our ELD PD: Learning Objectives. Five quick stations, about three minutes. First: a language objective has TWO jobs. Tap them!",
     body: () => `
       <div class="lo-chips">
         ${PURPOSES.map((p, i) => {
@@ -213,10 +131,9 @@ const STEPS: Step[] = [
       ${
         PURPOSES.every((p, i) => !p.ok || state.purposes.has(i))
           ? `<div class="lo-reveal">
-              <h3>You got it! 🎉</h3>
-              <p><b>A language objective describes the specific language students will use to <u>access</u> and <u>demonstrate</u> their learning during a lesson.</b></p>
-              <p>It sits right next to the content objective. It helps MLLs get into the content <i>and</i> keep developing their English, so nobody gets watered-down content.</p>
-              <a class="lo-video" href="https://www.youtube.com/watch?v=Ef6ZQE2QM6c" target="_blank" rel="noopener">▶ Watch Dr. José Medina (opens a new tab): what do you notice? What do you wonder?</a>
+              <p><b>🎉 Exactly. A language objective describes the specific language students will use to <u>access</u> and <u>demonstrate</u> their learning during a lesson.</b></p>
+              <p>Grade-level content for everyone, plus the language to get there. No watered-down lessons.</p>
+              <a class="lo-video" href="https://www.youtube.com/watch?v=Ef6ZQE2QM6c" target="_blank" rel="noopener">▶ Later: watch Dr. José Medina on content + language (new tab)</a>
             </div>`
           : ""
       }`,
@@ -235,17 +152,13 @@ const STEPS: Step[] = [
       );
     },
     ready: () => PURPOSES.every((p, i) => !p.ok || state.purposes.has(i)),
-    need: "Find both purposes",
+    need: "Find both jobs",
   },
   {
-    title: "What vs. How",
+    title: "WHAT vs. HOW",
     weber:
-      "The content objective says WHAT students will learn. The language objective says HOW they'll learn it or show it: by reading, writing, speaking, or listening. Sort these six. Content or language?",
+      "The content objective is WHAT students learn. The language objective is HOW they learn it or show it: by listening, speaking, reading, or writing. Sort these four!",
     body: () => `
-      <div class="lo-two">
-        <div class="lo-def c"><b>Content objective = WHAT</b><span>“Today you will learn about the causes of the American Revolution.”</span></div>
-        <div class="lo-def l"><b>Language objective = HOW</b><span>“You will explain orally the connection between the French and Indian War and the American Revolution by speaking with a partner.”</span></div>
-      </div>
       <div class="lo-sort">
         ${CV_CARDS.map((c, i) => {
           const pick = state.sortCV.get(i);
@@ -255,8 +168,8 @@ const STEPS: Step[] = [
             ${
               pick && right
                 ? `<small>${c.a === "C" ? "Content" : "Language"} ✓ ${esc(c.why)}</small>`
-                : `<div class="lo-btns"><button type="button" data-cv="${i}" data-v="C">Content</button><button type="button" data-cv="${i}" data-v="L">Language</button></div>
-                   ${pick ? `<small class="lo-try">Not quite. Look again: is it WHAT or HOW?</small>` : ""}`
+                : `<div class="lo-btns"><button type="button" data-cv="${i}" data-v="C">Content (WHAT)</button><button type="button" data-cv="${i}" data-v="L">Language (HOW)</button></div>
+                   ${pick ? `<small class="lo-try">Not quite. Is it WHAT or HOW?</small>` : ""}`
             }
           </div>`;
         }).join("")}
@@ -270,78 +183,12 @@ const STEPS: Step[] = [
       );
     },
     ready: () => CV_CARDS.every((c, i) => state.sortCV.get(i) === c.a),
-    need: "Sort all six cards",
-  },
-  {
-    title: "The 4 (+1) language domains",
-    weber:
-      "Every language objective names HOW students will use language. These are the four domains the ELPAC tests, plus one more that honors our students' home languages. Tap each one to open it.",
-    body: () => `
-      <div class="lo-domains">
-        ${DOMAINS.map((d, i) => {
-          const open = state.domains.has(i);
-          return `<button type="button" class="lo-domain ${open ? "open" : ""}" data-dom="${i}">
-            <span class="lo-dicon">${d.icon}</span><b>${d.name}</b>
-            ${open ? `<span class="lo-dtext">${esc(d.d)}</span><span class="lo-didea">💡 ${esc(d.idea)}</span>` : `<span class="lo-dtap">tap to open</span>`}
-          </button>`;
-        }).join("")}
-      </div>
-      ${
-        state.domains.size === DOMAINS.length
-          ? `<div class="lo-jot"><b>Stop &amp; Jot (optional):</b> How does knowing the domain you want students to use change the way you scaffold up to the final task?
-              <textarea rows="2" placeholder="Your thoughts…" data-jot></textarea></div>`
-          : ""
-      }`,
-    wire: (root) => {
-      root.querySelectorAll<HTMLElement>("[data-dom]").forEach((b) =>
-        b.addEventListener("click", () => {
-          state.domains.add(Number(b.dataset.dom));
-          render();
-        })
-      );
-    },
-    ready: () => state.domains.size === DOMAINS.length,
-    need: "Open all five domains",
-  },
-  {
-    title: "Function vs. Demand",
-    weber:
-      "Here's my favorite metaphor: if the content is the destination, the language demand is the road students travel to get there. The FUNCTION is what students DO with language. The DEMAND is the language they need to USE to do it. Sort these!",
-    body: () => `
-      <div class="lo-road">
-        <div><b>🎯 Function = DO</b><span>explain · compare · describe · justify · summarize · predict · argue · sequence</span></div>
-        <div><b>🛣️ Demand = USE</b><span>vocabulary · sentence frames · connectives · noun phrases · complex sentences · verb tense</span></div>
-      </div>
-      <div class="lo-sort three">
-        ${FD_CARDS.map((c, i) => {
-          const pick = state.sortFD.get(i);
-          const right = pick === c.a;
-          return `<div class="lo-card ${pick ? (right ? "good" : "bad") : ""}">
-            <p>${esc(c.t)}</p>
-            ${
-              pick && right
-                ? `<small>${c.a === "F" ? "Function: what they DO" : "Demand: the language they USE"} ✓</small>`
-                : `<div class="lo-btns"><button type="button" data-fd="${i}" data-v="F">Function</button><button type="button" data-fd="${i}" data-v="D">Demand</button></div>
-                   ${pick ? `<small class="lo-try">Try the other one!</small>` : ""}`
-            }
-          </div>`;
-        }).join("")}
-      </div>`,
-    wire: (root) => {
-      root.querySelectorAll<HTMLElement>("[data-fd]").forEach((b) =>
-        b.addEventListener("click", () => {
-          state.sortFD.set(Number(b.dataset.fd), b.dataset.v as "F" | "D");
-          render();
-        })
-      );
-    },
-    ready: () => FD_CARDS.every((c, i) => state.sortFD.get(i) === c.a),
-    need: "Sort all six cards",
+    need: "Sort all four",
   },
   {
     title: "The Formula Machine",
     weber:
-      "Now let's build one! Every language objective follows one formula: Students will [DO] + [USE] + [HOW]. Pull the lever, or tap the arrows to pick your own pieces.",
+      "Every language objective has three parts. The FUNCTION is what students DO with language. The DEMAND is the language they need to USE: if the content is the destination, the demand is the road. The DOMAIN is HOW: listening, speaking, reading, writing (+1: their home language!). Pull the lever and build one.",
     body: () => `
       <div class="lo-formula">Students will <b class="f1">[DO]</b> + <b class="f2">[USE]</b> + <b class="f3">[HOW]</b></div>
       <div class="lo-machine">
@@ -358,7 +205,7 @@ const STEPS: Step[] = [
       ${
         state.spun
           ? `<div class="lo-result"><span>Your objective:</span> Students will <b class="f1">${esc(REELS[0][state.reels[0]])}</b> <b class="f2">${esc(REELS[1][state.reels[1]])}</b> <b class="f3">${esc(REELS[2][state.reels[2]])}</b>.</div>
-             <p class="lo-tip">Does it fit together? Not every combination works for every lesson, and that's where your teacher judgment comes in. Keep tweaking until it sounds like your classroom.</p>`
+             <p class="lo-tip">Not every combo fits every lesson. That's your teacher judgment. Tip: write an exemplar student answer first, then ask "what language does it take to say this?"</p>`
           : ""
       }`,
     wire: (root) => {
@@ -395,7 +242,7 @@ const STEPS: Step[] = [
   {
     title: "Quality Check",
     weber:
-      "A strong language objective meets 3 criteria: (1) it connects to the lesson task (the function), (2) it names the language students need (the demand), and (3) it gives students real chances to use language (the domain). Be the instructional coach: what's going on with each of these?",
+      "Now you're the coach. A strong language objective (1) connects to the lesson task, (2) names the language students need, and (3) gives them real chances to use it. Tag each one!",
     body: () => `
       <div class="lo-criteria"><span>1 · Connects to the task <i>(function)</i></span><span>2 · Names the language <i>(demand)</i></span><span>3 · Chances to use it <i>(domain)</i></span></div>
       <div class="lo-quality">
@@ -408,7 +255,7 @@ const STEPS: Step[] = [
               right
                 ? `<small>${QUALITY_TAGS[q.a]} ✓ ${esc(q.why)}</small>`
                 : `<div class="lo-btns">${QUALITY_TAGS.map((t, k) => `<button type="button" data-q="${i}" data-v="${k}">${t}</button>`).join("")}</div>
-                   ${pick !== undefined ? `<small class="lo-try">Hmm, check it against the 3 criteria again.</small>` : ""}`
+                   ${pick !== undefined ? `<small class="lo-try">Check it against the 3 criteria again.</small>` : ""}`
             }
           </div>`;
         }).join("")}
@@ -422,120 +269,22 @@ const STEPS: Step[] = [
       );
     },
     ready: () => QUALITY.every((q, i) => state.quality.get(i) === q.a),
-    need: "Check all four objectives",
-  },
-  {
-    title: "One goal, three levels",
-    weber:
-      "Here's the California piece. The CA ELD Standards describe three proficiency levels: Emerging, Expanding, and Bridging. The content goal stays the SAME rigorous, grade-level goal for everyone (EL Roadmap Principle 2). What changes is the support and the language demand. Flip each card.",
-    body: () => `
-      <div class="lo-goal">🎯 Same content goal for all: <b>the connection between the French and Indian War and the American Revolution</b></div>
-      <div class="lo-levels">
-        ${LEVELS.map((l, i) => {
-          const open = state.flips.has(i);
-          return `<button type="button" class="lo-flip ${open ? "open" : ""} lv${i}" data-flip="${i}">
-            <b>${l.lvl}</b><span class="lo-sup">${l.sup}</span>
-            ${open ? `<span class="lo-obj">${esc(l.obj)}</span>` : `<span class="lo-dtap">tap to flip</span>`}
-          </button>`;
-        }).join("")}
-      </div>
-      ${state.flips.size === 3 ? `<p class="lo-tip">Notice: every level still explains the same history. Keep the content rigorous; adjust the language support from substantial → moderate → light.</p>` : ""}`,
-    wire: (root) => {
-      root.querySelectorAll<HTMLElement>("[data-flip]").forEach((b) =>
-        b.addEventListener("click", () => {
-          state.flips.add(Number(b.dataset.flip));
-          render();
-        })
-      );
-    },
-    ready: () => state.flips.size === 3,
-    need: "Flip all three cards",
-  },
-  {
-    title: "Your turn: Let's Try It",
-    weber:
-      "Think of a lesson you're teaching soon, and keep your “MLL Heart Student” in mind. Write the content objective, picture what a great student answer looks like, then use the formula. This part is just for you, so skip it if you'd like, but I'd love for you to try!",
-    body: () => `
-      <label class="lo-field"><b>Step 1 · Your content objective</b>
-        <input type="text" data-mine="content" value="${esc(state.mine.content)}" placeholder="e.g. Students will explain how ecosystems depend on energy from the sun." /></label>
-      <label class="lo-field"><b>Step 2 · An exemplar student response</b> <i>(What language does it take to produce this?)</i>
-        <textarea rows="2" data-mine="exemplar" placeholder="e.g. Plants use energy from the sun to make food. Because animals eat plants, the energy moves through the food chain.">${esc(state.mine.exemplar)}</textarea></label>
-      <label class="lo-field"><b>Step 3 · Your language objective</b> <i>Students will [DO] + [USE] + [HOW]</i>
-        <textarea rows="2" data-mine="objective" placeholder="Students will…">${esc(state.mine.objective)}</textarea></label>
-      <div class="lo-field"><b>Step 4 · Check it against the criteria</b>
-        ${["It connects to the lesson task (function)", "It names the language students need (demand)", "It gives students chances to use language (domain)"]
-          .map((t, k) => `<label class="lo-check"><input type="checkbox" data-check="${k}" ${state.mine.checks[k] ? "checked" : ""}/> ${t}</label>`)
-          .join("")}
-      </div>
-      <p class="lo-tip">Heads up: Illustrative Math, Into Literature and Benchmark Advance already build part of a language objective into their lessons, and the Unit Map's “Language” section gives you the function and demand. Check them against the criteria and add what's missing!</p>`,
-    wire: (root) => {
-      root.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("[data-mine]").forEach((f) =>
-        f.addEventListener("input", () => {
-          (state.mine as any)[f.dataset.mine!] = f.value;
-        })
-      );
-      root.querySelectorAll<HTMLInputElement>("[data-check]").forEach((c) =>
-        c.addEventListener("change", () => {
-          state.mine.checks[Number(c.dataset.check)] = c.checked;
-        })
-      );
-    },
-  },
-  {
-    title: "Exit ticket",
-    weber: "Last stop! Two quick questions to check your understanding. There's no pressure: answer them and your assignment is complete either way.",
-    body: () => `
-      ${QUIZ.map(
-        (q, i) => `<div class="lo-quiz">
-          <h3>${i + 1}. ${esc(q.q)}</h3>
-          ${q.opts
-            .map((o, k) => {
-              const picked = state.answers[i] === k;
-              let cls = picked ? "picked" : "";
-              if (state.submitted) cls = k === q.a ? "good" : picked ? "bad" : "";
-              return `<button type="button" class="lo-opt ${cls}" data-ans="${i}" data-v="${k}" ${state.submitted ? "disabled" : ""}><span>${String.fromCharCode(65 + k)}</span>${esc(o)}</button>`;
-            })
-            .join("")}
-          ${state.submitted ? `<p class="lo-why">${state.answers[i] === q.a ? "✅ Correct!" : "💡 The answer is " + String.fromCharCode(65 + q.a) + "."} ${esc(q.why)}</p>` : ""}
-        </div>`
-      ).join("")}
-      ${
-        state.submitted
-          ? `<div class="lo-score">You got <b>${QUIZ.filter((q, i) => state.answers[i] === q.a).length} / ${QUIZ.length}</b>. Assignment complete! ⭐</div>`
-          : `<button type="button" class="lo-submit" data-submit ${state.answers.includes(-1) ? "disabled" : ""}>Submit my answers</button>`
-      }`,
-    wire: (root) => {
-      root.querySelectorAll<HTMLElement>("[data-ans]").forEach((b) =>
-        b.addEventListener("click", () => {
-          state.answers[Number(b.dataset.ans)] = Number(b.dataset.v);
-          render();
-        })
-      );
-      root.querySelector("[data-submit]")?.addEventListener("click", () => {
-        state.submitted = true;
-        onDone?.(); // complete, whatever the score
-        render();
-      });
-    },
-    ready: () => state.submitted,
-    need: "Answer both and submit",
+    need: "Tag all three",
   },
   {
     title: "You're an Objective Architect!",
     weber:
-      "Fantastic work today! Language objectives make language development intentional: they name the language our MLLs need, right alongside grade-level content. Before you go, make two commitments.",
+      "That's it! Language objectives make language development intentional. One last thing: keep the content rigorous for everyone and adjust the support, from substantial (Emerging) to moderate (Expanding) to light (Bridging). Make one commitment before you go. Oh, and don't forget to log your reading minutes for the week and have an adult sign off on it!",
     body: () => `
-      <div class="lo-badge"><span>🏅</span><div><b>Objective Architect</b><small>Learning Objectives · Room 7 USC</small></div></div>
+      <div class="lo-badge"><span>🏅</span><div><b>Objective Architect</b><small>Learning Objectives · ELD PD with Mrs. Weber</small></div></div>
       <ul class="lo-takeaways">
-        <li><b>Dual purpose:</b> access to the content <i>and</i> continued English growth.</li>
-        <li><b>What vs. How:</b> the content objective is the destination; the language objective is how students get there.</li>
+        <li><b>Two jobs:</b> access to the content <i>and</i> continued English growth.</li>
         <li><b>The formula:</b> Students will <b class="f1">[DO]</b> + <b class="f2">[USE]</b> + <b class="f3">[HOW]</b>.</li>
-        <li><b>Quality check:</b> connects to the task · names the language · gives chances to use it.</li>
-        <li><b>Make it visible:</b> post it with domain icons (“At Table 4, we are speaking and writing”).</li>
+        <li><b>The check:</b> connects to the task · names the language · gives chances to use it.</li>
+        <li><b>Make it visible:</b> post it with domain icons. Your curriculum (and the Unit Map's Language section) often gives you part of it already!</li>
       </ul>
-      <div class="lo-commit">
-        <label><b>🔒 Private commitment</b> <i>(just for you)</i><textarea rows="2" placeholder="One thing I'll do with language objectives…"></textarea></label>
-        <label><b>📣 Public commitment</b> <i>(share it with your table!)</i><textarea rows="2" placeholder="Starting Monday, I will…"></textarea></label>
+      <div class="lo-commit one">
+        <label><b>📣 My commitment</b> <i>(optional, share it with your table!)</i><textarea rows="2" placeholder="In my next lesson, I will…"></textarea></label>
       </div>`,
   },
 ];
@@ -564,13 +313,13 @@ function render(): void {
   const next = overlay.querySelector<HTMLButtonElement>(".lo-next")!;
   back.disabled = step === 0;
   next.disabled = !ready;
-  next.textContent = last ? "Finish ✓" : step === 0 ? "Let's go! →" : "Next →";
+  next.textContent = last ? "Finish ✓" : "Next →";
   overlay.querySelector(".lo-need")!.textContent = ready ? "" : s.need ?? "";
 }
 
 /**
  * Open the lesson. `alreadyDone`: the player finished it before (they can go through it again). `complete` runs once,
- * when the exit ticket is submitted.
+ * when the player finishes the last station.
  */
 export function openLesson(roomId: string, alreadyDone: boolean, complete: () => void): void {
   if (overlay || !hasLesson(roomId)) return;
@@ -583,7 +332,7 @@ export function openLesson(roomId: string, alreadyDone: boolean, complete: () =>
   overlay.innerHTML = `
     <div class="lo-wrap" role="dialog" aria-modal="true" aria-label="Learning Objectives with Mrs. Weber">
       <div class="lo-top">
-        <div><span class="lo-kicker">Room 7 USC · Mrs. Weber</span><b>Learning Objectives</b></div>
+        <div><span class="lo-kicker">ELD PD · facilitated by Mrs. Weber</span><b>Learning Objectives</b></div>
         <div class="lo-dots"></div>
         <button type="button" class="lo-close" aria-label="Close (you can come back)">✕</button>
       </div>
@@ -603,6 +352,7 @@ export function openLesson(roomId: string, alreadyDone: boolean, complete: () =>
   });
   overlay.querySelector(".lo-next")!.addEventListener("click", () => {
     if (step === STEPS.length - 1) {
+      onDone?.(); // finishing the last station completes the assignment
       closeLesson();
       step = 0;
       return;

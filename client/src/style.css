@@ -3194,3 +3194,4 @@ body {
   .lo-domains { grid-template-columns: repeat(2, 1fr); }
   .lo-machine, .lo-commit, .lo-chips, .lo-two, .lo-road, .lo-sort { grid-template-columns: 1fr; }
 }
+.lo-commit.one { grid-template-columns: 1fr; }

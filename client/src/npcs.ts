@@ -1216,7 +1216,7 @@ export const NPC_WEBER: NpcDef = {
       root: {
         paragraphs: [
           "Hi there! I'm Mrs. Weber, and I teach 7th grade English here in USC. Welcome!",
-          "Today's assignment is all about Learning Objectives: how a language objective helps our multilingual learners reach grade-level content. It's hands-on, I promise. There's a slot machine!",
+          "Today I'm facilitating part of our ELD PD: Learning Objectives, and how a language objective helps our multilingual learners reach grade-level content. It only takes about three minutes, and there's a slot machine!",
         ],
         options: [
           { label: "Show me the assignment!", action: "open-assignment" },
@@ -1236,7 +1236,7 @@ export const NPC_WEBER: NpcDef = {
         ],
       },
       bye: {
-        paragraphs: ["(Sample text) Have a wonderful day! Enjoy the rest of the classrooms."],
+        paragraphs: ["Don't forget to log your reading minutes for the week and have an adult sign off on it!"],
         options: [{ label: "See you, Mrs. Weber!" }],
       },
     },
