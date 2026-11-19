@@ -1,4 +1,4 @@
-import { openLesson, hasLesson } from "./lessonObjectives";
+import { openLesson, hasLesson } from "./lessons";
 import type { DialogTree } from "./dialog";
 import * as THREE from "three";
 import layout from "../../content/layout.json";

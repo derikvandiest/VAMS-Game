@@ -1,0 +1,18 @@
+/** The interactive lessons, by classroom (see lessonEngine.ts) */
+import { openLessonDef, type LessonDef } from "./lessonEngine";
+import { OBJECTIVES_LESSON } from "./lessonObjectives";
+import { GRADING_LESSON } from "./lessonGrading";
+
+export { isLessonOpen, closeLesson } from "./lessonEngine";
+
+const LESSONS: Record<string, LessonDef> = Object.fromEntries([OBJECTIVES_LESSON, GRADING_LESSON].map((l) => [l.roomId, l]));
+
+/** The rooms that have one of these interactive lessons */
+export function hasLesson(roomId: string): boolean {
+  return roomId in LESSONS;
+}
+
+export function openLesson(roomId: string, alreadyDone: boolean, complete: () => void): void {
+  const def = LESSONS[roomId];
+  if (def) openLessonDef(def, alreadyDone, complete);
+}

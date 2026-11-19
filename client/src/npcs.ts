@@ -1572,8 +1572,8 @@ export const NPC_RAMIREZ: NpcDef = {
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Welcome! I'm Mr. Ramirez, and I teach 8th grade history here in LMU.",
-          "Your assignment is ready whenever you are. Grab a seat and dive in!",
+          "Welcome! I'm Mr. Ramirez, and I teach 8th grade history here in LMU.",
+          "Today I'm facilitating part of our ELD PD: Grading for Equity. Two students, same learning, very different grades. Let's find out why. It only takes about three minutes!",
         ],
         options: [
           { label: "Show me the assignment!", action: "open-assignment" },
@@ -1583,7 +1583,7 @@ export const NPC_RAMIREZ: NpcDef = {
       },
       learn: {
         paragraphs: [
-          "(Sample text) We're at the Constitutional Convention: how the founders debated, compromised, and built the government we still have today.",
+          "We're at the Constitutional Convention: how the founders debated, compromised, and built the government we still have today.",
           "My students read primary sources and argue both sides with sentence frames. History is a conversation, and every student, especially my English learners, gets to join it.",
         ],
         options: [
@@ -1593,7 +1593,7 @@ export const NPC_RAMIREZ: NpcDef = {
         ],
       },
       bye: {
-        paragraphs: ["(Sample text) Thanks for stopping by! Enjoy the rest of your visit."],
+        paragraphs: ["Thanks for stopping by! Enjoy the rest of your visit."],
         options: [{ label: "See you, Mr. Ramirez!" }],
       },
     },

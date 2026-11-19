@@ -14,7 +14,7 @@ import { ROOMS } from "./rooms";
 import { openChromebook, isChromebookOpen, closeChromebook } from "./chromebook";
 import { openAgenda, isAgendaOpen, closeAgenda } from "./agenda";
 import { openHandout, isHandoutOpen, closeHandout } from "./handout";
-import { isLessonOpen } from "./lessonObjectives";
+import { isLessonOpen } from "./lessons";
 import { loadCharacterProfile, saveCharacterProfile } from "./profile";
 
 export interface ItemDef {

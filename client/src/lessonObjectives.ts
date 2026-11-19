@@ -9,10 +9,8 @@
  * station completes the assignment.
  */
 import weberPortrait from "./assets/weber_portrait.png";
+import { esc, rerender, type LessonDef, type LessonStep } from "./lessonEngine";
 
-let overlay: HTMLElement | null = null;
-let step = 0; // where the player is (kept while the game is open, so closing and reopening resumes)
-let onDone: (() => void) | null = null;
 /** Each activity's progress, so Back / reopening keep what the player already did */
 const state = {
   purposes: new Set<number>(),
@@ -21,33 +19,6 @@ const state = {
   spun: false,
   quality: new Map<number, number>(),
 };
-
-export function isLessonOpen(): boolean {
-  return !!overlay;
-}
-
-/** The rooms that have one of these interactive lessons */
-export function hasLesson(roomId: string): boolean {
-  return roomId === "7th-usc-english";
-}
-
-export function closeLesson(): void {
-  if (!overlay) return;
-  window.removeEventListener("keydown", onKey, true);
-  overlay.remove();
-  overlay = null;
-}
-
-function onKey(e: KeyboardEvent): void {
-  if (!overlay) return;
-  e.stopImmediatePropagation(); // the lesson has the keyboard while it is open (typing in its boxes still works)
-  if (e.key === "Escape") {
-    e.preventDefault();
-    closeLesson();
-  }
-}
-
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 // ---------------------------------------------------------------------------------------------------------------
 // Content
@@ -103,23 +74,10 @@ const QUALITY: Array<{ t: string; a: number; why: string }> = [
 // Steps
 // ---------------------------------------------------------------------------------------------------------------
 
-interface Step {
-  title: string;
-  /** Mrs. Weber's line at the top of the step */
-  weber: string;
-  body: () => string;
-  /** Wire up the step's buttons after it is drawn */
-  wire?: (root: HTMLElement) => void;
-  /** Whether Next is allowed yet (the activity is done) */
-  ready?: () => boolean;
-  /** Shown beside a disabled Next */
-  need?: string;
-}
-
-const STEPS: Step[] = [
+const STEPS: LessonStep[] = [
   {
     title: "Why language objectives?",
-    weber:
+    say:
       "Welcome to my classroom! I teach 7th grade English, and today I'm facilitating part of our ELD PD: Learning Objectives. Five quick stations, about three minutes. First: a language objective has TWO jobs. Tap them!",
     body: () => `
       <div class="lo-chips">
@@ -147,7 +105,7 @@ const STEPS: Step[] = [
             setTimeout(() => b.classList.remove("bad", "shake"), 700);
             return;
           }
-          render();
+          rerender();
         })
       );
     },
@@ -156,7 +114,7 @@ const STEPS: Step[] = [
   },
   {
     title: "WHAT vs. HOW",
-    weber:
+    say:
       "The content objective is WHAT students learn. The language objective is HOW they learn it or show it: by listening, speaking, reading, or writing. Sort these four!",
     body: () => `
       <div class="lo-sort">
@@ -178,7 +136,7 @@ const STEPS: Step[] = [
       root.querySelectorAll<HTMLElement>("[data-cv]").forEach((b) =>
         b.addEventListener("click", () => {
           state.sortCV.set(Number(b.dataset.cv), b.dataset.v as "C" | "L");
-          render();
+          rerender();
         })
       );
     },
@@ -187,7 +145,7 @@ const STEPS: Step[] = [
   },
   {
     title: "The Formula Machine",
-    weber:
+    say:
       "Every language objective has three parts. The FUNCTION is what students DO with language. The DEMAND is the language they need to USE: if the content is the destination, the demand is the road. The DOMAIN is HOW: listening, speaking, reading, writing (+1: their home language!). Pull the lever and build one.",
     body: () => `
       <div class="lo-formula">Students will <b class="f1">[DO]</b> + <b class="f2">[USE]</b> + <b class="f3">[HOW]</b></div>
@@ -215,7 +173,7 @@ const STEPS: Step[] = [
           const n = REELS[k].length;
           state.reels[k] = (state.reels[k] + Number(b.dataset.d) + n) % n;
           state.spun = true;
-          render();
+          rerender();
         })
       );
       root.querySelector("[data-spin]")?.addEventListener("click", () => {
@@ -231,7 +189,7 @@ const STEPS: Step[] = [
             window.clearInterval(iv);
             state.reels = state.reels.map((_, k) => Math.floor(Math.random() * REELS[k].length));
             state.spun = true;
-            render();
+            rerender();
           }
         }, 80);
       });
@@ -241,7 +199,7 @@ const STEPS: Step[] = [
   },
   {
     title: "Quality Check",
-    weber:
+    say:
       "Now you're the coach. A strong language objective (1) connects to the lesson task, (2) names the language students need, and (3) gives them real chances to use it. Tag each one!",
     body: () => `
       <div class="lo-criteria"><span>1 · Connects to the task <i>(function)</i></span><span>2 · Names the language <i>(demand)</i></span><span>3 · Chances to use it <i>(domain)</i></span></div>
@@ -264,7 +222,7 @@ const STEPS: Step[] = [
       root.querySelectorAll<HTMLElement>("[data-q]").forEach((b) =>
         b.addEventListener("click", () => {
           state.quality.set(Number(b.dataset.q), Number(b.dataset.v));
-          render();
+          rerender();
         })
       );
     },
@@ -273,7 +231,7 @@ const STEPS: Step[] = [
   },
   {
     title: "You're an Objective Architect!",
-    weber:
+    say:
       "That's it! Language objectives make language development intentional. One last thing: keep the content rigorous for everyone and adjust the support, from substantial (Emerging) to moderate (Expanding) to light (Bridging).",
     body: () => `
       <div class="lo-badge"><span>🏅</span><div><b>Objective Architect</b><small>Learning Objectives · ELD PD with Mrs. Weber</small></div></div>
@@ -286,77 +244,11 @@ const STEPS: Step[] = [
   },
 ];
 
-// ---------------------------------------------------------------------------------------------------------------
-// Drawing
-// ---------------------------------------------------------------------------------------------------------------
-
-function render(): void {
-  if (!overlay) return;
-  const s = STEPS[step];
-  const ready = s.ready ? s.ready() : true;
-  const last = step === STEPS.length - 1;
-  overlay.querySelector(".lo-dots")!.innerHTML = STEPS.map((_, i) => `<span class="${i < step ? "done" : i === step ? "now" : ""}"></span>`).join("");
-  overlay.querySelector(".lo-stepname")!.textContent = `Station ${step + 1} of ${STEPS.length} · ${s.title}`;
-  const scroll = overlay.querySelector<HTMLElement>(".lo-main")!;
-  const keep = scroll.dataset.step === String(step) ? scroll.scrollTop : 0;
-  scroll.dataset.step = String(step);
-  scroll.innerHTML = `
-    <div class="lo-weber"><img src="${weberPortrait}" alt="" /><div class="lo-bubble"><b>Mrs. Weber</b>${esc(s.weber)}</div></div>
-    <h2>${esc(s.title)}</h2>
-    ${s.body()}`;
-  scroll.scrollTop = keep;
-  s.wire?.(scroll);
-  const back = overlay.querySelector<HTMLButtonElement>(".lo-back")!;
-  const next = overlay.querySelector<HTMLButtonElement>(".lo-next")!;
-  back.disabled = step === 0;
-  next.disabled = !ready;
-  next.textContent = last ? "Finish ✓" : "Next →";
-  overlay.querySelector(".lo-need")!.textContent = ready ? "" : s.need ?? "";
-}
-
-/**
- * Open the lesson. `alreadyDone`: the player finished it before (they can go through it again). `complete` runs once,
- * when the player finishes the last station.
- */
-export function openLesson(roomId: string, alreadyDone: boolean, complete: () => void): void {
-  if (overlay || !hasLesson(roomId)) return;
-  onDone = alreadyDone ? null : () => {
-    onDone = null;
-    complete();
-  };
-  overlay = document.createElement("div");
-  overlay.className = "modal-overlay lo-overlay";
-  overlay.innerHTML = `
-    <div class="lo-wrap" role="dialog" aria-modal="true" aria-label="Learning Objectives with Mrs. Weber">
-      <div class="lo-top">
-        <div><span class="lo-kicker">ELD PD · facilitated by Mrs. Weber</span><b>Learning Objectives</b></div>
-        <div class="lo-dots"></div>
-        <button type="button" class="lo-close" aria-label="Close (you can come back)">✕</button>
-      </div>
-      <div class="lo-stepname"></div>
-      <div class="lo-main"></div>
-      <div class="lo-foot">
-        <button type="button" class="lo-back">← Back</button>
-        <span class="lo-need"></span>
-        <button type="button" class="lo-next">Next →</button>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-  overlay.querySelector(".lo-close")!.addEventListener("click", closeLesson);
-  overlay.querySelector(".lo-back")!.addEventListener("click", () => {
-    if (step > 0) step--;
-    render();
-  });
-  overlay.querySelector(".lo-next")!.addEventListener("click", () => {
-    if (step === STEPS.length - 1) {
-      onDone?.(); // finishing the last station completes the assignment
-      closeLesson();
-      step = 0;
-      return;
-    }
-    step++;
-    render();
-  });
-  window.addEventListener("keydown", onKey, true);
-  render();
-}
+export const OBJECTIVES_LESSON: LessonDef = {
+  roomId: "7th-usc-english",
+  title: "Learning Objectives",
+  kicker: "ELD PD · facilitated by Mrs. Weber",
+  teacher: "Mrs. Weber",
+  portrait: weberPortrait,
+  steps: STEPS,
+};
