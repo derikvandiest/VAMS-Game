@@ -1,7 +1,12 @@
 /**
  * The Counselors' Office (the ground-floor office door inside campus, under the music room). There are no characters to
  * walk up to: pressing E at the door opens the office, where the three counselors can be talked to in dialogue windows:
- * Ms. Chavez (lead counselor), Ms. Sosa and Ms. Mendez. All text here is SAMPLE text for now.
+ * Ms. Chavez (lead counselor), Ms. Sosa and Ms. Mendez.
+ *
+ * Content: assets/Counselors-Supporting-MLLs-Room-Blueprint.md (Olsen / Californians Together Counselor Toolkit 2025;
+ * ASCA; U.S. ED Newcomer Toolkit; ELRD Center 2023; Ed Code §234.7, §48985; Plyler v. Doe; CDE on AB 2555). Each
+ * counselor covers a third of it: Ms. Chavez the big picture, typologies and social-emotional support; Ms. Sosa
+ * placement, scheduling and reclassification; Ms. Mendez families, immigration protections and transitions.
  */
 import type { DialogTree, DialogSpeaker } from "./dialog";
 import chavezPortrait from "./assets/chavez_portrait.png";
@@ -41,6 +46,12 @@ const others = (me: "chavez" | "sosa" | "mendez") =>
     me !== "mendez" ? { label: "Can I talk to Ms. Mendez?", action: "counsel:mendez" } : null,
   ].filter((x): x is { label: string; action: string } => !!x);
 
+/** The usual "ask something else / thanks" pair after an answer */
+const more = (name: string) => [
+  { label: "I have another question", next: "root" },
+  { label: `Thanks, ${name}!`, next: "bye" },
+];
+
 export const CHAVEZ: Talk = {
   speaker: { name: "Ms. Chavez", title: "Lead Counselor", portrait: chavezPortrait },
   tree: {
@@ -48,38 +59,39 @@ export const CHAVEZ: Talk = {
     nodes: {
       root: {
         paragraphs: [
-          "(Sample text) Hi, welcome in! I'm Ms. Chavez, the lead counselor. I'm so glad you stopped by.",
-          "Our team supports students' social-emotional well-being, their academics, and their plans for the future.",
+          "Hi, welcome in! I'm Ms. Chavez, the lead counselor. With our multilingual learners, we cover three areas: their academics, their college and career path, and their social-emotional well-being.",
         ],
         options: [
-          { label: "What does a lead counselor do?", next: "lead" },
-          { label: "How do you support newcomer students?", next: "newcomers" },
+          { label: "Why do counselors matter so much for MLLs?", next: "why" },
+          { label: "Aren't English learners all pretty similar?", next: "types" },
+          { label: "How do you support students emotionally?", next: "sel" },
           ...others("chavez"),
           { label: "Thanks, Ms. Chavez!", next: "bye" },
         ],
       },
-      lead: {
+      why: {
         paragraphs: [
-          "(Sample text) Besides my own students, I coordinate our counseling team: the schedules, school-wide lessons on things like kindness and goal setting, our student support meetings, and how we respond when a student is in crisis.",
-          "I also make sure every student has at least one adult on campus they trust.",
+          "Access! In one study, English learners in schools with counselor time were more likely to be enrolled in core English and math classes than those in schools without a counselor.",
+          "But California averages about 432 students per counselor, and the recommendation is 250. We can't do it alone, so we build systems: data dashboards, scheduling rules, teacher referrals and family liaisons. Every teacher is part of it.",
         ],
-        options: [
-          { label: "I have another question", next: "root" },
-          { label: "Thanks, Ms. Chavez!", next: "bye" },
-        ],
+        options: more("Ms. Chavez"),
       },
-      newcomers: {
+      types: {
         paragraphs: [
-          "(Sample text) We meet with every newcomer in their first week, with an interpreter if needed, and pair them with a buddy who speaks their language.",
-          "Moving to a new country is a big change. We check in often, connect families with Mr. Martinez for community resources, and work closely with the ELD teachers.",
+          "Not at all! Newcomers with strong schooling need acceleration, not waiting. Students with interrupted schooling need intensive literacy and math support. Long-term English learners, often born here and socially fluent, need goal-setting and academic language. Some also have an IEP, and reclassified students are monitored for four years.",
+          "Their lives matter too: culture shock, trauma, family separation, working or interpreting for their parents. About 1 in 5 California kids lives in a mixed-status household.",
         ],
-        options: [
-          { label: "I have another question", next: "root" },
-          { label: "Thanks, Ms. Chavez!", next: "bye" },
+        options: more("Ms. Chavez"),
+      },
+      sel: {
+        paragraphs: [
+          "In tiers. For everyone: a welcoming, culturally affirming school with peer buddies. For some: newcomer and long-term EL groups and regular check-ins with a trusted adult. For a few: individual counseling and referrals to bilingual mental health services.",
+          "And trauma-informed habits in every classroom: predictable routines, a heads-up before fire drills, relationships first, and never forcing a student to share their immigration story. What looks like misbehavior can be a stress response.",
         ],
+        options: more("Ms. Chavez"),
       },
       bye: {
-        paragraphs: ["(Sample text) Our door is always open. Have a great day!"],
+        paragraphs: ["Our door is always open. Have a great day!"],
         options: [{ label: "Bye, Ms. Chavez!" }, ...others("chavez")],
       },
     },
@@ -92,36 +104,38 @@ export const SOSA: Talk = {
     start: "root",
     nodes: {
       root: {
-        paragraphs: ["(Sample text) Hey, hi! I'm Ms. Sosa, one of the counselors. Come on in!"],
+        paragraphs: ["Hey, hi! I'm Ms. Sosa, one of the counselors. I do a lot of the scheduling and placement for our English learners."],
         options: [
-          { label: "What do you work on with students?", next: "work" },
-          { label: "How can teachers help?", next: "teachers" },
+          { label: "How do you build an English learner's schedule?", next: "schedule" },
+          { label: "How do you place a new arrival?", next: "place" },
+          { label: "How do you help with reclassification?", next: "reclass" },
           ...others("sosa"),
           { label: "Thanks, Ms. Sosa!", next: "bye" },
         ],
       },
-      work: {
+      schedule: {
         paragraphs: [
-          "(Sample text) A little bit of everything: friendship problems, stress, grades, and helping students set goals and find what they're good at.",
-          "We also run small groups at lunch, like a newcomers' group where students can talk in English and in their home language.",
+          "English learners can't be kept out of core classes, a full course load, advanced classes or electives. We schedule ELD first, then build everything else around it.",
+          "And we avoid the \"ESL ghetto,\" where the same group of English learners is together all day. We don't mix newcomers and long-term English learners in ELD, and electives like music and robotics are a priority, because that's where belonging happens.",
         ],
-        options: [
-          { label: "I have another question", next: "root" },
-          { label: "Thanks, Ms. Sosa!", next: "bye" },
-        ],
+        options: more("Ms. Sosa"),
       },
-      teachers: {
+      place: {
         paragraphs: [
-          "(Sample text) You know your students best! If a student seems quiet, upset, or different than usual, send us a referral or just come find us.",
-          "For English learners, remember that silence can be part of learning a new language. Give them time, visuals, and a friendly partner.",
+          "It depends on the student. A newcomer with strong schooling gets a transcript review and grade-level or even advanced classes with home-language resources. Accelerate, don't remediate: their time is precious.",
+          "A student with interrupted schooling might start in a newcomer class with double ELD. And if a disability is a question, the student study team asks: did they get good ELD, and does the difficulty show up in both languages?",
         ],
-        options: [
-          { label: "I have another question", next: "root" },
-          { label: "Thanks, Ms. Sosa!", next: "bye" },
+        options: more("Ms. Sosa"),
+      },
+      reclass: {
+        paragraphs: [
+          "With goal-setting conferences, especially for our 7th and 8th grade long-term English learners. We look at their ELPAC scores by domain and set goals together. Under AB 2555, the ELPAC is now the only reclassification criterion.",
+          "Labels carry feelings, so we call it being \"on the path to biliteracy,\" not a deficit. And after students reclassify, we keep an eye on their grades for four years.",
         ],
+        options: more("Ms. Sosa"),
       },
       bye: {
-        paragraphs: ["(Sample text) Take care! Come back anytime."],
+        paragraphs: ["Take care! Come back anytime."],
         options: [{ label: "Bye, Ms. Sosa!" }, ...others("sosa")],
       },
     },
@@ -134,9 +148,10 @@ export const MENDEZ: Talk = {
     start: "root",
     nodes: {
       root: {
-        paragraphs: ["(Sample text) Hi there! I'm Ms. Mendez, one of the counselors. How are you doing today?"],
+        paragraphs: ["Hi there! I'm Ms. Mendez, one of the counselors. I work a lot with our families and with students' plans for the future."],
         options: [
           { label: "How do you work with families?", next: "families" },
+          { label: "What if a family is worried about immigration?", next: "rights" },
           { label: "What about high school and college?", next: "future" },
           ...others("mendez"),
           { label: "Thanks, Ms. Mendez!", next: "bye" },
@@ -144,24 +159,27 @@ export const MENDEZ: Talk = {
       },
       families: {
         paragraphs: [
-          "(Sample text) Families are our partners. We call home with good news too, not only when there's a problem, and we always offer an interpreter so families can share in their own language.",
+          "Families are our partners and the experts on their child. We use qualified interpreters, never a student or sibling, and translate key documents. When 15% of our students share a language, notices go home in that language too.",
+          "We hold family nights in home languages to explain grades, credits, the ELPAC and reclassification, offer evening and phone meetings, and invite families to our English Learner Advisory Committee.",
         ],
-        options: [
-          { label: "I have another question", next: "root" },
-          { label: "Thanks, Ms. Mendez!", next: "bye" },
+        options: more("Ms. Mendez"),
+      },
+      rights: {
+        paragraphs: [
+          "Every child has the right to a free public education, regardless of immigration status (Plyler v. Doe). In California, schools don't collect immigration status, and we can't share a student's information with immigration enforcement without parent consent or a court order.",
+          "We share \"Know Your Educational Rights\" guides in home languages, help families with emergency contact plans if they ask, and refer them to trusted legal services. We don't give legal advice ourselves.",
         ],
+        options: more("Ms. Mendez"),
       },
       future: {
         paragraphs: [
-          "(Sample text) It's never too early to dream! We help our 8th graders choose their high school and classes, and every grade learns about college and careers. That's why our homerooms are named after universities.",
+          "It starts in middle school! Our 7th and 8th grade English learners set goals, learn about college, A–G classes and financial aid in their home language, and explore careers where being bilingual is a strength, on the path to the State Seal of Biliteracy.",
+          "For 8th graders, we send each high school an EL student profile, meet with their counselors, and hold a \"Welcome to High School\" night in home languages, so no one gets automatically tracked into lower classes.",
         ],
-        options: [
-          { label: "I have another question", next: "root" },
-          { label: "Thanks, Ms. Mendez!", next: "bye" },
-        ],
+        options: more("Ms. Mendez"),
       },
       bye: {
-        paragraphs: ["(Sample text) Have a wonderful day! Remember to take care of yourself too."],
+        paragraphs: ["Have a wonderful day! Remember to take care of yourself too."],
         options: [{ label: "Bye, Ms. Mendez!" }, ...others("mendez")],
       },
     },
