@@ -168,7 +168,7 @@ export function openHandout(id = "community-handout"): void {
   overlay.id = "handout-overlay";
   overlay.className = "modal-overlay ho-overlay";
   overlay.innerHTML = `
-    <div class="ho-wrap" role="dialog" aria-modal="true" aria-label="${h.bar.replace(/^\S+ /, "")}">
+    <div class="ho-wrap ${h.theme ? h.theme + "-wrap" : ""}" role="dialog" aria-modal="true" aria-label="${h.bar.replace(/^\S+ /, "")}">
       <div class="ho-bar">
         <span>${h.bar}</span>
         <button type="button" class="ho-print">🖨️ Print / Save as PDF</button>

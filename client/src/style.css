@@ -3294,3 +3294,28 @@ button.al-read:hover { background: #ede9fe; }
 .ho-example { background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 10px; padding: 10px 14px; margin-top: 12px; }
 .ho-example p { margin: 6px 0 0; font-size: 13.5px; }
 @media print { .ho-iep .ho-head, .ho-table th, .ho-big, .ho-key, .ho-example { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+/* Ms. Williams's handout is a one-pager: wider, compact, no scrolling */
+.ho-iep-wrap { width: min(1040px, 96vw); }
+.ho-iep { padding: 0 26px 14px; font-size: 12.5px; line-height: 1.4; }
+.ho-iep .ho-head { margin: 0 -26px 10px; padding: 14px 26px 12px; }
+.ho-iep .ho-head h1 { font-size: 26px; margin: 2px 0; }
+.ho-iep .ho-sub { font-size: 14px; }
+.op-top { display: grid; grid-template-columns: repeat(3, 1fr) 1.6fr; gap: 8px; margin-bottom: 8px; }
+.op-stat { background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; padding: 6px 10px; }
+.op-stat b { display: block; font-size: 18px; color: #0f766e; line-height: 1.1; }
+.op-stat span { font-size: 11.5px; }
+.op-belief { background: #eef2ff; border-left: 5px solid #3730a3; border-radius: 8px; padding: 8px 12px; font-size: 13.5px; align-self: stretch; }
+.op-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.op-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; }
+.op-card.wide { grid-column: 1 / -1; }
+.op-card h3 { margin: 0 0 4px !important; font-size: 13.5px !important; color: #134e4a !important; }
+.op-card p { margin: 0 0 4px; }
+.op-card ul { margin: 0; padding-left: 18px; }
+.op-card li { margin: 0 0 2px; }
+.op-flag { color: #9a3412; font-weight: 600; }
+.op-layers { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 5px; }
+.op-layers span { background: #134e4a; color: #fff; border-radius: 999px; padding: 3px 10px; font-size: 11.5px; }
+.op-src { margin: 6px 0 0; font-size: 10.5px; color: #64748b; }
+@media (max-width: 700px) { .op-top, .op-grid { grid-template-columns: 1fr; } }
+@media print { .op-stat, .op-belief, .op-layers span { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
