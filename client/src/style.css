@@ -3367,3 +3367,16 @@ button.al-read:hover { background: #ede9fe; }
 .go-route { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; color: #94a3b8; font-weight: 900; }
 .go-route span { background: #b8312f; color: #fff; border-radius: 999px; padding: 6px 12px; font-size: 13px; }
 @media (max-width: 700px) { .go-match, .go-upgrade { grid-template-columns: 1fr; } .go-signals { grid-template-columns: 1fr 1fr; } }
+
+/* Ms. Blessing's lesson: compact so no station scrolls */
+.go-venn:not(.mini) { max-width: 620px; margin: 0 auto 8px; }
+.go-venn:not(.mini) .go-circle { aspect-ratio: 1.75; padding: 6px 14px; font-size: 12.5px; }
+.go-venn:not(.mini) .go-mid { padding: 8px 4px; font-size: 12.5px; }
+.go-venn.mini { margin-bottom: 4px; }
+.go-venn.mini .go-circle { aspect-ratio: 2.1; }
+.go-venn.mini .go-mid { padding: 8px 4px; }
+.go-plain { gap: 4px; padding: 8px; }
+.go-added { padding: 3px 8px; align-items: center; }
+.go-added span { font-size: 15px; }
+.go-added b { display: inline; margin-right: 6px; }
+.go-tool { padding: 8px 10px; font-size: 13px; }

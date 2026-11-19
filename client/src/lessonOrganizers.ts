@@ -50,7 +50,7 @@ const STEPS: LessonStep[] = [
   {
     title: "The messy desk",
     say:
-      "Welcome to my classroom! I teach 5th grade humanities, and today I'm facilitating part of our ELD PD: Graphic Organizers for MLLs. Try this: read the paragraph and find one thing the Aztec and Maya BOTH had. Now imagine reading it in a language you're still learning…",
+      "Welcome! I teach 5th grade humanities, and today I'm facilitating part of our ELD PD: Graphic Organizers for MLLs. Find one thing the Aztec and Maya BOTH had, and imagine reading this in a language you're still learning…",
     body: () => `
       ${
         state.organized
@@ -68,7 +68,7 @@ const STEPS: LessonStep[] = [
       </div>
       ${
         state.organized && state.both === 1
-          ? `<div class="lo-reveal"><p><b>Same information, much lighter language load.</b> A graphic organizer makes the <i>relationships</i> between ideas visible, so MLLs can show their thinking with words, phrases, drawings or their home language before writing full English sentences. It's a <b>thinking tool and a language tool</b>.</p></div>`
+          ? `<div class="lo-reveal"><p><b>Same information, lighter language load.</b> Organizers make the relationships between ideas visible, so MLLs can show their thinking with words, drawings or their home language first: a <b>thinking tool and a language tool</b>.</p></div>`
           : ""
       }`,
     wire: (root) => {
@@ -170,7 +170,7 @@ const STEPS: LessonStep[] = [
       </div>
       ${
         state.upgrades.size === UPGRADES.length
-          ? `<div class="lo-reveal"><p><b>Now fade it as students grow:</b> Emerging gets a mostly completed organizer with pictures, a word bank and frames in every box. Expanding gets a partially completed one. Bridging gets a blank one, or chooses their own. Model it first: I do → we do → you do.</p></div>`
+          ? `<div class="lo-reveal"><p><b>Then fade it:</b> Emerging gets it mostly completed with pictures and frames, Expanding partially completed, Bridging blank (or their own). Model it first: I do → we do → you do.</p></div>`
           : ""
       }`,
     wire: (root) => {
@@ -198,7 +198,7 @@ const STEPS: LessonStep[] = [
         <li><b>A small, consistent set</b> across classes, so students recognize the shapes.</li>
         <li><b>Welcome drawings, cognates and L1.</b> At the Emerging level, the CA ELD Standards expect students to express ideas with visuals like graphic organizers.</li>
       </ul>
-      <p class="lo-tip">The research: the What Works Clearinghouse recommends visuals and graphic organizers to anchor instruction for English learners (part of a strong-evidence recommendation), and a meta-analysis found moderate to large gains for students with learning disabilities (Dexter &amp; Hughes, 2011). They work best when taught explicitly and paired with talk and writing.</p>`,
+      <p class="lo-tip">Research: the What Works Clearinghouse recommends organizers to anchor instruction for English learners, and a meta-analysis found moderate to large gains for students with learning disabilities (Dexter &amp; Hughes, 2011).</p>`,
   },
 ];
 
