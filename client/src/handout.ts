@@ -9,6 +9,8 @@
  * engagement research shows strong associations, not controlled experiments.
  */
 
+import { IEP_HANDOUT_HTML } from "./handoutIep";
+
 let overlay: HTMLElement | null = null;
 
 export function isHandoutOpen(): boolean {
@@ -137,40 +139,48 @@ const HANDOUT_HTML = `
   </ol>
 </footer>`;
 
+/** The handouts, by their backpack item id */
+const HANDOUTS: Record<string, { bar: string; title: string; theme: string; html: string }> = {
+  "community-handout": { bar: "📄 Community Schools Handout", title: "Partners in Learning – Valor Community Schools", theme: "", html: HANDOUT_HTML },
+  "iep-handout": { bar: "📘 Ms. Williams's Handout", title: "Both/And – Supporting MLLs with IEPs", theme: "ho-iep", html: IEP_HANDOUT_HTML },
+};
+
 /** Open a print-friendly copy (the browser's print dialog can save it as a PDF) */
-function printHandout(): void {
+function printHandout(id: string): void {
+  const h = HANDOUTS[id];
   const css = Array.from(document.querySelectorAll("style"))
     .map((s) => s.textContent ?? "")
     .join("\n");
   const w = window.open("", "_blank");
   if (!w) return;
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Partners in Learning – Valor Community Schools</title>
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${h.title}</title>
     <style>${css}\nbody{background:#fff;margin:0}.ho-paper{box-shadow:none;margin:0 auto;max-height:none;overflow:visible}</style></head>
-    <body><article class="ho-paper">${HANDOUT_HTML}</article></body></html>`);
+    <body><article class="ho-paper ${h.theme}">${h.html}</article></body></html>`);
   w.document.close();
   w.focus();
   w.setTimeout(() => w.print(), 300);
 }
 
-export function openHandout(): void {
-  if (overlay) return;
+export function openHandout(id = "community-handout"): void {
+  const h = HANDOUTS[id];
+  if (overlay || !h) return;
   overlay = document.createElement("div");
   overlay.id = "handout-overlay";
   overlay.className = "modal-overlay ho-overlay";
   overlay.innerHTML = `
-    <div class="ho-wrap" role="dialog" aria-modal="true" aria-label="Community Schools handout">
+    <div class="ho-wrap" role="dialog" aria-modal="true" aria-label="${h.bar.replace(/^\S+ /, "")}">
       <div class="ho-bar">
-        <span>📄 Community Schools Handout</span>
+        <span>${h.bar}</span>
         <button type="button" class="ho-print">🖨️ Print / Save as PDF</button>
         <button type="button" class="ho-close" aria-label="Close the handout">✕</button>
       </div>
-      <article class="ho-paper">${HANDOUT_HTML}</article>
+      <article class="ho-paper ${h.theme}">${h.html}</article>
     </div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) closeHandout();
   });
   overlay.querySelector(".ho-close")!.addEventListener("click", closeHandout);
-  overlay.querySelector(".ho-print")!.addEventListener("click", printHandout);
+  overlay.querySelector(".ho-print")!.addEventListener("click", () => printHandout(id));
   window.addEventListener("keydown", onKey, true);
 }

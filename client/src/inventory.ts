@@ -436,16 +436,16 @@ export function discardItem(id: string): boolean {
 // ---------------------------------------------------------------------------------------------------------------
 // Mr. Martinez's Community Schools handout
 // ---------------------------------------------------------------------------------------------------------------
-/** Receive the handout from Mr. Martinez (it needs a backpack to carry it; one copy is enough) */
-export function takeHandout(): "ok" | "no-backpack" | "has" | "full" {
+/** Receive a handout (Mr. Martinez's or Ms. Williams's; it needs a backpack to carry it; one copy is enough) */
+export function takeHandout(id = "community-handout", from = "Mr. Martinez's"): "ok" | "no-backpack" | "has" | "full" {
   if (!state.backpack) return "no-backpack";
-  if (countItem("community-handout") > 0) return "has";
+  if (countItem(id) > 0) return "has";
   const k = state.bag.indexOf(null);
   if (k < 0) return "full";
-  state.bag[k] = { id: "community-handout", qty: 1 };
+  state.bag[k] = { id, qty: 1 };
   save();
   render();
-  toast("📄 Mr. Martinez's handout is in your backpack. Click it to read it!");
+  toast(`${id === "iep-handout" ? "📘" : "📄"} ${from} handout is in your backpack. Click it to read it!`);
   return "ok";
 }
 
@@ -835,7 +835,7 @@ function onPointerUp(e: PointerEvent): void {
     if (clicked === "water-bottle-full") drinkWaterBottle();
     if (clicked === "chromebook") openChromebook(loadCharacterProfile().name); // open the laptop at its login screen
     if (clicked === "student-agenda") openAgenda(loadCharacterProfile().name); // every objective, in detail
-    if (clicked === "community-handout") openHandout(); // Mr. Martinez's handout
+    if (clicked === "community-handout" || clicked === "iep-handout") openHandout(clicked); // Mr. Martinez's / Ms. Williams's handout
     if (clicked === "burrito" || clicked === "burrito-vegan") eatBurrito(clicked);
     return;
   }

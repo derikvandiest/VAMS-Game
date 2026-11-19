@@ -2276,12 +2276,25 @@ export const NPC_WILLIAMS: NpcDef = {
       root: {
         paragraphs: [
           "(Sample text) Hi there, welcome! I'm Ms. Williams, the 8th grade IET and our lead IET here at Valor.",
-          "Ms. Roldan and I were just talking about how we support every learner on campus. Ask me anything about inclusion and supports!",
+          "Ms. Roldan and I were just talking about how we support every learner on campus. Ask me anything about inclusion and supports, and grab my handout on supporting multilingual learners with IEPs!",
         ],
         options: [
+          { label: "What's in your handout?", next: "handout" },
           { label: "What does a lead IET do?", next: "lead" },
           { label: "How do supports for IEPs help English learners?", next: "overlap" },
           { label: "Any advice for supporting every learner?", next: "advice" },
+          { label: "Can I have your handout?", action: "give-iep-handout" },
+          { label: "Thanks, Ms. Williams!", next: "bye" },
+        ],
+      },
+      handout: {
+        paragraphs: [
+          "It's called \"Both/And.\" About 1 in 6 of our multilingual learners also has an IEP, and they're entitled to BOTH: English language development AND special education services. One never replaces the other.",
+          "It covers how to tell a language difference from a disability, what an English learner's IEP must include, working with interpreters, ELPAC decisions, and classroom moves that work for these students.",
+        ],
+        options: [
+          { label: "Can I have your handout?", action: "give-iep-handout" },
+          { label: "I have another question", next: "root" },
           { label: "Thanks, Ms. Williams!", next: "bye" },
         ],
       },
@@ -2292,6 +2305,7 @@ export const NPC_WILLIAMS: NpcDef = {
         ],
         options: [
           { label: "I have another question", next: "root" },
+          { label: "Can I have your handout?", action: "give-iep-handout" },
           { label: "Thanks, Ms. Williams!", next: "bye" },
         ],
       },
@@ -2302,6 +2316,7 @@ export const NPC_WILLIAMS: NpcDef = {
         ],
         options: [
           { label: "I have another question", next: "root" },
+          { label: "Can I have your handout?", action: "give-iep-handout" },
           { label: "Thanks, Ms. Williams!", next: "bye" },
         ],
       },
@@ -2311,6 +2326,7 @@ export const NPC_WILLIAMS: NpcDef = {
         ],
         options: [
           { label: "I have another question", next: "root" },
+          { label: "Can I have your handout?", action: "give-iep-handout" },
           { label: "Thanks, Ms. Williams!", next: "bye" },
         ],
       },

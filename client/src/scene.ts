@@ -6881,6 +6881,7 @@ export function startPlaceholderScene(
       ["burrito", "the burrito"],
       ["burrito-vegan", "the vegan burrito"],
       ["community-handout", "Mr. Martinez's handout"],
+      ["iep-handout", "Ms. Williams's handout"],
     ];
     const have = throwable.filter(([id]) => countItem(id) > 0);
     showDialog(
@@ -8042,8 +8043,8 @@ export function startPlaceholderScene(
           setTimeout(() => showDialog({ name: n.def.profile.name, title: n.def.profile.title, portrait: n.def.portrait }, { start: "r", nodes: { r: { paragraphs: [msg[r]], options: [{ label: es ? "¡Gracias!" : "Thanks!" }] } } }), 0);
         }
         // Mr. Martinez hands out his Community Schools handout (it goes in the backpack)
-        if (event === "give-handout") {
-          const r = takeHandout();
+        if (event === "give-handout" || event === "give-iep-handout") {
+          const r = event === "give-iep-handout" ? takeHandout("iep-handout", "Ms. Williams's") : takeHandout();
           const why =
             r === "no-backpack"
               ? "You'll need a backpack to carry it! Grab one from the hooks just inside the MPR doors, then come back and I'll give you a copy."

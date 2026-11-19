@@ -3276,3 +3276,21 @@ button.al-read:hover { background: #ede9fe; }
 .al-mlr div { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .al-mlr span { background: #1e3a8a; color: #fff; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 700; }
 @media (max-width: 700px) { .al-words, .al-reps, .al-reads, .lo-chips.three { grid-template-columns: 1fr 1fr; } }
+
+/* Ms. Williams's IEP handout (handoutIep.ts): a teal/indigo theme, tables and callouts */
+.ho-iep .ho-head { background: linear-gradient(135deg, #134e4a, #3730a3); }
+.ho-iep h2 { color: #134e4a; border-color: #99f6e4; }
+.ho-iep .ho-stat { background: #f0fdfa; border-color: #99f6e4; }
+.ho-iep .ho-stat b { color: #0f766e; }
+.ho-iep cite { color: #0f766e; }
+.ho-iep .ho-group { color: #3730a3 !important; }
+.ho-iep .ho-pillars div { background: #134e4a; }
+.ho-big { font-size: 17px; background: #eef2ff; border-left: 5px solid #3730a3; border-radius: 8px; padding: 12px 16px; margin-bottom: 10px; }
+.ho-key { background: #fef9c3; border: 1px solid #fde047; border-radius: 10px; padding: 10px 14px; margin: 10px 0; font-size: 15px; }
+.ho-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
+.ho-table th { background: #134e4a; color: #fff; text-align: left; padding: 6px 8px; }
+.ho-table td { border-bottom: 1px solid #e2e8f0; padding: 6px 8px; vertical-align: top; }
+.ho-table tr:nth-child(even) td { background: #f8fafc; }
+.ho-example { background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 10px; padding: 10px 14px; margin-top: 12px; }
+.ho-example p { margin: 6px 0 0; font-size: 13.5px; }
+@media print { .ho-iep .ho-head, .ho-table th, .ho-big, .ho-key, .ho-example { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
