@@ -274,7 +274,7 @@ const STEPS: Step[] = [
   {
     title: "You're an Objective Architect!",
     weber:
-      "That's it! Language objectives make language development intentional. One last thing: keep the content rigorous for everyone and adjust the support, from substantial (Emerging) to moderate (Expanding) to light (Bridging). Oh, and don't forget to log your reading minutes for the week and have an adult sign off on it!",
+      "That's it! Language objectives make language development intentional. One last thing: keep the content rigorous for everyone and adjust the support, from substantial (Emerging) to moderate (Expanding) to light (Bridging).",
     body: () => `
       <div class="lo-badge"><span>🏅</span><div><b>Objective Architect</b><small>Learning Objectives · ELD PD with Mrs. Weber</small></div></div>
       <ul class="lo-takeaways">

@@ -1236,7 +1236,7 @@ export const NPC_WEBER: NpcDef = {
         ],
       },
       bye: {
-        paragraphs: ["Don't forget to log your reading minutes for the week and have an adult sign off on it!"],
+        paragraphs: ["Have a wonderful day! Enjoy the rest of the classrooms."],
         options: [{ label: "See you, Mrs. Weber!" }],
       },
     },

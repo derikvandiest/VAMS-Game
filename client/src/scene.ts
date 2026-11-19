@@ -8283,12 +8283,32 @@ export function startPlaceholderScene(
     });
   }
 
+  /** Rooms whose teacher calls a reminder after you as you leave, once you've done the assignment (once per session) */
+  const LEAVING_REMINDERS: Record<string, { npcId: string; line: string }> = {
+    "7th-usc-english": { npcId: "npc-weber", line: "Don't forget to log your reading minutes for the week and have an adult sign off on it!" },
+  };
+  const remindedRooms = new Set<string>();
+  function remindOnLeaving(roomId: string): void {
+    const r = LEAVING_REMINDERS[roomId];
+    if (!r || remindedRooms.has(roomId)) return;
+    const objectiveId = roomById(roomId)?.objectiveId;
+    if (!objectiveId || !loadSlot(getActiveSlotId())?.objectives.completedIds.includes(objectiveId)) return;
+    const def = npcList.find((n) => n.def.id === r.npcId)?.def;
+    if (!def) return;
+    remindedRooms.add(roomId);
+    window.setTimeout(
+      () => showDialog({ name: def.profile.name, title: def.profile.title, portrait: def.portrait }, { start: "r", nodes: { r: { paragraphs: [r.line], options: [{ label: "Will do!" }] } } }),
+      900
+    );
+  }
+
   function exitClassroom(): void {
     returnChromebook(); // Chromebooks stay in their classroom: it goes back on the laptop cart
     if (!currentClassroom) return;
     if (seatedChair) standUp();
     const roomToExit = currentClassroom;
     const door = roomToExit.campusDoor;
+    remindOnLeaving(roomToExit.id);
     triggerTransition(() => {
       roomToExit.group.visible = false;
       currentClassroom = null;
@@ -10560,6 +10580,7 @@ export function startPlaceholderScene(
 
   (window as any).__debug = {
     enterRoom: (id: string) => enterClassroom(id),
+    exitRoom: () => exitClassroom(),
     openAssignment: () => openAssignment(),
     setPlayer: (x: number, z: number, y?: number) => { player.position.x = x; player.position.z = z; if (y !== undefined) player.position.y = y; },
     setCamera: (angle: number, elev: number, dist: number) => { camAngle = angle; camElevation = elev; camDistance = dist; },
