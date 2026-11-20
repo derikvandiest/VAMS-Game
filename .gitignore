@@ -21,3 +21,5 @@ Thumbs.db
 # No staff photos are used in this project — this folder stays empty.
 assets/npc-photos/*
 !assets/npc-photos/.gitkeep
+.vercel
+.env*

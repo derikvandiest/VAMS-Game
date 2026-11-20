@@ -1,0 +1,9 @@
+# Vercel only builds the game pages (client/ + content/ with vite.config.ts). Everything else stays home.
+# (Leading slashes: only these top-level folders. client/src/assets must be uploaded.)
+/node_modules
+/dist
+/assets
+/blender
+/server
+*.log
+.env

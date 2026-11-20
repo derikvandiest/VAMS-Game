@@ -15,3 +15,6 @@ services:
         value: "22"
       - key: ADMIN_PASSWORD
         generateValue: true
+      # the Vercel site that hosts the game pages (comma-separated if more than one), so it may connect
+      - key: ALLOWED_ORIGINS
+        sync: false

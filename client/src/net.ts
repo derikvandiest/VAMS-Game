@@ -1,6 +1,13 @@
 import { io, Socket } from "socket.io-client";
 
 let currentSocket: Socket | null = null;
+
+/**
+ * Where the multiplayer server lives. When the game pages are hosted somewhere else (Vercel), the build sets
+ * VITE_SERVER_URL to the server's address (e.g. https://eld-pd-game.onrender.com). Empty = the same address the page
+ * came from (development, or one server hosting everything).
+ */
+const SERVER_URL: string = ((import.meta as any).env?.VITE_SERVER_URL ?? "").trim();
 let multiplayerActive = false;
 
 /** True while playing on the multiplayer server (other systems, like player presence, check this). */
@@ -10,13 +17,13 @@ export function isMultiplayerActive(): boolean {
 
 export function getSocket(): Socket {
   if (!currentSocket) {
-    currentSocket = io();
+    currentSocket = SERVER_URL ? io(SERVER_URL) : io();
   }
   return currentSocket;
 }
 
 /**
- * Multiplayer connection (Milestone 1: connection status only).
+ * Multiplayer connection (Milestone 1: connection status only). (VITE_SERVER_URL can point it at a separate server.)
  * Later milestones sync player movement, dialogue, stamps, and emojis here.
  *
  * `io()` connects to the same address the page came from:

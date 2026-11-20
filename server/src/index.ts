@@ -30,8 +30,16 @@ app.set("trust proxy", 1);
 app.disable("x-powered-by");
 const httpServer = createServer(app);
 
-/** Socket.io automatically falls back to long-polling if WebSockets are blocked. */
-const io = new Server(httpServer);
+/**
+ * Socket.io automatically falls back to long-polling if WebSockets are blocked.
+ * ALLOWED_ORIGINS (comma-separated) lets game pages hosted elsewhere connect, e.g. the Vercel site:
+ * ALLOWED_ORIGINS=https://eld-pd-game.vercel.app. Pages served by this server itself never need it.
+ */
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map((s) => s.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+const io = new Server(httpServer, ALLOWED_ORIGINS.length ? { cors: { origin: ALLOWED_ORIGINS, methods: ["GET", "POST"] } } : {});
 
 // --- Serving the game -------------------------------------------------------
 // In production (`npm run build` then `npm start`) the browser files live in /dist.
