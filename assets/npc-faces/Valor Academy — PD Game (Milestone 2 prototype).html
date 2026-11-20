@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<!-- saved from url=(0022)http://localhost:5173/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script type="module" src="./Valor Academy — PD Game (Milestone 2 prototype)_files/client"></script>
+
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
+    <title>Valor Academy — PD Game (Milestone 2 prototype)</title>
+    <link rel="stylesheet" href="./Valor Academy — PD Game (Milestone 2 prototype)_files/style.css">
+  </head>
+  <body>
+    <!-- The 3D scene is created by TypeScript and appended into #app -->
+    <div id="app"><canvas data-engine="three.js r186" width="1920" height="917" style="display: block; width: 1920px; height: 917px;"></canvas><div id="goal-banner" style="position: fixed; top: 18%; left: 50%; transform: translateX(-50%) scale(0); background: rgba(15, 23, 42, 0.92); color: rgb(250, 204, 21); font-family: sans-serif; font-size: 32px; font-weight: 900; letter-spacing: 1px; padding: 14px 32px; border-radius: 14px; border: 3px solid rgb(250, 204, 21); box-shadow: rgba(0, 0, 0, 0.45) 0px 12px 35px; pointer-events: none; z-index: 1000; opacity: 0; transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.35s; text-align: center;">⚽ GOAL! (SOUTH GOAL) ⚽</div><div id="plate-reset-toast" style="position: fixed; top: 26%; left: 50%; transform: translateX(-50%) scale(0); background: rgba(15, 23, 42, 0.94); color: rgb(56, 189, 248); font-family: system-ui, -apple-system, sans-serif; font-size: 22px; font-weight: 800; letter-spacing: 0.5px; padding: 12px 28px; border-radius: 12px; border: 2px solid rgb(56, 189, 248); box-shadow: rgba(0, 0, 0, 0.5) 0px 8px 30px; pointer-events: none; z-index: 1000; opacity: 0; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; text-align: center;">⚽ All balls were reset! 🏀</div><div id="basket-banner" style="position: fixed; top: 18%; left: 50%; transform: translateX(-50%) scale(0); background: rgba(15, 23, 42, 0.94); color: rgb(234, 88, 12); font-family: system-ui, -apple-system, sans-serif; font-size: 32px; font-weight: 900; letter-spacing: 1px; padding: 14px 32px; border-radius: 14px; border: 3px solid rgb(234, 88, 12); box-shadow: rgba(0, 0, 0, 0.5) 0px 12px 35px; pointer-events: none; z-index: 1000; opacity: 0; transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.35s; text-align: center;">🏀 SWISH! 🏀</div><div id="bball-hint" style="position: fixed; bottom: 78px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.92); color: rgb(234, 88, 12); font-family: system-ui, -apple-system, sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.4px; padding: 9px 22px; border-radius: 20px; border: 1.5px solid rgba(234, 88, 12, 0.7); box-shadow: rgba(0, 0, 0, 0.4) 0px 8px 24px; pointer-events: none; z-index: 900; opacity: 0; transition: opacity 0.25s, transform 0.25s; display: none;">Press E to shoot at hoop 🏀</div><div id="car-reset-toast" style="position: fixed; top: 26%; left: 50%; transform: translateX(-50%) scale(0); background: rgba(15, 23, 42, 0.95); color: rgb(245, 158, 11); font-family: system-ui, -apple-system, sans-serif; font-size: 22px; font-weight: 800; letter-spacing: 0.5px; padding: 12px 28px; border-radius: 12px; border: 2px solid rgb(245, 158, 11); box-shadow: rgba(0, 0, 0, 0.5) 0px 8px 30px; pointer-events: none; z-index: 1000; opacity: 0; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; text-align: center;">🚗 All cars were reset to parking spots!</div></div>
+
+    <!-- Shows whether the game is talking to the multiplayer server -->
+    <div id="status-badge" class="badge badge-ok" style="display: block;">Server: connected — players online: 1</div>
+
+    <!-- Compass: click to snap the camera back to north-up -->
+    <button id="compass" type="button" title="Orient camera north" aria-label="Orient camera north" style="display: flex;">
+      <div class="compass-dial">
+        <svg viewBox="0 0 44 44" class="compass-svg" aria-hidden="true">
+          <!-- Outer dial ring -->
+          <circle cx="22" cy="22" r="20" class="compass-ring"></circle>
+          <circle cx="22" cy="22" r="17" class="compass-inner-ring"></circle>
+          <!-- Cardinal ticks -->
+          <line x1="22" y1="2" x2="22" y2="6" class="compass-tick-n"></line>
+          <line x1="22" y1="38" x2="22" y2="42" class="compass-tick"></line>
+          <line x1="2" y1="22" x2="6" y2="22" class="compass-tick"></line>
+          <line x1="38" y1="22" x2="42" y2="22" class="compass-tick"></line>
+          <!-- Needle group rotates with camera angle -->
+          <g id="compass-needle" style="transform: rotate(4.865rad);">
+            <!-- North Arrow (Red) -->
+            <polygon points="22,6 18.5,22 25.5,22" class="needle-north"></polygon>
+            <polygon points="22,6 22,22 18.5,22" class="needle-north-dark"></polygon>
+            <!-- South Arrow (Silver / White) -->
+            <polygon points="22,38 18.5,22 25.5,22" class="needle-south"></polygon>
+            <polygon points="22,38 22,22 18.5,22" class="needle-south-dark"></polygon>
+            <!-- Center pivot -->
+            <circle cx="22" cy="22" r="3" class="needle-pivot"></circle>
+            <circle cx="22" cy="22" r="1.5" class="needle-pivot-core"></circle>
+            <!-- North indicator label -->
+            <text x="22" y="14" class="needle-label" text-anchor="middle">N</text>
+          </g>
+        </svg>
+      </div>
+    </button>
+
+    <!-- Settings button: opens character customization & settings menu -->
+    <button id="settings-btn" type="button" title="Character settings &amp; customization" aria-label="Settings" style="display: flex;">
+      <span class="settings-btn-icon">⚙️</span>
+      <span class="settings-btn-label">Settings</span>
+    </button>
+
+    <!-- Unstuck button: teleports player to MPR front doors if stuck -->
+    <button id="unstuck-btn" type="button" title="Teleport to MPR entrance if stuck" aria-label="Unstuck" style="display: flex;">
+      <span class="unstuck-icon">↺</span>
+      <span>Unstuck</span>
+    </button>
+
+    <!-- Map button: opens the campus map (also the M key) -->
+    <button id="map-btn" type="button" title="Open the campus map (M)" aria-label="Map" style="display: flex;">
+      <span class="map-btn-icon">🗺️</span>
+      <span>Map <kbd>M</kbd></span>
+    </button>
+
+    <!-- Leave Game button: saves & returns to the Start Menu -->
+    <button id="leave-game-btn" type="button" title="Save and return to the main menu" aria-label="Leave Game" style="display: flex;">
+      <span class="leave-game-icon">🚪</span>
+      <span class="leave-game-label">Leave Game</span>
+    </button>
+
+    <!-- Objective Tracker HUD Widget -->
+    <div id="objective-hud" class="objective-hud" style="display: block;">
+      <div class="obj-hud-header">
+        <span class="obj-hud-icon">📋</span>
+        <span class="obj-hud-title">Current Objective</span>
+        <span id="obj-hud-stamps" class="obj-hud-stamps">0 / 16 Assignments</span>
+      </div>
+      <div id="obj-hud-desc" class="obj-hud-desc">Complete the assignment in every classroom (0 / 16 done)</div>
+    </div>
+
+    <!-- On-screen reminder of the controls (Milestone 2: single-player walking) -->
+    <div id="controls-hint" style="display: block;">Move with <b>W A S D</b> / arrows · hold <b>Shift</b> to sprint · <b>right-drag</b> to rotate · <b>scroll</b> to zoom · click the <b>compass</b> for north</div>
+
+    <!-- Gate interaction prompt (Milestone 2): shown when standing near the gate -->
+    <div id="gate-hint">Press E to open the gate</div>
+
+    <!-- MPR Door prompt: shown when near the MPR entrance outside or exit inside -->
+    <div id="mpr-hint" style="display: none;">Press E to enter 8th Grade USC (Science)</div>
+
+    <!-- Screen fade transition overlay for entering/exiting rooms -->
+    <div id="scene-transition-overlay" class=""></div>
+
+    <!-- Ball reset prompt: shown when near the soccer field ball reset vent -->
+    <div id="plate-hint" style="position: fixed; bottom: 78px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.92); color: rgb(56, 189, 248); font-family: system-ui, -apple-system, sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.4px; padding: 9px 22px; border-radius: 20px; border: 1.5px solid rgba(56, 189, 248, 0.7); box-shadow: rgba(0, 0, 0, 0.4) 0px 8px 24px; pointer-events: none; z-index: 900; opacity: 0; transition: opacity 0.25s, transform 0.25s; display: none;">Step here to reset all balls ⚽ 🏀</div>
+
+    <!-- Action / interaction prompt: shown when near chairs or cars -->
+    <div id="action-hint" style="opacity: 0; display: none;">Press E to take a seat 🪑</div>
+
+    <!-- Leave Game Confirmation Modal -->
+    <div id="leave-modal-overlay" class="modal-overlay" style="display: none;">
+      <div class="modal-card">
+        <h3 class="modal-title">Leave Game?</h3>
+        <p class="modal-desc">Your character progress, stamps, and campus location will be automatically saved to your current slot.</p>
+        <div class="modal-actions">
+          <button id="leave-confirm-btn" class="modal-btn modal-btn-danger">Save &amp; Exit to Menu</button>
+          <button id="leave-cancel-btn" class="modal-btn modal-btn-secondary">Keep Playing</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Start Menu Screen (Valor Academy Middle School) -->
+    <div id="start-menu" class="start-menu-container fade-out" style="display: none;">
+      <div class="sm-backdrop">
+        <div class="sm-card">
+          <!-- School Crest & Header -->
+          <div class="sm-header">
+            <div class="sm-logo-wrapper">
+              <img src="./Valor Academy — PD Game (Milestone 2 prototype)_files/valor_logo.jpg" alt="Valor Academy Middle School Logo" class="sm-logo-img">
+            </div>
+            <h1 class="sm-school-title">VALOR ACADEMY MIDDLE SCHOOL</h1>
+            <h2 class="sm-school-subtitle">A BRIGHT STAR SCHOOL</h2>
+            <div class="sm-badge-pill">Educator Professional Development 3D Campus</div>
+          </div>
+
+          <!-- Main Menu Actions -->
+          <div class="sm-actions">
+            <!-- Continue Button -->
+            <button id="sm-btn-continue" class="sm-btn sm-btn-primary ">
+              <div class="sm-btn-content">
+                <span class="sm-btn-icon">▶</span>
+                <span class="sm-btn-title">Continue</span>
+              </div>
+              <span class="sm-btn-desc">Slot 2 · Mr. Van Diest · 0/16 Stamps · Multiplayer</span>
+            </button>
+
+            <!-- New Game Button -->
+            <button id="sm-btn-new" class="sm-btn sm-btn-action">
+              <div class="sm-btn-content">
+                <span class="sm-btn-icon">✨</span>
+                <span class="sm-btn-title">New Game</span>
+              </div>
+              <span class="sm-btn-desc">Choose Single Player or Multiplayer &amp; start fresh</span>
+            </button>
+
+            <!-- Load Game Button -->
+            <button id="sm-btn-load" class="sm-btn sm-btn-secondary">
+              <div class="sm-btn-content">
+                <span class="sm-btn-icon">📁</span>
+                <span class="sm-btn-title">Load Game</span>
+              </div>
+              <span class="sm-btn-desc">Select from Save Slots 1, 2, or 3</span>
+            </button>
+
+            <!-- Settings Button -->
+            <button id="sm-btn-settings" class="sm-btn sm-btn-secondary">
+              <div class="sm-btn-content">
+                <span class="sm-btn-icon">⚙️</span>
+                <span class="sm-btn-title">Settings &amp; Character</span>
+              </div>
+              <span class="sm-btn-desc">Customize your teacher avatar &amp; view controls</span>
+            </button>
+          </div>
+
+          <!-- Footer / Instructions -->
+          <div class="sm-footer">
+            <div class="sm-controls-row">
+              <span><b>WASD</b> Walk</span>
+              <span>•</span>
+              <span><b>Shift</b> Sprint</span>
+              <span>•</span>
+              <span><b>E</b> Interact</span>
+              <span>•</span>
+              <span><b>Scroll</b> Zoom</span>
+              <span>•</span>
+              <span><b>Right-Drag</b> Orbit Camera</span>
+            </div>
+            <div class="sm-copyright">Browser-based • Automatic Progress Saving • No Account Required</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modals will be injected here -->
+      <div id="sm-modal-container"></div>
+    </div>
+
+
+    <script type="module" src="./Valor Academy — PD Game (Milestone 2 prototype)_files/main.ts"></script>
+  
+
+<div id="settings-modal-overlay" class="cc-overlay" style="display: none;">
+    <div class="cc-card" role="dialog" aria-modal="true" aria-labelledby="cc-title">
+      <div class="cc-stage">
+        <canvas id="cc-canvas" aria-label="Character preview (drag to rotate)"></canvas>
+        <div class="cc-stage-note" id="cc-stage-note">Drag to rotate</div>
+        <div class="cc-stage-fallback" id="cc-stage-fallback" hidden="">3D preview is not available on this device, but you can still create your character.</div>
+      </div>
+      <div class="cc-panel">
+        <header class="cc-head">
+          <h2 id="cc-title">Create Your Character</h2>
+          <button type="button" class="cc-x" id="cc-close" aria-label="Close">×</button>
+        </header>
+        <div class="cc-top">
+          <label class="cc-label" for="cc-name">Name</label>
+          <input id="cc-name" class="cc-input" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Your name">
+          <div class="cc-error" id="cc-error" role="alert"></div>
+          <div class="cc-tabs" role="tablist">
+            <button type="button" role="tab" class="cc-tab" data-tab="look">Look</button>
+            <button type="button" role="tab" class="cc-tab" data-tab="hair">Hair</button>
+            <button type="button" role="tab" class="cc-tab" data-tab="extras">Accessories</button>
+          </div>
+        </div>
+        <div class="cc-scroll" id="cc-body"></div>
+        <div class="cc-homeroom-bar">
+          <div class="cc-label">Homeroom <span class="cc-hint">(shown on your name badge)</span></div>
+          <div class="cc-homerooms" id="cc-homeroom" role="radiogroup" aria-label="Homeroom"></div>
+        </div>
+        <footer class="cc-foot">
+          <button type="button" class="cc-btn cc-btn-ghost" id="cc-random">🎲 Randomize</button>
+          <span class="cc-spacer"></span>
+          <button type="button" class="cc-btn cc-btn-ghost" id="cc-cancel">Cancel</button>
+          <button type="button" class="cc-btn cc-btn-primary" id="cc-save">Save &amp; Continue</button>
+        </footer>
+      </div>
+    </div></div><div id="chat-widget" class="chat-widget" style="display: block;">
+    <!-- Collapsed pill button -->
+    <div id="chat-collapsed-pill" class="chat-collapsed-pill" style="display: none;">
+      <span class="chat-pill-icon">💬</span>
+      <span class="chat-pill-title">Chat</span>
+      <span id="chat-pill-badge" class="chat-unread-badge" style="display: none;">0</span>
+    </div>
+
+    <!-- Main Chat Window -->
+    <div id="chat-window" class="chat-window">
+      <!-- Header -->
+      <div class="chat-header">
+        <div class="chat-header-title">
+          <span class="chat-logo">💬</span>
+          <span class="chat-title-text">Campus Chat</span>
+          <span class="chat-online-pill">
+            <span class="chat-online-dot"></span>
+            <span id="chat-online-count">1 online</span>
+          </span>
+        </div>
+        <div class="chat-header-actions">
+          <button id="chat-profile-btn" class="chat-profile-btn" title="Click to change your username">
+            <span class="chat-user-icon">👤</span>
+            <span id="chat-my-name-display" class="chat-my-name">Mr Van Diest</span>
+            <span class="chat-edit-icon">✎</span>
+          </button>
+          <button id="chat-collapse-btn" class="chat-header-btn" title="Minimize chat">─</button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="chat-tabs">
+        <button id="chat-tab-all" class="chat-tab active">
+          <span>🌐 Server (All)</span>
+        </button>
+        <button id="chat-tab-private" class="chat-tab">
+          <span>🔒 Private DM</span>
+          <span id="chat-dm-badge" class="chat-tab-badge" style="display: none;">●</span>
+        </button>
+      </div>
+
+      <!-- Private DM Selector Bar (visible in Private tab) -->
+      <div id="chat-dm-bar" class="chat-dm-bar" style="display: none;">
+        <span class="chat-dm-label">To:</span>
+        <select id="chat-recipient-select" class="chat-recipient-select"><option value="">Select an online player...</option></select>
+        <button id="chat-clear-recipient-btn" class="chat-clear-btn" title="Clear recipient">✕</button>
+      </div>
+
+      <!-- System Notice Banner (errors/status) -->
+      <div id="chat-notice-banner" class="chat-notice-banner" style="display: none;"></div>
+
+      <!-- Message History Container -->
+      <div id="chat-messages" class="chat-messages">
+        <div class="chat-empty-hint">
+          No messages yet. Be the first to say something!
+        </div>
+      </div>
+
+      <!-- Input Bar -->
+      <div class="chat-input-bar">
+        <div id="chat-dm-indicator" class="chat-dm-indicator" style="display: none;">
+          <span class="chat-dm-lock">🔒 Direct Message to</span>
+          <span id="chat-dm-target-name" class="chat-dm-target">@Target</span>
+          <button id="chat-cancel-dm-btn" class="chat-cancel-dm" title="Cancel DM">✕</button>
+        </div>
+        <div class="chat-input-row">
+          <input id="chat-input" type="text" class="chat-input" placeholder="Type a message... (or @name for DM)" maxlength="500" autocomplete="off" spellcheck="false">
+          <button id="chat-send-btn" class="chat-send-btn" title="Send (Enter)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div><div id="save-toast-banner" class="save-toast-banner"><span class="save-toast-icon">💾</span> <span class="save-toast-text">💾 Progress Saved</span></div><div class="modal-overlay" style="z-index: 135;"><div class="modal-card" role="alertdialog" aria-modal="true"><h3 class="modal-title">Reset the balls?</h3><p class="modal-desc">The soccer ball and basketball will go back to their starting spots.</p><div class="modal-actions"><button class="modal-btn modal-btn-primary">Yes, reset them</button><button class="modal-btn modal-btn-secondary">Cancel</button></div></div></div></body></html>
