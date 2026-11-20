@@ -2666,7 +2666,7 @@ export const NPC_CARMONA: NpcDef = {
 };
 
 /**
- * Ms. Jenkins, the school's Interventionist, upstairs on the office building's walkway, on the right side of the ELD
+ * Ms. Jenkins, the school's Intervention Specialist, upstairs on the office building's walkway, on the right side of the ELD
  * classroom door (x = -16) as you face it, in the middle of the walkway (z -10.5..-7.5), facing out toward campus.
  * Matches her portrait: very long, thin black box braids with a center part (down past her waist), black rectangular
  * glasses, deep brown skin, a white short-sleeved blouse with a pointed collar and a keyhole neckline.
@@ -2682,7 +2682,7 @@ export const NPC_JENKINS: NpcDef = {
   profile: {
     ...getDefaultProfile(),
     name: "Ms. Jenkins",
-    title: "Interventionist",
+    title: "Intervention Specialist",
     noHomeroom: true,
     gender: "feminine",
     look: "fem-casual", // the casual top as her white blouse
@@ -2703,10 +2703,10 @@ export const NPC_JENKINS: NpcDef = {
     nodes: {
       root: {
         paragraphs: [
-          "Hi there! I'm Ms. Jenkins, Valor's Interventionist. I work with students who need a little extra support to reach grade-level reading and math.",
+          "Hi there! I'm Ms. Jenkins, Valor's Intervention Specialist. I work with students who need a little extra support to reach grade-level reading and math.",
         ],
         options: [
-          { label: "What does an interventionist do?", next: "role" },
+          { label: "What does an Intervention Specialist do?", next: "role" },
           { label: "How do you support English learners?", next: "mll" },
           { label: "Thanks, Ms. Jenkins!", next: "bye" },
         ],
