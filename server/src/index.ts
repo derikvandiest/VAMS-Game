@@ -9,6 +9,7 @@
  * In later milestones it will also validate movement, quizzes, stamps, and
  * email sending. Game content lives in /content — never hard-code it here.
  */
+import { timingSafeEqual } from "node:crypto";
 import express from "express";
 import { createServer } from "node:http";
 import path from "node:path";
@@ -40,6 +41,19 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "")
   .map((s) => s.trim().replace(/\/$/, ""))
   .filter(Boolean);
 const io = new Server(httpServer, ALLOWED_ORIGINS.length ? { cors: { origin: ALLOWED_ORIGINS, methods: ["GET", "POST"] } } : {});
+
+/**
+ * ACCESS_PASSWORD (set on the host, never in the code): only players who typed it on the game's password screen may
+ * connect. Compared like the screen does: no surrounding spaces, capital letters don't matter. Unset = open (local).
+ */
+const ACCESS_PASSWORD = (process.env.ACCESS_PASSWORD ?? "").trim().toLowerCase();
+io.use((socket, next) => {
+  if (!ACCESS_PASSWORD) return next();
+  const key = String((socket.handshake.auth as { key?: unknown })?.key ?? "").trim().toLowerCase();
+  const a = Buffer.from(key), b = Buffer.from(ACCESS_PASSWORD);
+  if (a.length === b.length && timingSafeEqual(a, b)) return next();
+  next(new Error("access denied"));
+});
 
 // --- Serving the game -------------------------------------------------------
 // In production (`npm run build` then `npm start`) the browser files live in /dist.

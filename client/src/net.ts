@@ -1,4 +1,5 @@
 import { io, Socket } from "socket.io-client";
+import { accessKey } from "./accessGate";
 
 let currentSocket: Socket | null = null;
 
@@ -17,7 +18,9 @@ export function isMultiplayerActive(): boolean {
 
 export function getSocket(): Socket {
   if (!currentSocket) {
-    currentSocket = SERVER_URL ? io(SERVER_URL) : io();
+    // the access password goes along, so the server only lets in people who know it
+    const opts = { auth: (cb: (data: object) => void) => cb({ key: accessKey() }) };
+    currentSocket = SERVER_URL ? io(SERVER_URL, opts) : io(opts);
   }
   return currentSocket;
 }
@@ -37,6 +40,10 @@ export function connectToServer(): Socket {
   socket.on("connect", () => {
     setBadge(`Server: connected`, "badge-ok");
     console.log(`[client] connected to server (${socket.id})`);
+  });
+
+  socket.on("connect_error", (err) => {
+    if (err?.message === "access denied") setBadge("Server: access password not accepted, reload and enter it again", "badge-bad");
   });
 
   socket.on("disconnect", () => {

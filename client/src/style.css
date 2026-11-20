@@ -3439,3 +3439,21 @@ button.al-read:hover { background: #ede9fe; }
 .mn-part.done { opacity: 0.55; cursor: default; }
 .mn-part.done::after { content: " ✓"; }
 @media (max-width: 700px) { .mn-rocks { grid-template-columns: 1fr; } }
+
+/* --- Access password screen (accessGate.ts) --- */
+#access-gate { position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 30%, #1e3a8a 0%, #0b1226 70%); transition: opacity 0.4s; }
+#access-gate.ag-open { opacity: 0; pointer-events: none; }
+#access-gate .ag-card { width: min(380px, 90vw); background: #fffdf8; border-radius: 18px; padding: 28px 28px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 24px 70px rgba(0,0,0,0.5); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; color: #1f2937; }
+#access-gate .ag-logo { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+#access-gate h1 { margin: 6px 0 0; font-size: 26px; color: #7f1d1d; }
+#access-gate .ag-sub { margin: 0 0 10px; font-size: 13px; color: #64748b; text-align: center; }
+#access-gate label { align-self: flex-start; font-weight: 700; font-size: 14px; }
+#access-gate .ag-row { display: flex; width: 100%; gap: 6px; }
+#access-gate input { flex: 1; min-width: 0; border: 2px solid #cbd5e1; border-radius: 10px; padding: 11px 12px; font: inherit; font-size: 16px; color: #1f2937; background: #fff; }
+#access-gate input:focus { outline: none; border-color: #1e3a8a; }
+#access-gate .ag-eye { border: 2px solid #cbd5e1; background: #fff; border-radius: 10px; width: 46px; cursor: pointer; font-size: 16px; }
+#access-gate .ag-error { min-height: 18px; color: #b91c1c; font-size: 13px; font-weight: 700; align-self: flex-start; }
+#access-gate .ag-go { width: 100%; border: 0; border-radius: 12px; background: #b8312f; color: #fff; font-weight: 900; font-size: 16px; padding: 12px; cursor: pointer; box-shadow: inset 0 -4px 0 rgba(0,0,0,0.2); }
+#access-gate .ag-go:hover { background: #a42a28; }
+#access-gate .ag-help { margin: 8px 0 0; font-size: 12px; color: #94a3b8; }
+#access-gate .ag-shake { animation: lo-shake 0.45s; }

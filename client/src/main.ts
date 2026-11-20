@@ -14,6 +14,7 @@ import {
 } from "./saveManager";
 import { saveCharacterProfile } from "./profile";
 import { StartMenu } from "./startMenu";
+import { requireAccess } from "./accessGate";
 
 /**
  * Game Entry Point:
@@ -89,6 +90,9 @@ function updateObjectiveHud(slot: SaveSlotData): void {
     }
   }
 }
+
+// The access password screen covers everything (including the start menu) until the right password is typed
+void requireAccess();
 
 // Create and show Start Menu
 const startMenu = new StartMenu({
