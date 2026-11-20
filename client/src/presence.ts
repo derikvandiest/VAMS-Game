@@ -59,6 +59,14 @@ interface WireState {
 
 const SEND_INTERVAL = 0.066; // seconds between position updates
 const STALE_AFTER = 8; // drop a remote player we have not heard from for this long (seconds)
+/** A player standing still (or reading a lesson) only sends this often, so the others still know they're here */
+const KEEPALIVE = 3; // seconds (well under STALE_AFTER)
+
+/** Everything the others see of us, rounded, to tell whether anything changed since the last update */
+function stateKey(l: LocalPresence): string {
+  const r = (v: number) => Math.round(v * 100);
+  return `${l.zone}|${r(l.x)}|${r(l.y)}|${r(l.z)}|${Math.round(l.rotY * 50)}|${l.seatY ?? "-"}|${l.driving ?? "-"}|${l.hidden ? 1 : 0}`;
+}
 
 export interface Presence {
   update(dt: number, local: LocalPresence): void;
@@ -144,7 +152,11 @@ export function startPresence(scene: THREE.Scene, cars?: CarSeats): Presence | n
     if (joined) socket.emit("presence:profile", { profile: p });
   });
 
+  let lastSent = ""; // what we last told the server (positions rounded to a centimeter)
+  let sinceSent = 0;
   const sendState = (l: LocalPresence): void => {
+    lastSent = stateKey(l);
+    sinceSent = 0;
     socket.emit("presence:state", { zone: l.zone, x: l.x, y: l.y, z: l.z, rotY: l.rotY, seatY: l.seatY, driving: l.driving, hidden: l.hidden });
   };
 
@@ -163,9 +175,12 @@ export function startPresence(scene: THREE.Scene, cars?: CarSeats): Presence | n
           sendTimer = 0;
         } else {
           sendTimer += dt;
+          sinceSent += dt;
+          // only while something changed (moving, turning, sitting, driving), plus a slow keepalive when idle:
+          // 75 players mostly standing in lessons then cost the server almost nothing
           if (sendTimer >= SEND_INTERVAL) {
             sendTimer = 0;
-            sendState(local);
+            if (stateKey(local) !== lastSent || sinceSent >= KEEPALIVE) sendState(local);
           }
         }
       }
