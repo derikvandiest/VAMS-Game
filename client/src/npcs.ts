@@ -2675,8 +2675,8 @@ export const NPC_JENKINS: NpcDef = {
   id: "npc-jenkins",
   room: "campus",
   floor: 1,
-  x: -14.4,
-  z: -9,
+  x: -11.2,
+  z: -7.6,
   rotY: 0, // facing out over the walkway toward campus
   talkRange: 2,
   profile: {
