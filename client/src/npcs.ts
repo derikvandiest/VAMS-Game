@@ -20,6 +20,7 @@ import nayfeldPortrait from "./assets/nayfeld_portrait.png";
 import daniPortrait from "./assets/dani_portrait.png";
 import somozaPortrait from "./assets/somoza_portrait.png";
 import weberPortrait from "./assets/weber_portrait.png";
+import jenkinsPortrait from "./assets/jenkins_portrait.png";
 import blessingPortrait from "./assets/blessing_portrait.png";
 import dominguezPortrait from "./assets/dominguez_portrait.png";
 import larkPortrait from "./assets/lark_portrait.png";
@@ -2664,7 +2665,81 @@ export const NPC_CARMONA: NpcDef = {
   dialog: { start: "root", nodes: { root: { paragraphs: [""], options: [] } } }, // replaced at run time (eldTurnIn.ts)
 };
 
-export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL, NPC_APARICIO, NPC_CARRERA, NPC_WILLIAMS, NPC_MARIA, NPC_QUINTANA, NPC_NELLY, NPC_CARMONA];
+/**
+ * Ms. Jenkins, the school's Interventionist, upstairs on the office building's walkway, on the right side of the ELD
+ * classroom door (x = -16) as you face it, in the middle of the walkway (z -10.5..-7.5), facing out toward campus.
+ * Matches her portrait: very long, thin black box braids with a center part (down past her waist), black rectangular
+ * glasses, deep brown skin, a white short-sleeved blouse with a pointed collar and a keyhole neckline.
+ */
+export const NPC_JENKINS: NpcDef = {
+  id: "npc-jenkins",
+  room: "campus",
+  floor: 1,
+  x: -14.4,
+  z: -9,
+  rotY: 0, // facing out over the walkway toward campus
+  talkRange: 2,
+  profile: {
+    ...getDefaultProfile(),
+    name: "Ms. Jenkins",
+    title: "Interventionist",
+    noHomeroom: true,
+    gender: "feminine",
+    look: "fem-casual", // the casual top as her white blouse
+    outfitColor: "#f4f2ee",
+    hairStyle: "f-witch", // center part, long
+    hairLength: 1.95, // long, down the chest (the modelled long hair stretched any further turns into a flat sheet)
+    hairColor: "#111014",
+    skinTone: "#7A4A32",
+    glasses: "rect",
+    glassesColor: "#141414",
+    shoes: "dress",
+    shoeColor: "#1c1c20",
+    partColors: { "Legs:Orange": "#262a33" },
+  },
+  portrait: jenkinsPortrait,
+  dialog: {
+    start: "root",
+    nodes: {
+      root: {
+        paragraphs: [
+          "Hi there! I'm Ms. Jenkins, Valor's Interventionist. I work with students who need a little extra support to reach grade-level reading and math.",
+        ],
+        options: [
+          { label: "What does an interventionist do?", next: "role" },
+          { label: "How do you support English learners?", next: "mll" },
+          { label: "Thanks, Ms. Jenkins!", next: "bye" },
+        ],
+      },
+      role: {
+        paragraphs: [
+          "I look at our data with teachers to find students who need more help, then work with them in small groups, a few times a week, on the exact skills they're missing.",
+          "We check progress every couple of weeks. If a student is growing, great! If not, we change the plan. The goal is always to get them back to full speed in their regular classes.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Jenkins!", next: "bye" },
+        ],
+      },
+      mll: {
+        paragraphs: [
+          "First I ask: is this a reading or math gap, or is the student still learning English? Those need different help. I compare them with other English learners like them, and I check with the ELD team and the family before deciding anything.",
+          "In my groups I use visuals, sentence frames, cognates and lots of talk, so students build their English while they build the skill. And intervention never replaces their ELD time.",
+        ],
+        options: [
+          { label: "I have another question", next: "root" },
+          { label: "Thanks, Ms. Jenkins!", next: "bye" },
+        ],
+      },
+      bye: {
+        paragraphs: ["Have a great day! Come find me if a student of yours needs a boost."],
+        options: [{ label: "See you, Ms. Jenkins!" }],
+      },
+    },
+  },
+};
+
+export const NPCS: NpcDef[] = [NPC_VAN_DIEST, NPC_PRINCIPAL, NPC_KURISU, NPC_BLESSING, NPC_MORRIS, NPC_ASHI, NPC_NAVARRO, NPC_DANI, NPC_IPENA, NPC_CASTANEDA, NPC_TUNSON, NPC_STAUFFER, NPC_ROLDAN, NPC_GUERRERO, NPC_NAYFELD, NPC_SOMOZA, NPC_WEBER, NPC_DOMINGUEZ, NPC_LARK, NPC_GILLETT, NPC_NORORI, NPC_RAMIREZ, NPC_MARTINEZ, NPC_TRAE, NPC_BAKOO, NPC_GETIS, NPC_MARTINEZ_CS, NPC_DELMA, NPC_RAQUEL, NPC_APARICIO, NPC_CARRERA, NPC_WILLIAMS, NPC_MARIA, NPC_QUINTANA, NPC_NELLY, NPC_CARMONA, NPC_JENKINS];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Generic PD attendees: teachers seated at the MPR tables (wearing their homeroom colors), with a short chat.
