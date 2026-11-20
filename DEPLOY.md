@@ -33,8 +33,10 @@ Netlify, Vercel static) won't work for multiplayer.
 - **Vercel** (project `eld-pd-game`, <https://eld-pd-game.vercel.app>) hosts the game pages. `vercel.json` and
   `.vercelignore` set it up; redeploy with `vercel deploy --prod` from the project folder (or connect the GitHub repo
   in the Vercel dashboard to deploy on every push). Single player works with just this.
-- **Render** runs the multiplayer server (`render.yaml`). In its dashboard set **ALLOWED_ORIGINS** to
-  `https://eld-pd-game.vercel.app` so the Vercel pages may connect.
+- **Render** runs the multiplayer server: service `vams-game` (Standard instance, 1 CPU / 2 GB, sized for 50–75
+  players at once), <https://vams-game.onrender.com>, deploying `main` of `derikvandiest/VAMS-Game` on every push.
+  **ALLOWED_ORIGINS** is `https://eld-pd-game.vercel.app`; when a custom domain is added to Vercel, add it there
+  too (comma-separated), or that address won't be able to join multiplayer.
 - Then tell the game where the server is: `vercel env add VITE_SERVER_URL production` with the Render address (e.g.
   `https://eld-pd-game.onrender.com`), and redeploy Vercel. (It's baked in at build time.)
 
