@@ -28,6 +28,16 @@ Netlify, Vercel static) won't work for multiplayer.
 | **Fly.io** | `fly launch` in the project folder (uses the `Dockerfile`). | Keep at least 1 machine running. |
 | **Any VPS / school server** | Install Node 20+, then `npm ci && npm run build && npm start` (or `docker build` / `docker run`). | Put it behind HTTPS (e.g. Caddy or nginx). |
 
+## 2b. Our setup: game pages on Vercel + multiplayer server on Render
+
+- **Vercel** (project `eld-pd-game`, <https://eld-pd-game.vercel.app>) hosts the game pages. `vercel.json` and
+  `.vercelignore` set it up; redeploy with `vercel deploy --prod` from the project folder (or connect the GitHub repo
+  in the Vercel dashboard to deploy on every push). Single player works with just this.
+- **Render** runs the multiplayer server (`render.yaml`). In its dashboard set **ALLOWED_ORIGINS** to
+  `https://eld-pd-game.vercel.app` so the Vercel pages may connect.
+- Then tell the game where the server is: `vercel env add VITE_SERVER_URL production` with the Render address (e.g.
+  `https://eld-pd-game.onrender.com`), and redeploy Vercel. (It's baked in at build time.)
+
 ## 3. Settings (environment variables)
 
 | Variable | What | Default |
@@ -35,6 +45,8 @@ Netlify, Vercel static) won't work for multiplayer.
 | `PORT` | Port to listen on. Hosts set this for you. | `3001` |
 | `NODE_ENV` | Set to `production` on the website (turns on browser caching). | – |
 | `ADMIN_PASSWORD` | For the host/admin page (later milestone). Never commit it. | – |
+| `ALLOWED_ORIGINS` | Server: other sites allowed to connect, comma-separated (the Vercel address). | – |
+| `VITE_SERVER_URL` | Game pages (build time, set in Vercel): the multiplayer server's address. | same address |
 
 Copy `.env.example` to `.env` for local use; on a host, set them in its dashboard.
 
