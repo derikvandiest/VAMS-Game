@@ -49,6 +49,12 @@ Netlify, Vercel static) won't work for multiplayer.
 | `ADMIN_PASSWORD` | For the host/admin page (later milestone). Never commit it. | – |
 | `ALLOWED_ORIGINS` | Server: other sites allowed to connect, comma-separated (the Vercel address). | – |
 | `VITE_SERVER_URL` | Game pages (build time, set in Vercel): the multiplayer server's address. | same address |
+| `ACCESS_PASSWORD` | Server (Render): the access password players type; multiplayer refuses anyone without it. | open |
+| `VITE_ACCESS_HASH` | Game pages (Vercel, build time): the SHA-256 of that password, lower-case. Never the password itself (this repo is public). | no password screen |
+
+**Changing the access password:** set `ACCESS_PASSWORD` on Render to the new password (lower-case), set
+`VITE_ACCESS_HASH` on Vercel to its SHA-256 (e.g. `printf 'newpassword' | sha256sum`), then redeploy both. Players who
+saved the old password are asked for the new one.
 
 Copy `.env.example` to `.env` for local use; on a host, set them in its dashboard.
 
