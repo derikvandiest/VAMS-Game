@@ -23,3 +23,6 @@ assets/npc-photos/*
 !assets/npc-photos/.gitkeep
 .vercel
 .env*
+
+# Account recovery codes and other personal secrets: never committed
+*recovery-codes*
