@@ -34,15 +34,15 @@ interface Remote {
   id: string;
   rig: AvatarRig;
   pos: THREE.Vector3;
-  target: THREE.Vector3;
   rotY: number;
-  targetRotY: number;
   seatY: number | null;
   driving: number | null;
   inCar: THREE.Group | null;
   lastSeen: number;
   clock: number;
   speed: number;
+  /** Buffered position updates for smooth interpolation */
+  buffer: Array<{ t: number; x: number; y: number; z: number; rotY: number }>;
 }
 
 interface WireState {
@@ -61,6 +61,7 @@ const SEND_INTERVAL = 0.066; // seconds between position updates
 const STALE_AFTER = 8; // drop a remote player we have not heard from for this long (seconds)
 /** A player standing still (or reading a lesson) only sends this often, so the others still know they're here */
 const KEEPALIVE = 3; // seconds (well under STALE_AFTER)
+const BUFFER_DELAY = 0.15; // interpolation delay (seconds) to absorb network jitter
 
 /** Everything the others see of us, rounded, to tell whether anything changed since the last update */
 function stateKey(l: LocalPresence): string {
@@ -109,13 +110,14 @@ export function startPresence(scene: THREE.Scene, cars?: CarSeats): Presence | n
       rig.player.position.copy(pos);
       rig.player.rotation.y = w.rotY;
       scene.add(rig.player);
-      r = { id: w.id, rig, pos, target: pos.clone(), rotY: w.rotY, targetRotY: w.rotY, seatY: w.seatY, driving: w.driving ?? null, inCar: null, lastSeen: 0, clock: Math.random() * 10, speed: 0 };
+      r = { id: w.id, rig, pos, rotY: w.rotY, seatY: w.seatY, driving: w.driving ?? null, inCar: null, lastSeen: 0, clock: Math.random() * 10, speed: 0, buffer: [{ t: performance.now() * 0.001, x: w.x, y: w.y, z: w.z, rotY: w.rotY }] };
       remotes.set(w.id, r);
     } else if (w.profile) {
       r.rig.apply(sanitizeProfile(w.profile)); // they changed their look
     }
-    r.target.set(w.x, w.y, w.z);
-    r.targetRotY = w.rotY;
+    const now = performance.now() * 0.001;
+    r.buffer.push({ t: now, x: w.x, y: w.y, z: w.z, rotY: w.rotY });
+    while (r.buffer.length > 5) r.buffer.shift();
     r.seatY = w.seatY;
     r.driving = w.driving ?? null;
     r.lastSeen = 0;
@@ -185,7 +187,6 @@ export function startPresence(scene: THREE.Scene, cars?: CarSeats): Presence | n
         }
       }
       // --- draw the others ---
-      const k = 1 - Math.exp(-dt * 12);
       for (const r of remotes.values()) {
         r.lastSeen += dt;
         if (r.lastSeen > STALE_AFTER) {
@@ -208,7 +209,9 @@ export function startPresence(scene: THREE.Scene, cars?: CarSeats): Presence | n
           r.rig.bodyGroup.position.y = r.rig.seatDrop ? r.rig.seatDrop(0.37 / 0.55) : 0;
           r.rig.setLocomotion?.(0);
           r.rig.syncSkeleton?.();
-          r.pos.copy(r.target); // so they step out where the car stopped
+          const lastCar = r.buffer[r.buffer.length - 1];
+          r.pos.set(lastCar.x, lastCar.y, lastCar.z);
+          r.rotY = lastCar.rotY;
           continue;
         }
         if (r.inCar) {
@@ -216,16 +219,35 @@ export function startPresence(scene: THREE.Scene, cars?: CarSeats): Presence | n
           r.inCar = null;
           r.rig.player.scale.setScalar(1);
           scene.add(r.rig.player);
-          r.pos.copy(r.target);
+          const lastCar = r.buffer[r.buffer.length - 1];
+          r.pos.set(lastCar.x, lastCar.y, lastCar.z);
+          r.rotY = lastCar.rotY;
           r.rig.bodyGroup.position.y = 0;
         }
+        // --- interpolate remote position from network buffer ---
+        const now = performance.now() * 0.001;
+        const targetTime = now - BUFFER_DELAY;
+        const buf = r.buffer;
+        let p0 = buf[0];
+        let p1 = buf[buf.length - 1];
+        for (let i = 1; i < buf.length; i++) {
+          if (buf[i].t >= targetTime) {
+            p0 = buf[i - 1];
+            p1 = buf[i];
+            break;
+          }
+        }
+        const span = p1.t - p0.t;
+        const f = span > 0 ? Math.min(1, Math.max(0, (targetTime - p0.t) / span)) : 1;
         const before = r.pos.clone();
-        r.pos.lerp(r.target, k);
+        r.pos.x = p0.x + (p1.x - p0.x) * f;
+        r.pos.y = p0.y + (p1.y - p0.y) * f;
+        r.pos.z = p0.z + (p1.z - p0.z) * f;
         const speed = r.pos.distanceTo(before) / Math.max(dt, 1e-4);
         r.speed += (speed - r.speed) * Math.min(1, dt * 8);
-        let dr = r.targetRotY - r.rotY;
-        dr = Math.atan2(Math.sin(dr), Math.cos(dr));
-        r.rotY += dr * Math.min(1, dt * 12);
+        let drot = p1.rotY - p0.rotY;
+        drot = Math.atan2(Math.sin(drot), Math.cos(drot));
+        r.rotY = p0.rotY + drot * f;
         r.rig.player.position.copy(r.pos);
         r.rig.player.rotation.y = r.rotY;
         r.clock += dt;
@@ -250,7 +272,8 @@ export function startPresence(scene: THREE.Scene, cars?: CarSeats): Presence | n
     },
     seatTaken(x: number, z: number): boolean {
       for (const r of remotes.values()) {
-        if (r.seatY !== null && Math.hypot(r.target.x - x, r.target.z - z) < 0.55) return true;
+        const lastSeat = r.buffer[r.buffer.length - 1];
+        if (r.seatY !== null && Math.hypot(lastSeat.x - x, lastSeat.z - z) < 0.55) return true;
       }
       return false;
     },
